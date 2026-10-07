@@ -1,6 +1,6 @@
 # minijs Reference Spec
 
-Status: approved design, v1 scope. This document is the source of truth. If code and spec disagree, fix one of them deliberately and note it in `handoff.md`.
+Status: approved design, v1 scope. This document is the source of truth. If code and spec disagree, fix one of them deliberately and note it in `handoffs/handoff.md`.
 
 ## 1. Product
 
@@ -19,7 +19,7 @@ Sound, levels and tilemaps, emoji looks, user-defined functions or macros, per-i
 ```
 minijs/
   packages/
-    lang/        @minijs/lang      pure TypeScript, no DOM
+    lang/        @minijs/lang      plain JavaScript, no DOM
       ast        AST types: the contract between lang and runtime
       errors     MiniError shape and helpers
       keys       canonical key names shared with runtime
@@ -272,7 +272,7 @@ Missing image: magenta placeholder, one `image-missing` error emitted, game keep
 
 ## 6. Public API
 
-```ts
+```js
 import { compile } from '@minijs/lang'
 import { start } from '@minijs/runtime'
 
@@ -289,7 +289,7 @@ if (program) {
 
 Headless (tests, tools):
 
-```ts
+```js
 import { Simulation, NullRenderer, ManualInput } from '@minijs/runtime'
 const sim = await Simulation.create(program, { input: new ManualInput(), assets: fakeAssets })
 sim.tick()

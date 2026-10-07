@@ -6,15 +6,17 @@
 
 **Goal:** A dev playground page where you type `.mini` text and watch the game run live, a set of example games, CI, and a README that teaches the language.
 
-**Architecture:** `playground/` is a Vite + TypeScript app in the npm workspace. Left pane: CodeMirror 6 editor with lint diagnostics from `compile()`. Right pane: canvas driven by `@minijs/runtime` `start()`, plus a problems list and a small perf readout. Recompile on a 300 ms debounce; when there are no errors, `game.reload(program)`. Example games live in `examples/` and are tested headlessly.
+**Architecture:** `playground/` is a Vite + plain JavaScript app in the npm workspace. Left pane: CodeMirror 6 editor with lint diagnostics from `compile()`. Right pane: canvas driven by `@minijs/runtime` `start()`, plus a problems list and a small perf readout. Recompile on a 300 ms debounce; when there are no errors, `game.reload(program)`. Example games live in `examples/` and are tested headlessly.
 
-**Tech Stack:** Vite 7, TypeScript, CodeMirror 6 (`codemirror`, `@codemirror/lint`, `@codemirror/state`, `@codemirror/view`), `@phosphor-icons/web` for icons, Vitest.
+**Tech Stack:** Vite 7, plain JavaScript (no TypeScript), CodeMirror 6 (`codemirror`, `@codemirror/lint`, `@codemirror/state`, `@codemirror/view`), `@phosphor-icons/web` for icons, Vitest.
+
+**Language note (2026-10-05):** The project is plain JavaScript. Signatures and snippets below use TypeScript notation only as shorthand for shapes; write `.js` files, drop type annotations, and put types in JSDoc (`@param`, `@returns`, `@typedef`, `/** @import { X } from '...' */`).
 
 ## Read first
 
 1. `docs/spec.md` (whole file).
 2. `docs/plans/stage-3-engine.md` "Public interfaces later stages rely on".
-3. `packages/lang/src/index.ts` after Stage 2 (`compile`, `MiniError`, `formatError`).
+3. `packages/lang/src/index.js` after Stage 2 (`compile`, `MiniError`, `formatError`).
 4. The `design-taste-frontend` skill (the user asked for it). Apply its universal rules to the playground page (see Global Constraints). Its landing-page rules (hero, bento, logo wall) do not apply: this is a tool page, which that skill lists as out of scope for layout patterns.
 
 ## Global Constraints
@@ -43,35 +45,35 @@
 | `examples/clicker.mini` | `mouse is clicked on`, counters, text |
 | `examples/hero.mini` + `examples/assets/*.png` | image looks and animation |
 | `scripts/make-example-assets.mjs` | generates the small PNGs for `hero.mini` (no binary blobs hand-written) |
-| `packages/runtime/test/examples.test.ts` | every example compiles clean and runs 600 headless ticks with no errors |
-| `playground/package.json`, `vite.config.ts`, `tsconfig.json`, `index.html` | app shell |
-| `playground/src/main.ts` | wiring: editor, compile loop, game, problems, toolbar |
-| `playground/src/editor.ts` | CodeMirror setup, lint source, jump-to-line |
-| `playground/src/problems.ts` | render problems list |
-| `playground/src/storage.ts` | safe localStorage helpers |
-| `playground/src/examples.ts` | `import.meta.glob('../../examples/*.mini', { query: '?raw', eager: true })` |
-| `playground/src/perf.ts` | fps and tick time readout |
+| `packages/runtime/test/examples.test.js` | every example compiles clean and runs 600 headless ticks with no errors |
+| `playground/package.json`, `vite.config.js`, `index.html` | app shell |
+| `playground/src/main.js` | wiring: editor, compile loop, game, problems, toolbar |
+| `playground/src/editor.js` | CodeMirror setup, lint source, jump-to-line |
+| `playground/src/problems.js` | render problems list |
+| `playground/src/storage.js` | safe localStorage helpers |
+| `playground/src/examples.js` | `import.meta.glob('../../examples/*.mini', { query: '?raw', eager: true })` |
+| `playground/src/perf.js` | fps and tick time readout |
 | `playground/src/styles.css` | tokens + layout |
-| `playground/test/storage.test.ts` | storage fallback behavior |
-| `.github/workflows/ci.yml` | install, typecheck, test |
+| `playground/test/storage.test.js` | storage fallback behavior |
+| `.github/workflows/ci.yml` | install, test |
 | `README.md` | rewrite: what minijs is, quick start, language cheat sheet |
 
 ---
 
 ### Task 1: Example games and headless example tests
 
-**Files:** `examples/*.mini`, `scripts/make-example-assets.mjs`, `examples/assets/`, `packages/runtime/test/examples.test.ts`
+**Files:** `examples/*.mini`, `scripts/make-example-assets.mjs`, `examples/assets/`, `packages/runtime/test/examples.test.js`
 
 - [ ] **Step 1: Write the failing test**
 
-```ts
+```js
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { compile } from '@minijs/lang'
 import { describe, expect, it } from 'vitest'
-import { StaticAssetLoader } from '../src/assets.ts'
-import { ManualInput } from '../src/input.ts'
-import { Simulation } from '../src/simulation.ts'
+import { StaticAssetLoader } from '../src/assets.js'
+import { ManualInput } from '../src/input.js'
+import { Simulation } from '../src/simulation.js'
 
 const dir = join(import.meta.dirname, '../../../examples')
 const files = readdirSync(dir).filter((f) => f.endsWith('.mini'))
@@ -100,7 +102,7 @@ describe('examples', () => {
 
 ### Task 2: Playground shell
 
-**Files:** `playground/package.json`, `playground/vite.config.ts`, `playground/tsconfig.json`, `playground/index.html`, `playground/src/styles.css`, root `package.json`
+**Files:** `playground/package.json`, `playground/vite.config.js`, `playground/index.html`, `playground/src/styles.css`, root `package.json`
 
 - [ ] **Step 1:** Add `"playground"` back to root `workspaces` and add root script `"dev": "npm run dev -w playground"`.
 - [ ] **Step 2:** `playground/package.json`:
@@ -128,18 +130,18 @@ describe('examples', () => {
 
 Verify each package exists on npm (`npm view <name> version`) before installing; adjust versions to what exists.
 
-- [ ] **Step 3:** `vite.config.ts` serves `examples/assets` as the asset base: `publicDir: '../examples'` so `"hero-1.png"` resolves at `/assets/hero-1.png` with `assetsBase: '/assets/'`.
+- [ ] **Step 3:** `vite.config.js` serves `examples/assets` as the asset base: `publicDir: '../examples'` so `"hero-1.png"` resolves at `/assets/hero-1.png` with `assetsBase: '/assets/'`.
 - [ ] **Step 4:** `index.html` structure: `<header>` (name, example picker `<select>`, Run/Stop/Restart buttons), `<main class="split">` with `<section class="editor-pane">` and `<section class="game-pane">` (canvas wrapper with fixed aspect from game size, problems list below, perf readout). Labels above controls; the picker has a visible `<label>`.
 - [ ] **Step 5:** `styles.css` defines tokens on `:root` (`--bg`, `--surface`, `--border`, `--text`, `--text-muted`, `--accent`, `--accent-text`, `--danger`), dark overrides under `@media (prefers-color-scheme: dark)`, body background explicit, grid layout per Global Constraints.
 - [ ] **Step 6:** `npm install`, `npm run dev`, open the page; empty editor and black canvas render with no console errors in both color schemes.
 
 ### Task 3: Editor with live diagnostics
 
-**Files:** `playground/src/editor.ts`, `playground/src/main.ts`
+**Files:** `playground/src/editor.js`, `playground/src/main.js`
 
 **Interfaces (Produces):**
 
-```ts
+```js
 export interface Editor {
   getText(): string
   setText(text: string): void
@@ -151,18 +153,18 @@ export function createEditor(parent: HTMLElement, initial: string): Editor
 ```
 
 - [ ] Map each `MiniError` to a CodeMirror `Diagnostic` spanning from (line, col) to the end of that word (or end of line). `message` = `${error.message}${error.hint ? ' ' + error.hint : ''}`, severity `error`.
-- [ ] `main.ts` loop: on change, debounce 300 ms, `compile(text)`; `editor.setProblems(errors)`; `renderProblems(errors)`; if `program` then `game ? game.reload(program) : (game = await start(program, canvas, { assetsBase: '/assets/' }))`. Runtime errors from `game.on('error')` are appended to the problems list (not the editor).
+- [ ] `main.js` loop: on change, debounce 300 ms, `compile(text)`; `editor.setProblems(errors)`; `renderProblems(errors)`; if `program` then `game ? game.reload(program) : (game = await start(program, canvas, { assetsBase: '/assets/' }))`. Runtime errors from `game.on('error')` are appended to the problems list (not the editor).
 - [ ] While there are compile errors the last good game keeps running, and the problems list says so in one line above the list: "Showing your last working version."
 - [ ] Clicking a problem calls `editor.jumpTo(line, col)`.
 
 ### Task 4: Toolbar, examples, persistence, perf readout
 
-**Files:** `playground/src/examples.ts`, `playground/src/storage.ts`, `playground/src/perf.ts`, `playground/src/problems.ts`, `playground/test/storage.test.ts`
+**Files:** `playground/src/examples.js`, `playground/src/storage.js`, `playground/src/perf.js`, `playground/src/problems.js`, `playground/test/storage.test.js`
 
 - [ ] Example picker lists every `examples/*.mini` by file name (without extension). Choosing one loads it unless the current text has unsaved edits for a different example; then ask with `confirm()`.
-- [ ] `storage.ts`: `loadSource(key): string | null`, `saveSource(key, text): void`, both try/catch, keyed `minijs:source:<example>`. Test with a `localStorage` stub that throws: functions return null / do nothing, never throw.
+- [ ] `storage.js`: `loadSource(key): string | null`, `saveSource(key, text): void`, both try/catch, keyed `minijs:source:<example>`. Test with a `localStorage` stub that throws: functions return null / do nothing, never throw.
 - [ ] Run = `game.reload(program)` from current text. Stop = `game.stop()`. Restart = `game.reload(game.simulation.program)`.
-- [ ] Perf readout (`perf.ts`): its own `requestAnimationFrame` loop computes fps over a rolling 60 frames, and once per second reads the change in `game.simulation.tickCount` for ticks per second. Show "60 fps" and "60 ticks/s" in Geist Mono, muted color, top-right of the game pane. Hidden below 640px wide. Stop its loop when the page is hidden (`visibilitychange`).
+- [ ] Perf readout (`perf.js`): its own `requestAnimationFrame` loop computes fps over a rolling 60 frames, and once per second reads the change in `game.simulation.tickCount` for ticks per second. Show "60 fps" and "60 ticks/s" in Geist Mono, muted color, top-right of the game pane. Hidden below 640px wide. Stop its loop when the page is hidden (`visibilitychange`).
 - [ ] Focus: clicking the canvas focuses it (`tabindex="0"`) so arrow keys go to the game, not the editor. Show a one-line hint under the canvas: "Click the game, then use the keyboard."
 
 ### Task 5: Browser verification
@@ -177,11 +179,11 @@ export function createEditor(parent: HTMLElement, initial: string): Editor
 
 **Files:** `.github/workflows/ci.yml`, `README.md`
 
-- [ ] `ci.yml`: on push and pull_request; `actions/checkout@v4`, `actions/setup-node@v4` with Node 22 and npm cache; `npm ci`; `npm run typecheck`; `npm test`.
+- [ ] `ci.yml`: on push and pull_request; `actions/checkout@v4`, `actions/setup-node@v4` with Node 22 and npm cache; `npm ci`; `npm test`.
 - [ ] `README.md`: one-paragraph pitch, a 10-line example, `npm install` / `npm run dev` / `npm test`, a language cheat sheet (blocks, triggers, conditions, expressions, actions; tables copied from spec section 4), links to `docs/spec.md` and the plans. Plain hyphens only.
 
 ## Done when
 
-- [ ] `npm test`, `npm run typecheck`, `npm run bench` all pass.
+- [ ] `npm test` and `npm run bench` pass.
 - [ ] Playground verified in browser per Task 5 with screenshots saved.
-- [ ] `handoff.md` updated with a new timestamped, model-stamped section.
+- [ ] `handoffs/handoff.md` updated with a new timestamped, model-stamped section.

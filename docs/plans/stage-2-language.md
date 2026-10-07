@@ -8,16 +8,18 @@
 
 **Architecture:** Three pure passes. `lex` (indentation-aware tokens) -> `parse` (recursive descent, one statement per line, line-level error recovery) -> `check` (name resolution and cross-references with "did you mean" hints). `compile` runs all three and sorts errors by position. No DOM, no runtime imports.
 
-**Tech Stack:** TypeScript strict, Vitest. No new dependencies.
+**Tech Stack:** Plain JavaScript (ES modules, JSDoc types for docs and editor hints, no TypeScript), Vitest. No new dependencies.
+
+**Language note (2026-10-05):** The project is plain JavaScript. Signatures and snippets below use TypeScript notation only as shorthand for shapes; write `.js` files, drop type annotations, and put types in JSDoc (`@param`, `@returns`, `@typedef`, `/** @import { X } from '...' */`).
 
 ## Read first
 
 1. `docs/spec.md` sections 4 (language) and 4.7 (errors). Section 7 is the golden example.
-2. `packages/lang/src/ast.ts`: the exact output shape. Do not change it without updating `docs/spec.md`, `packages/runtime`, and `handoff.md`.
-3. `packages/lang/src/errors.ts`: `miniError`, `didYouMean`, error code unions.
-4. `packages/lang/src/keys.ts`: `KEY_NAMES`, `isKeyName`.
-5. `packages/runtime/test/build.ts`: shows exactly which AST each language construct must produce.
-6. `packages/runtime/test/spec-example.test.ts`: `specExample` is the spec section 7 game built by hand. `compile(SPEC_EXAMPLE)` must equal it once locs are stripped; add that assertion to `compile.test.ts`.
+2. `packages/lang/src/ast.js`: the exact output shape. Do not change it without updating `docs/spec.md`, `packages/runtime`, and `handoffs/handoff.md`.
+3. `packages/lang/src/errors.js`: `miniError`, `didYouMean`, error code unions.
+4. `packages/lang/src/keys.js`: `KEY_NAMES`, `isKeyName`.
+5. `packages/runtime/test/build.js`: shows exactly which AST each language construct must produce.
+6. `packages/runtime/test/spec-example.test.js`: `specExample` is the spec section 7 game built by hand. `compile(SPEC_EXAMPLE)` must equal it once locs are stripped; add that assertion to `compile.test.js`.
 
 ## Global Constraints
 
@@ -27,31 +29,31 @@
 - Error wording is product surface: plain sentences, no jargon ("token", "identifier", "expression", "syntax" are banned words in messages and hints). Use the exact messages in the message catalog below.
 - Error recovery: an error inside a statement skips to the end of that line; an error in a block header (`thing`, `when`, `always`, `game`) skips the whole indented block. Report all errors, capped at 50.
 - `compile` returns `program: null` whenever `errors.length > 0`.
-- Do not commit unless the user asks. Run `npm test` and `npm run typecheck` at every checkpoint.
+- Do not commit unless the user asks. Run `npm test` at every checkpoint.
 
 ## File map
 
 | File | Responsibility |
 |---|---|
-| Create `packages/lang/src/colors.ts` | CSS named colors, `isCssColor`, `normalizeColor` |
-| Create `packages/lang/src/lexer.ts` | `lex(source) => { tokens, errors }` |
-| Create `packages/lang/src/cursor.ts` | token cursor helpers, `ParseError`, `describeToken` |
-| Create `packages/lang/src/parse-expr.ts` | expressions and conditions |
-| Create `packages/lang/src/parse-rule.ts` | triggers, actions, text interpolation |
-| Create `packages/lang/src/parser.ts` | top-level blocks: game, variables, things, rules |
-| Create `packages/lang/src/checker.ts` | `check(program) => MiniError[]` |
-| Create `packages/lang/src/compile.ts` | `compile(source) => CompileResult` |
-| Modify `packages/lang/src/index.ts` | export the above |
-| Tests in `packages/lang/test/` | one file per module plus `compile.test.ts`, `errors.test.ts` |
-| Create `packages/runtime/test/integration.test.ts` | compile + Simulation end to end |
+| Create `packages/lang/src/colors.js` | CSS named colors, `isCssColor`, `normalizeColor` |
+| Create `packages/lang/src/lexer.js` | `lex(source) => { tokens, errors }` |
+| Create `packages/lang/src/cursor.js` | token cursor helpers, `ParseError`, `describeToken` |
+| Create `packages/lang/src/parse-expr.js` | expressions and conditions |
+| Create `packages/lang/src/parse-rule.js` | triggers, actions, text interpolation |
+| Create `packages/lang/src/parser.js` | top-level blocks: game, variables, things, rules |
+| Create `packages/lang/src/checker.js` | `check(program) => MiniError[]` |
+| Create `packages/lang/src/compile.js` | `compile(source) => CompileResult` |
+| Modify `packages/lang/src/index.js` | export the above |
+| Tests in `packages/lang/test/` | one file per module plus `compile.test.js`, `errors.test.js` |
+| Create `packages/runtime/test/integration.test.js` | compile + Simulation end to end |
 
 ---
 
 ### Task 1: Colors
 
 **Files:**
-- Create: `packages/lang/src/colors.ts`
-- Test: `packages/lang/test/colors.test.ts`
+- Create: `packages/lang/src/colors.js`
+- Test: `packages/lang/test/colors.test.js`
 
 **Interfaces (Produces):**
 - `CSS_COLOR_NAMES: readonly string[]`
@@ -60,9 +62,9 @@
 
 - [ ] **Step 1: Write the failing test**
 
-```ts
+```js
 import { describe, expect, it } from 'vitest'
-import { CSS_COLOR_NAMES, isCssColor, normalizeColor } from '../src/colors.ts'
+import { CSS_COLOR_NAMES, isCssColor, normalizeColor } from '../src/colors.js'
 
 describe('colors', () => {
   it('knows all 148 CSS named colors', () => {
@@ -84,11 +86,11 @@ describe('colors', () => {
 })
 ```
 
-- [ ] **Step 2: Run it, expect FAIL** (`npx vitest run packages/lang/test/colors.test.ts`, module not found)
+- [ ] **Step 2: Run it, expect FAIL** (`npx vitest run packages/lang/test/colors.test.js`, module not found)
 
 - [ ] **Step 3: Implement**
 
-```ts
+```js
 // CSS Color Module Level 4 named colors (148 including rebeccapurple and grey variants).
 export const CSS_COLOR_NAMES = [
   'aliceblue', 'antiquewhite', 'aqua', 'aquamarine', 'azure', 'beige', 'bisque', 'black',
@@ -136,12 +138,12 @@ export function normalizeColor(words: string[]): string | null {
 ### Task 2: Lexer
 
 **Files:**
-- Create: `packages/lang/src/lexer.ts`
-- Test: `packages/lang/test/lexer.test.ts`
+- Create: `packages/lang/src/lexer.js`
+- Test: `packages/lang/test/lexer.test.js`
 
 **Interfaces (Produces):**
 
-```ts
+```js
 export type TokenKind = 'word' | 'number' | 'string' | 'color' | 'comma' | 'op' | 'newline' | 'indent' | 'dedent' | 'eof'
 export interface Token {
   kind: TokenKind
@@ -172,9 +174,9 @@ Rules (spec 4.1):
 
 - [ ] **Step 1: Write failing tests**
 
-```ts
+```js
 import { describe, expect, it } from 'vitest'
-import { lex } from '../src/lexer.ts'
+import { lex } from '../src/lexer.js'
 
 const kinds = (src: string) => lex(src).tokens.map((t) => (t.kind === 'word' || t.kind === 'op' || t.kind === 'color' ? t.text : t.kind === 'number' ? t.value : t.kind))
 
@@ -242,13 +244,13 @@ describe('lexer errors', () => {
 ### Task 3: Cursor and expressions/conditions
 
 **Files:**
-- Create: `packages/lang/src/cursor.ts`, `packages/lang/src/parse-expr.ts`
-- Test: `packages/lang/test/parse-expr.test.ts`
+- Create: `packages/lang/src/cursor.js`, `packages/lang/src/parse-expr.js`
+- Test: `packages/lang/test/parse-expr.test.js`
 
 **Interfaces (Produces):**
 
-```ts
-// cursor.ts
+```js
+// cursor.js
 export class ParseError extends Error { constructor(readonly error: MiniError) }
 export function describeToken(t: Token): string
 // word -> `"move"`, number -> `the number 5`, string -> `some text`, color -> `the color #abc`,
@@ -275,7 +277,7 @@ export const RESERVED: ReadonlySet<string>
 // game thing when always key mouse random count the a an not and or is to at by of on in
 // left right up down x y vx vy width height text
 
-// parse-expr.ts
+// parse-expr.js
 export function parseExpr(c: Cursor): Expr
 export function parseCondition(c: Cursor): Condition
 export const PROP_WORDS: ReadonlySet<InstanceProp>   // x y vx vy width height
@@ -309,7 +311,7 @@ Important: `and` in a condition binds conditions, never numbers. `score is 10 an
 
 - [ ] **Step 1: Failing tests** (use a helper `const e = (src) => parseExpr(new Cursor(lex(src).tokens))` and strip `loc` with a recursive `strip()` helper before comparing):
 
-```ts
+```js
 expect(strip(e('1 + 2 * 3'))).toEqual({ kind: 'binary', op: '+', left: { kind: 'number', value: 1 }, right: { kind: 'binary', op: '*', left: { kind: 'number', value: 2 }, right: { kind: 'number', value: 3 } } })
 expect(strip(e('-4'))).toEqual({ kind: 'number', value: -4 })
 expect(strip(e('- score'))).toEqual({ kind: 'binary', op: '-', left: { kind: 'number', value: 0 }, right: { kind: 'var', name: 'score' } })
@@ -339,9 +341,9 @@ expect(k('not a is 1 and b is 2 or c is 3')).toEqual({
 ```
 
 - [ ] **Step 2: Run, expect FAIL.**
-- [ ] **Step 3: Implement** `cursor.ts` and `parse-expr.ts`. The expression parser is classic precedence climbing:
+- [ ] **Step 3: Implement** `cursor.js` and `parse-expr.js`. The expression parser is classic precedence climbing:
 
-```ts
+```js
 export function parseExpr(c: Cursor): Expr {
   let left = parseTerm(c)
   while (c.peek().kind === 'op' && (c.peek().text === '+' || c.peek().text === '-')) {
@@ -367,12 +369,12 @@ function parseTerm(c: Cursor): Expr {
 ### Task 4: Triggers, actions, text interpolation
 
 **Files:**
-- Create: `packages/lang/src/parse-rule.ts`
-- Test: `packages/lang/test/parse-rule.test.ts`
+- Create: `packages/lang/src/parse-rule.js`
+- Test: `packages/lang/test/parse-rule.test.js`
 
 **Interfaces (Produces):**
 
-```ts
+```js
 export function parseTrigger(c: Cursor): Trigger        // after 'when' was consumed; does not consume end of line
 export function parseAction(c: Cursor): Action          // one action line; does not consume end of line
 export function parseLook(c: Cursor): Look              // after 'looks like' / 'to look like'
@@ -426,7 +428,7 @@ Text interpolation: inside a string, `{` ... `}` is an expression. Lex the inner
 
 - [ ] **Step 1: Failing tests.** Assert each table row (strip locs). Also:
 
-```ts
+```js
 // guards
 expect(strip(trig('up key is pressed and player is on ground'))).toEqual({ kind: 'key', key: 'up', state: 'pressed', guard: { kind: 'onGround', thing: 'player' } })
 // event wins over condition
@@ -455,12 +457,12 @@ expect(strip(look('"hero.png"'))).toEqual({ kind: 'image', src: 'hero.png' })
 ### Task 5: Top-level parser
 
 **Files:**
-- Create: `packages/lang/src/parser.ts`
-- Test: `packages/lang/test/parser.test.ts`
+- Create: `packages/lang/src/parser.js`
+- Test: `packages/lang/test/parser.test.js`
 
 **Interfaces (Produces):**
 
-```ts
+```js
 export interface ParseResult { program: Program; errors: MiniError[] }
 export function parse(tokens: Token[]): ParseResult
 ```
@@ -486,7 +488,7 @@ Block rules:
 
 - [ ] **Step 1: Failing tests.** Parse the spec section 7 example and assert key parts:
 
-```ts
+```js
 const { program, errors } = parse(lex(SPEC_EXAMPLE).tokens)
 expect(errors).toEqual([])
 expect(program.game).toEqual({ width: 320, height: 180, pixelArt: true, background: 'skyblue', gravity: 0.4, loc: { line: 1, col: 1 } })
@@ -497,7 +499,7 @@ expect(program.rules).toHaveLength(7)
 expect(program.rules[6]!.trigger).toEqual({ kind: 'always', loc: { line: 45, col: 1 } })
 ```
 
-Copy `SPEC_EXAMPLE` verbatim from spec section 7 into `packages/lang/test/fixtures.ts` (it is also used by Task 7 and Stage 4). Line numbers above assume the example starts at line 1 with `game`.
+Copy `SPEC_EXAMPLE` verbatim from spec section 7 into `packages/lang/test/fixtures.js` (it is also used by Task 7 and Stage 4). Line numbers above assume the example starts at line 1 with `game`.
 
 Error recovery test: a file with three broken lines in different blocks yields exactly three errors and still parses the good rules.
 
@@ -508,8 +510,8 @@ Error recovery test: a file with three broken lines in different blocks yields e
 ### Task 6: Checker
 
 **Files:**
-- Create: `packages/lang/src/checker.ts`
-- Test: `packages/lang/test/checker.test.ts`
+- Create: `packages/lang/src/checker.js`
+- Test: `packages/lang/test/checker.test.js`
 
 **Interfaces (Produces):** `export function check(program: Program): MiniError[]`
 
@@ -532,13 +534,13 @@ Checks, in this order:
 ### Task 7: compile() and integration
 
 **Files:**
-- Create: `packages/lang/src/compile.ts`
-- Modify: `packages/lang/src/index.ts` (export `compile`, `CompileResult`, `lex`, `Token`, `TokenKind`, `parse`, `check`, colors API)
-- Test: `packages/lang/test/compile.test.ts`, `packages/runtime/test/integration.test.ts`
+- Create: `packages/lang/src/compile.js`
+- Modify: `packages/lang/src/index.js` (export `compile`, `CompileResult`, `lex`, `Token`, `TokenKind`, `parse`, `check`, colors API)
+- Test: `packages/lang/test/compile.test.js`, `packages/runtime/test/integration.test.js`
 
 **Interfaces (Produces):**
 
-```ts
+```js
 export interface CompileResult { program: Program | null; errors: MiniError[] }
 export function compile(source: string): CompileResult
 // lex -> parse -> (only if no lex/parse errors) check; errors sorted by line then col; capped at 50.
@@ -546,9 +548,9 @@ export function compile(source: string): CompileResult
 
 - [ ] **Step 1: Failing tests**
 
-```ts
-// compile.test.ts
-import { SPEC_EXAMPLE } from './fixtures.ts'
+```js
+// compile.test.js
+import { SPEC_EXAMPLE } from './fixtures.js'
 it('compiles the spec example cleanly', () => {
   const r = compile(SPEC_EXAMPLE)
   expect(r.errors).toEqual([])
@@ -570,12 +572,12 @@ it('compiles an empty file to defaults', () => {
 })
 ```
 
-```ts
-// packages/runtime/test/integration.test.ts
+```js
+// packages/runtime/test/integration.test.js
 import { compile } from '@minijs/lang'
-import { SPEC_EXAMPLE } from '../../lang/test/fixtures.ts'
-import { ManualInput } from '../src/input.ts'
-import { Simulation } from '../src/simulation.ts'
+import { SPEC_EXAMPLE } from '../../lang/test/fixtures.js'
+import { ManualInput } from '../src/input.js'
+import { Simulation } from '../src/simulation.js'
 
 it('runs the spec example: player lands, walks, collects', () => {
   const { program } = compile(SPEC_EXAMPLE)
@@ -591,7 +593,7 @@ it('runs the spec example: player lands, walks, collects', () => {
 })
 ```
 
-- [ ] **Step 2: FAIL. Step 3: Implement. Step 4: PASS** plus `npm run typecheck`.
+- [ ] **Step 2: FAIL. Step 3: Implement. Step 4: PASS**.
 
 ---
 
@@ -615,6 +617,5 @@ it('runs the spec example: player lands, walks, collects', () => {
 ## Done when
 
 - [ ] All Stage 2 tests pass, plus all existing tests (`npm test`).
-- [ ] `npm run typecheck` clean.
 - [ ] `compile(SPEC_EXAMPLE)` has zero errors and the integration test passes.
-- [ ] `handoff.md` updated with a new timestamped, model-stamped section.
+- [ ] `handoffs/handoff.md` updated with a new timestamped, model-stamped section.

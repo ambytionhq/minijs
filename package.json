@@ -11,11 +11,9 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "bench": "vitest bench --run",
-    "typecheck": "tsc -p packages/lang && tsc -p packages/runtime"
+    "bench": "vitest bench --run"
   },
   "devDependencies": {
-    "typescript": "^5.9.0",
     "vitest": "^3.2.0"
   },
   "engines": {

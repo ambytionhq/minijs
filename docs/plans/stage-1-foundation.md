@@ -6,9 +6,11 @@
 
 **Goal:** Monorepo tooling plus the AST/error/key contract that Stage 2 (language) and Stage 3 (engine) both build against independently.
 
-**Architecture:** npm workspaces, source-first TypeScript packages (package `exports` point at `src/index.ts`; no build step during development). Vitest runs every package's tests from the root.
+**Architecture:** npm workspaces, source-first JavaScript packages (package `exports` point at `src/index.js`; no build step during development). Vitest runs every package's tests from the root.
 
-**Tech Stack:** Node >= 20 (built on 25.5), npm workspaces, TypeScript 5.9 (strict, `moduleResolution: Bundler`, `.ts` import extensions), Vitest 3.2.
+**Tech Stack:** Node >= 20 (built on 25.5), npm workspaces, plain JavaScript ES modules with JSDoc types (no TypeScript), Vitest 3.2.
+
+**2026-10-05 conversion:** Originally built in TypeScript; converted to plain JavaScript at the user's request. `tsconfig*.json` and the `typecheck` script were removed; a `jsconfig.json` gives editors JSDoc hints. Checklist below is updated to match.
 
 ## Global Constraints
 
@@ -23,19 +25,19 @@
 ### Task 1: Workspace tooling
 
 **Files:**
-- Create: `package.json`, `tsconfig.base.json`, `vitest.config.ts`
-- Create: `packages/lang/package.json`, `packages/lang/tsconfig.json`
-- Create: `packages/runtime/package.json`, `packages/runtime/tsconfig.json`
+- Create: `package.json`, `jsconfig.json`, `vitest.config.js`
+- Create: `packages/lang/package.json`
+- Create: `packages/runtime/package.json`
 - Modify: `.gitignore` (add `.vite/`)
 
-- [x] Root scripts: `test` (vitest run), `test:watch`, `bench` (vitest bench --run), `typecheck` (tsc per package).
-- [x] Vitest includes `packages/*/test/**/*.test.ts`, `playground/test/**/*.test.ts`; benches `packages/*/bench/**/*.bench.ts`.
+- [x] Root scripts: `test` (vitest run), `test:watch`, `bench` (vitest bench --run). (No typecheck: plain JS.)
+- [x] Vitest includes `packages/*/test/**/*.test.js`, `playground/test/**/*.test.js`; benches `packages/*/bench/**/*.bench.js`.
 - [x] `npm install` succeeds; `node_modules/@minijs/{lang,runtime}` are workspace symlinks.
 
 ### Task 2: AST contract
 
 **Files:**
-- Create: `packages/lang/src/ast.ts`
+- Create: `packages/lang/src/ast.js`
 
 **Interfaces (Produces):** `Loc`, `Program`, `GameSettings`, `DEFAULT_GAME_SETTINGS`, `VarDecl`, `Point`, `Size`, `Look`, `AnimationDecl`, `ThingDecl`, `Direction`, `InstanceProp`, `SettableProp`, `BinaryOp`, `Expr`, `CompareOp`, `Condition`, `KeyState`, `Trigger`, `TextPart`, `TextPosition`, `Action`, `Rule`, `DEFAULT_TEXT_COLOR`. Read the file; it is the source of truth.
 
@@ -45,8 +47,8 @@
 ### Task 3: Errors and keys
 
 **Files:**
-- Create: `packages/lang/src/errors.ts`, `packages/lang/src/keys.ts`, `packages/lang/src/index.ts`
-- Test: `packages/lang/test/foundation.test.ts`
+- Create: `packages/lang/src/errors.js`, `packages/lang/src/keys.js`, `packages/lang/src/index.js`
+- Test: `packages/lang/test/foundation.test.js`
 
 **Interfaces (Produces):**
 - `miniError(code, loc, message, hint?) => MiniError`
@@ -56,4 +58,3 @@
 - Error code unions `LangErrorCode`, `RuntimeErrorCode`, `MiniErrorCode`
 
 - [x] 9 tests pass: `npm test`.
-- [x] `npm run typecheck` clean.
