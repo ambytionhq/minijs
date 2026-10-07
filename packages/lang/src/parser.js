@@ -207,6 +207,8 @@ class Parser {
     c.expectEndOfLine()
     /** @type {Look | null} */
     let look = null
+    // A broken "looks like" line already has its own error; don't also say the look is missing.
+    let triedLook = false
     /** @type {ThingDecl} */
     const thing = {
       name,
@@ -223,6 +225,7 @@ class Parser {
     this.block(() => {
       const t = c.peek()
       if (c.acceptWords('looks', 'like')) {
+        triedLook = true
         const parsed = parseLook(c)
         if (look !== null) {
           throw fail(
@@ -257,7 +260,7 @@ class Parser {
         throw this.unknownLine(t, THING_WORDS)
       }
     })
-    if (look === null) {
+    if (look === null && !triedLook) {
       this.errors.push(
         miniError(
           'missing-look',
@@ -266,7 +269,7 @@ class Parser {
           'Add a line like: looks like gold circle 4',
         ),
       )
-    } else {
+    } else if (look !== null) {
       thing.look = look
     }
     this.things.push(thing)

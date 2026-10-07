@@ -78,6 +78,9 @@ describe('parser: things', () => {
     expect(strip(program.things[0].look)).toEqual({ kind: 'box', color: 'white', w: 10, h: 10 })
     expect(p('thing coin\n').errors.map((e) => e.code)).toEqual(['missing-look'])
   })
+  it('does not also report a missing look when the look line is broken', () => {
+    expect(p('thing coin\n  looks like blu circle 4\n').errors.map((e) => e.code)).toEqual(['unknown-color'])
+  })
   it('reports a second look', () => {
     const { program, errors } = p('thing coin\n  looks like gold circle 4\n  looks like red box 2 by 2\n')
     expect(errors).toEqual([

@@ -367,7 +367,7 @@ always
 | Stage | Plan | Owner |
 |---|---|---|
 | 1. Foundation | `docs/plans/stage-1-foundation.md` | Claude Opus 5.5, done |
-| 2. Language | `docs/plans/stage-2-language.md` | next model |
+| 2. Language | `docs/plans/stage-2-language.md` | Claude Opus 5.5, done |
 | 3. Engine | `docs/plans/stage-3-engine.md` | Claude Opus 5.5, done |
 | 4. Playground, examples, docs | `docs/plans/stage-4-playground.md` | next model |
 

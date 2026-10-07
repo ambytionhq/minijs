@@ -1,8 +1,8 @@
 # Stage 2: Language Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
-**Status: NOT STARTED.** Owner: next model.
+**Status: DONE (2026-10-06, Claude Opus 5.5).** 98 new tests; `npm test` 192/192. Deviations from this plan are listed under "As built" at the bottom.
 
 **Goal:** `compile(source)` in `@minijs/lang` turns `.mini` text into the Stage 1 `Program` AST, or a list of friendly `MiniError`s.
 
@@ -60,7 +60,7 @@
 - `isCssColor(value: string): boolean` (named color or `#rgb` / `#rrggbb`, case-insensitive)
 - `normalizeColor(words: string[]): string | null` (join words lowercase, no spaces; return valid color or null)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```js
 import { describe, expect, it } from 'vitest'
@@ -86,9 +86,9 @@ describe('colors', () => {
 })
 ```
 
-- [ ] **Step 2: Run it, expect FAIL** (`npx vitest run packages/lang/test/colors.test.js`, module not found)
+- [x] **Step 2: Run it, expect FAIL** (`npx vitest run packages/lang/test/colors.test.js`, module not found)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```js
 // CSS Color Module Level 4 named colors (148 including rebeccapurple and grey variants).
@@ -131,7 +131,7 @@ export function normalizeColor(words: string[]): string | null {
 }
 ```
 
-- [ ] **Step 4: Run, expect PASS.** Count the array: it must be exactly 148.
+- [x] **Step 4: Run, expect PASS.** Count the array: it must be exactly 148.
 
 ---
 
@@ -172,7 +172,7 @@ Rules (spec 4.1):
   - `,` -> `comma`. `+ - * /` -> `op`. Note `-` inside a word stays part of the word.
   - anything else: `unknown-word` with message `I don't understand the symbol "@".` and no hint; skip the char.
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```js
 import { describe, expect, it } from 'vitest'
@@ -235,9 +235,9 @@ describe('lexer errors', () => {
 })
 ```
 
-- [ ] **Step 2: Run, expect FAIL.**
-- [ ] **Step 3: Implement `lex` to the rules above.** Keep it one pass over lines; build tokens into one array. Use the message catalog for wording.
-- [ ] **Step 4: Run, expect PASS.**
+- [x] **Step 2: Run, expect FAIL.**
+- [x] **Step 3: Implement `lex` to the rules above.** Keep it one pass over lines; build tokens into one array. Use the message catalog for wording.
+- [x] **Step 4: Run, expect PASS.**
 
 ---
 
@@ -309,7 +309,7 @@ Locs: binary/and/or nodes use the left operand's loc; `not` uses the `not` word;
 
 Important: `and` in a condition binds conditions, never numbers. `score is 10 and lives is above 0` is `and(compare, compare)`.
 
-- [ ] **Step 1: Failing tests** (use a helper `const e = (src) => parseExpr(new Cursor(lex(src).tokens))` and strip `loc` with a recursive `strip()` helper before comparing):
+- [x] **Step 1: Failing tests** (use a helper `const e = (src) => parseExpr(new Cursor(lex(src).tokens))` and strip `loc` with a recursive `strip()` helper before comparing):
 
 ```js
 expect(strip(e('1 + 2 * 3'))).toEqual({ kind: 'binary', op: '+', left: { kind: 'number', value: 1 }, right: { kind: 'binary', op: '*', left: { kind: 'number', value: 2 }, right: { kind: 'number', value: 3 } } })
@@ -340,8 +340,8 @@ expect(k('not a is 1 and b is 2 or c is 3')).toEqual({
 // 'score is'          -> expected: I expected a number here, but found the end of the line.
 ```
 
-- [ ] **Step 2: Run, expect FAIL.**
-- [ ] **Step 3: Implement** `cursor.js` and `parse-expr.js`. The expression parser is classic precedence climbing:
+- [x] **Step 2: Run, expect FAIL.**
+- [x] **Step 3: Implement** `cursor.js` and `parse-expr.js`. The expression parser is classic precedence climbing:
 
 ```js
 export function parseExpr(c: Cursor): Expr {
@@ -362,7 +362,7 @@ function parseTerm(c: Cursor): Expr {
 }
 ```
 
-- [ ] **Step 4: Run, expect PASS.**
+- [x] **Step 4: Run, expect PASS.**
 
 ---
 
@@ -426,7 +426,7 @@ LOOK: a `string` token -> image. Otherwise color (a `color` token, or one or mor
 
 Text interpolation: inside a string, `{` ... `}` is an expression. Lex the inner text with `lex()`, shift every token loc to `line = string.line`, `col = string.col + 1 + offsetOfInnerTextInString + (token.col - 1)`, parse one `expr`, require the inner tokens to end. `{{` is a literal `{`; a lone `}` is literal. Unclosed `{`: `expected`, `I expected "}" to close the "{" in this text.` hint `Use {score} to show a number inside text.`
 
-- [ ] **Step 1: Failing tests.** Assert each table row (strip locs). Also:
+- [x] **Step 1: Failing tests.** Assert each table row (strip locs). Also:
 
 ```js
 // guards
@@ -450,7 +450,7 @@ expect(strip(look('#ff8800 circle 3'))).toEqual({ kind: 'circle', color: '#ff880
 expect(strip(look('"hero.png"'))).toEqual({ kind: 'image', src: 'hero.png' })
 ```
 
-- [ ] **Step 2: Run, expect FAIL.** **Step 3: Implement.** **Step 4: Run, expect PASS.**
+- [x] **Step 2: Run, expect FAIL.** **Step 3: Implement.** **Step 4: Run, expect PASS.**
 
 ---
 
@@ -486,7 +486,7 @@ Block rules:
 - Names (thing, variable, animation) that are in `RESERVED`: `name-clash`, message `"left" is a special word in minijs, so it can't be a name.`, hint `Pick another name, like left-wall.`
 - Recovery: catch `ParseError` per line; record its error; `skipLine()` (or `skipBlock()` for headers).
 
-- [ ] **Step 1: Failing tests.** Parse the spec section 7 example and assert key parts:
+- [x] **Step 1: Failing tests.** Parse the spec section 7 example and assert key parts:
 
 ```js
 const { program, errors } = parse(lex(SPEC_EXAMPLE).tokens)
@@ -503,7 +503,7 @@ Copy `SPEC_EXAMPLE` verbatim from spec section 7 into `packages/lang/test/fixtur
 
 Error recovery test: a file with three broken lines in different blocks yields exactly three errors and still parses the good rules.
 
-- [ ] **Step 2: Run, FAIL. Step 3: Implement. Step 4: Run, PASS.**
+- [x] **Step 2: Run, FAIL. Step 3: Implement. Step 4: Run, PASS.**
 
 ---
 
@@ -526,8 +526,8 @@ Checks, in this order:
    - animation references: `unknown-animation`, message `"coin" has no animation called "spin".`, hint `didYouMean(name, thatThingsAnimations)` or `Add a line like: animation spin "a.png", "b.png" at 8 fps`
 6. Each error loc is the loc of the node holding the bad name.
 
-- [ ] **Step 1: Failing tests**, one per check, asserting the full `MiniError` (code, message, hint, line, col). Include the spec 4.7 example: `remove cion` with a thing `coin` gives `I don't know what "cion" is.` + `Did you mean "coin"?`.
-- [ ] **Step 2: FAIL. Step 3: Implement** with one recursive walker per node family (`walkExpr`, `walkCondition`, `walkAction`, `walkTrigger`). **Step 4: PASS.**
+- [x] **Step 1: Failing tests**, one per check, asserting the full `MiniError` (code, message, hint, line, col). Include the spec 4.7 example: `remove cion` with a thing `coin` gives `I don't know what "cion" is.` + `Did you mean "coin"?`.
+- [x] **Step 2: FAIL. Step 3: Implement** with one recursive walker per node family (`walkExpr`, `walkCondition`, `walkAction`, `walkTrigger`). **Step 4: PASS.**
 
 ---
 
@@ -546,7 +546,7 @@ export function compile(source: string): CompileResult
 // lex -> parse -> (only if no lex/parse errors) check; errors sorted by line then col; capped at 50.
 ```
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```js
 // compile.test.js
@@ -593,7 +593,7 @@ it('runs the spec example: player lands, walks, collects', () => {
 })
 ```
 
-- [ ] **Step 2: FAIL. Step 3: Implement. Step 4: PASS**.
+- [x] **Step 2: FAIL. Step 3: Implement. Step 4: PASS**.
 
 ---
 
@@ -616,6 +616,18 @@ it('runs the spec example: player lands, walks, collects', () => {
 
 ## Done when
 
-- [ ] All Stage 2 tests pass, plus all existing tests (`npm test`).
-- [ ] `compile(SPEC_EXAMPLE)` has zero errors and the integration test passes.
-- [ ] `handoffs/handoff.md` updated with a new timestamped, model-stamped section.
+- [x] All Stage 2 tests pass, plus all existing tests (`npm test`).
+- [x] `compile(SPEC_EXAMPLE)` has zero errors and the integration test passes.
+- [x] `handoffs/handoff.md` updated with a new timestamped, model-stamped section.
+
+## As built (2026-10-06)
+
+Differences from the text above, all deliberate:
+
+1. **`a` and `an` are not in `RESERVED`.** Task 3's own test uses `a` as a variable (`not a is 1 and ...`). They stay fillers in `make a coin`; `make a at 1, 2` still makes a thing called `a` (filler only when a word other than `at` follows).
+2. **`jump key` does suggest `up`.** "jump" -> "up" is edit distance 2, so `didYouMean` returns it. The no-suggestion test uses `banana` instead.
+3. **Inner text error column.** `show text "x {scroe +}"` reports column 22, which is the `}` after `+` (the plan said 21 but described the `}`).
+4. **Less cascading.** `compile` drops parser errors on lines the lexer already reported (e.g. `add 1 @ score` gives one error, not two). A thing whose `looks like` line is broken does not also get `missing-look`.
+5. **Golden equality lives in the runtime.** `@minijs/lang` tests can't import runtime code, so `packages/runtime/test/integration.test.js` asserts `compile(SPEC_EXAMPLE)` equals the hand-built `specExample` with locs stripped. `specExample` moved from `spec-example.test.js` to `packages/runtime/test/spec-example.js` so importing it doesn't re-run those tests. `compile.test.js` keeps the snapshot.
+6. **Small additions:** `set player width to 3` gets `I expected x, y, vx or vy here...` / `You can only set x, y, vx or vy.`; negative gravity gets `bad-number` with hint `Use 0 or a bigger number.`; an indented line at the top level, or nested under an action, gets `indent-unexpected` from the parser; digit keys (`7 key is held`) work although the lexer reads `7` as a number; the `name-clash` hint suffix depends on what is named (`left-wall` for things, `-move` for animations, `-count` for numbers).
+7. **Text interpolation columns** are counted on the unescaped text, so they drift by one per `\"` before the `{`.
