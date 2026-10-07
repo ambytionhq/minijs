@@ -71,6 +71,7 @@ describe('compile', () => {
       vars: [],
       things: [],
       controls: [],
+      maps: [],
       rules: [],
     })
   })

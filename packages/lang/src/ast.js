@@ -22,6 +22,7 @@
  * @property {VarDecl[]} vars
  * @property {ThingDecl[]} things
  * @property {ControlDecl[]} controls
+ * @property {MapDecl[]} maps
  * @property {Rule[]} rules
  */
 
@@ -115,6 +116,20 @@ export const DEFAULT_GAME_SETTINGS = {
  * @typedef {object} ControlDecl
  * @property {string} name
  * @property {InputSource[]} sources
+ * @property {Loc} loc
+ */
+
+/**
+ * A level drawn with letters. Each letter in `rows` that appears in `legend`
+ * places one of that thing at (x + column * tileW, y + row * tileH).
+ * `.` and spaces are empty.
+ * @typedef {object} MapDecl
+ * @property {number} x
+ * @property {number} y
+ * @property {number} tileW
+ * @property {number} tileH
+ * @property {Array<{ text: string; loc: Loc }>} rows `loc` is the opening quote of the row.
+ * @property {Array<{ char: string; thing: string; loc: Loc }>} legend
  * @property {Loc} loc
  */
 

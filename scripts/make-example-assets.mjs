@@ -1,4 +1,4 @@
-// Writes the 16x16 hero PNGs used by examples/hero.mini into examples/assets/.
+// Writes the 16x16 hero PNGs used by examples/hero.mini into examples/basics/assets/.
 // No dependencies: a tiny PNG encoder (RGBA, filter 0) on top of node:zlib.
 // Run: node scripts/make-example-assets.mjs
 
@@ -6,7 +6,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { deflateSync } from 'node:zlib'
 
-const OUT = join(import.meta.dirname, '../examples/assets')
+const OUT = join(import.meta.dirname, '../examples/basics/assets')
 
 /** Palette: one character per pixel. '.' is transparent. */
 const PALETTE = {
@@ -108,5 +108,5 @@ function encodePng(rows) {
 mkdirSync(OUT, { recursive: true })
 for (const [name, rows] of Object.entries(FRAMES)) {
   writeFileSync(join(OUT, name), encodePng(rows))
-  console.log(`wrote examples/assets/${name}`)
+  console.log(`wrote examples/basics/assets/${name}`)
 }

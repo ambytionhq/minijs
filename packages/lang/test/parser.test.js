@@ -169,7 +169,7 @@ describe('parser: rules and recovery', () => {
       },
     ])
     expect(p('banana split\n').errors[0].hint).toBe(
-      'Lines at the left edge start with game, thing, control, when, always, or a name followed by "starts at".',
+      'Lines at the left edge start with game, thing, control, map, when, always, or a name followed by "starts at".',
     )
   })
   it('reports extra words at the end of a line', () => {

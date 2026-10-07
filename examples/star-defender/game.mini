@@ -1,0 +1,265 @@
+# Star Defender
+# Rocks and aliens fall faster every wave. Shoot them before they reach you.
+# Move: arrows, A and D, the gamepad, or drag with the mouse or a finger.
+# Fire: space, Z, gamepad A or RT, or hold the mouse. Hold to keep firing.
+# R or the gamepad Start button plays again.
+
+game
+  size 320 by 180
+  pixel art
+  background #0b1020
+  touch buttons
+
+control go-left
+  left key
+  a key
+  gamepad left
+
+control go-right
+  right key
+  d key
+  gamepad right
+
+control fire
+  space key
+  z key
+  gamepad a
+  gamepad rt
+  mouse
+
+control start-over
+  r key
+  gamepad start
+
+score starts at 0
+lives starts at 3
+wave starts at 1
+playing starts at 0
+rock-speed starts at 0.8
+drift starts at 0.7
+
+thing far-star
+  looks like #3b4a6b box 1 by 1
+
+thing near-star
+  looks like #9fb4d8 box 2 by 2
+
+thing heart
+  looks like "heart.png"
+
+thing rock
+  looks like "rock.png"
+
+thing pebble
+  looks like "pebble.png"
+
+thing alien
+  looks like "alien-1.png"
+  animation wiggle "alien-1.png", "alien-2.png" at 4 fps
+
+thing bomb
+  looks like "bomb.png"
+
+thing laser
+  looks like "laser.png"
+
+thing ship
+  looks like "ship-1.png"
+  animation thrust "ship-1.png", "ship-2.png" at 12 fps
+  starts at 152, 156
+
+thing boom
+  looks like "boom-1.png"
+  animation pop "boom-1.png", "boom-2.png", "boom-3.png" at 12 fps
+
+thing title
+  looks like "title.png"
+  starts at 77, 52
+
+# A starry sky to begin with. New stars keep falling in from the top.
+map
+  "...o..o.o.oo..+....."
+  ".o...+.......oo....."
+  "...........+....o..."
+  "..........o.......o."
+  ".+o.+...o..........."
+  "......o........o...."
+  "..+.oo...oo.+.o....."
+  ".+....o+....o....o.."
+  "...................o"
+  "o..................."
+  "o...............+..."
+  "......+o............"
+  "o" is far-star
+  "+" is near-star
+
+# Starting and playing again
+
+when any key is pressed and playing is 0 and lives is above 0
+  set playing to 1
+  remove title
+when fire is pressed and playing is 0 and lives is above 0
+  set playing to 1
+  remove title
+
+when start-over is pressed
+  restart game
+
+# Flying
+
+always
+  play thrust on ship
+  play wiggle on alien
+  play pop on boom
+  move far-star down 0.4
+  move near-star down 1.2
+  move ship right gamepad stick x * 3
+
+when go-left is held and playing is 1 and ship x is above 2
+  move ship left 3
+when go-right is held and playing is 1 and ship x is below 302
+  move ship right 3
+
+# Drag with the mouse or a finger.
+when mouse is held and playing is 1
+  set ship x to mouse x - 8
+
+when every 0.3 seconds
+  make a far-star at random 0 to 319, -2
+when every 0.7 seconds
+  make a near-star at random 0 to 318, -2
+
+# Shooting
+
+when fire is pressed and playing is 1 and count of laser is below 5
+  make a laser at ship x + 6, ship y - 4
+
+when every 0.18 seconds and fire is held and playing is 1 and count of laser is below 5
+  make a laser at ship x + 6, ship y - 4
+
+always
+  move laser up 5
+
+# Trouble from above
+
+when every 0.9 seconds and playing is 1
+  make a rock at random 0 to 304, -16
+
+# Later waves bring more of everything.
+when every 0.55 seconds and playing is 1 and wave is above 4
+  make a rock at random 0 to 304, -16
+
+when every 0.35 seconds and playing is 1 and wave is above 8
+  make a pebble at random 0 to 310, -10
+
+when every 1.7 seconds and playing is 1 and wave is above 1
+  make a pebble at random 0 to 310, -10
+
+when every 2.6 seconds and playing is 1 and wave is above 2
+  make an alien at random 16 to 288, -12
+
+when every 1.3 seconds and playing is 1 and wave is above 6
+  make an alien at random 16 to 288, -12
+
+when every 1.1 seconds and playing is 1 and count of alien is above 0
+  make a bomb at alien x + 6, alien y + 12
+
+when every 0.8 seconds
+  set drift to 0 - drift
+
+always
+  move rock down rock-speed
+  move pebble down rock-speed * 1.8
+  move alien down rock-speed * 0.6
+  move alien right drift
+  move bomb down 2.5
+  move heart down 0.8
+
+when every 12 seconds and playing is 1
+  add 1 to wave
+  add 0.25 to rock-speed
+  log "wave {wave}"
+
+when every 20 seconds and playing is 1
+  make a heart at random 10 to 300, -10
+
+# Hits
+
+when laser touches rock
+  make a boom at rock x, rock y
+  remove the rock
+  remove the laser
+  add 10 to score
+
+when laser touches pebble
+  make a boom at pebble x - 3, pebble y - 3
+  remove the pebble
+  remove the laser
+  add 20 to score
+
+when laser touches alien
+  make a boom at alien x, alien y
+  remove the alien
+  remove the laser
+  add 50 to score
+  log "alien down, score {score}"
+
+# Ouch
+
+when rock touches ship and playing is 1
+  make a boom at rock x, rock y
+  remove the rock
+  subtract 1 from lives
+
+when pebble touches ship and playing is 1
+  make a boom at ship x, ship y
+  remove the pebble
+  subtract 1 from lives
+
+when bomb touches ship and playing is 1
+  make a boom at ship x, ship y
+  remove the bomb
+  subtract 1 from lives
+
+when alien touches ship and playing is 1
+  make a boom at alien x, alien y
+  remove the alien
+  subtract 1 from lives
+
+when ship touches heart and lives is below 5
+  remove the heart
+  add 1 to lives
+  log "extra life"
+
+# Cleaning up
+
+when every 0.25 seconds
+  remove boom
+
+when laser leaves the screen
+  remove the laser
+when rock leaves the screen
+  remove the rock
+when pebble leaves the screen
+  remove the pebble
+when alien leaves the screen
+  remove the alien
+when bomb leaves the screen
+  remove the bomb
+when heart leaves the screen
+  remove the heart
+when far-star leaves the screen
+  remove the far-star
+when near-star leaves the screen
+  remove the near-star
+
+when lives is 0
+  set playing to 0
+  remove ship
+  show text "Game over. Score {score}. Press R or Start to play again." in #e8f1ff
+  log "game over with {score} points"
+
+always
+  show text "Score {score}" at 6, 12 in #e8f1ff
+  show text "Wave {wave}" at 136, 12 in #7dd3fc
+  show text "Lives {lives}" at 262, 12 in #ff8a7a

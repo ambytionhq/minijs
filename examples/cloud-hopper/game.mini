@@ -1,0 +1,228 @@
+# Cloud Hopper
+# Run right, hop the gaps, grab all 20 stars, and touch the flag.
+# Move: arrows, A and D, or a gamepad. Jump: up, W, space, or gamepad A.
+# R or the gamepad Start button starts over. Phones get on-screen buttons.
+
+game
+  size 320 by 180
+  pixel art
+  background #8fd3ff
+  gravity 0.35
+  touch buttons
+
+control go-left
+  left key
+  a key
+  gamepad left
+
+control go-right
+  right key
+  d key
+  gamepad right
+
+control jump
+  up key
+  w key
+  space key
+  gamepad a
+
+control start-over
+  r key
+  gamepad start
+
+stars starts at 0
+lives starts at 3
+time starts at 0
+playing starts at 1
+saw-speed starts at 1
+respawn-x starts at 48
+
+# Things are drawn in the order they are listed, so the sky goes first.
+thing sky-cloud
+  looks like "sky-cloud.png"
+  starts at -90, 18
+  starts at 120, 40
+  starts at 330, 12
+  starts at 520, 34
+  starts at 760, 16
+  starts at 980, 42
+  starts at 1180, 20
+  starts at 1400, 36
+  starts at 1620, 14
+  starts at 1850, 40
+  starts at 2080, 22
+
+thing grass
+  looks like "grass.png"
+  solid
+  fixed
+
+thing dirt
+  looks like "dirt.png"
+  solid
+  fixed
+
+thing cloud
+  looks like "cloud.png"
+  solid
+  fixed
+
+thing star
+  looks like "star-1.png"
+  animation twinkle "star-1.png", "star-2.png" at 3 fps
+
+thing spikes
+  looks like "spikes.png"
+
+thing saw
+  looks like "saw-1.png"
+  animation spin "saw-1.png", "saw-2.png" at 12 fps
+
+thing flag
+  looks like "flag-1.png"
+  animation wave "flag-1.png", "flag-2.png" at 4 fps
+
+thing hero
+  looks like "hero-idle.png"
+  animation walk "hero-walk-1.png", "hero-idle.png", "hero-walk-2.png", "hero-idle.png" at 10 fps
+  starts at 48, 132
+  solid
+  falls
+  camera follows
+
+thing title
+  looks like "title.png"
+  starts at -23, 30
+
+# The level. Each letter places one thing, 16 pixels apart.
+map
+  at -160, 4
+  "d..................................................................................................................................................d"
+  "d..................................................................................................................................................d"
+  "d..................................................................................................................................................d"
+  "d.............................................................*.*.*.....................................*.*.*......................................d"
+  "d.............................................................ccccc....................................cccccc.................*....................d"
+  "d...............................*.................*...............................S.................*..............................................d"
+  "d....................*..........c.....*.*.........cc...............................*................cc.......................##....................d"
+  "d.................................#########............*...cc............*....................................c............##dd......F.............d"
+  "d..............*..*...............ddddddddd...S........cc........S....##...................*....ccc...............S.*S.....dddd....................d"
+  "d###################..#########...ddddddddd##########.....############dd#########....###########...............############dddd####################d"
+  "dddddddddddddddddddd..ddddddddd...ddddddddddddddddddd.....ddddddddddddddddddddddd....ddddddddddd...............ddddddddddddddddddddddddddddddddddddd"
+  "#" is grass
+  "d" is dirt
+  "c" is cloud
+  "*" is star
+  "S" is saw
+  "F" is flag
+
+# Spikes are half a tile tall, so their map sits 8 pixels lower.
+map
+  at -160, 12
+  "...................................................................................................................................................."
+  "...................................................................................................................................................."
+  "...................................................................................................................................................."
+  "...................................................................................................................................................."
+  "...................................................................................................................................................."
+  "...................................................................................................................................................."
+  "...................................................................................................................................................."
+  "...................................................................................................................................................."
+  "..........................^^................^............................^....^..........^^..............................^.........................."
+  "...................................................................................................................................................."
+  "...................................................................................................................................................."
+  "^" is spikes
+
+# Moving
+
+when go-left is held and playing is 1
+  move hero left 2
+when go-right is held and playing is 1
+  move hero right 2
+
+when go-left is held and hero is on the ground
+  play walk on hero
+when go-right is held and hero is on the ground
+  play walk on hero
+when go-left is released
+  stop animation on hero
+when go-right is released
+  stop animation on hero
+
+when jump is pressed and hero is on the ground and playing is 1
+  push hero up 6.2
+  change hero to look like "hero-jump.png"
+
+when hero is on the ground
+  change hero to look like "hero-idle.png"
+
+# The title goes away when you start playing.
+
+when any key is pressed
+  remove title
+when jump is pressed
+  remove title
+when mouse is clicked
+  remove title
+
+# The world moves
+
+always
+  play twinkle on star
+  play spin on saw
+  play wave on flag
+  move saw right saw-speed
+
+when every 1.5 seconds
+  set saw-speed to 0 - saw-speed
+
+when every 1 second and playing is 1
+  add 1 to time
+
+# Stars and the flag
+
+when hero touches star
+  remove the star
+  add 1 to stars
+  log "star {stars} of 20"
+
+when hero x is above 816
+  set respawn-x to 816
+  log "checkpoint 1"
+
+when hero x is above 1616
+  set respawn-x to 1616
+  log "checkpoint 2"
+
+when hero touches flag and playing is 1
+  set playing to 0
+  show text "You made it! {stars} of 20 stars in {time} seconds." in #1e3a8a
+  log "finished in {time} seconds with {stars} stars"
+
+# Ouch
+
+when hero touches spikes and playing is 1
+  subtract 1 from lives
+  set hero x to respawn-x
+  set hero y to 132
+  stop hero
+
+when hero touches saw and playing is 1
+  subtract 1 from lives
+  set hero x to respawn-x
+  set hero y to 132
+  stop hero
+
+when hero y is above 200 and playing is 1
+  subtract 1 from lives
+  set hero x to respawn-x
+  set hero y to 132
+  stop hero
+
+when lives is 0
+  set playing to 0
+  show text "Out of lives. Press R or Start to try again." in #e04545
+
+when start-over is pressed
+  restart game
+
+always
+  show text "Stars {stars}/20   Lives {lives}   Time {time}" at 6, 12 in #1e3a8a

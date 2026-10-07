@@ -94,3 +94,26 @@ describe('World', () => {
     expect(world.first(0)).toBe(a)
   })
 })
+
+describe('maps', () => {
+  it('places one thing per letter, after starts, row by row', async () => {
+    const { Simulation } = await import('../src/simulation.js')
+    const { map, program, thing, look } = await import('./build.js')
+    const p = program({
+      things: [
+        thing('wall', { look: look.box(8, 8), at: [[100, 100]] }),
+        thing('coin', { look: look.circle(2) }),
+      ],
+      maps: [map(['#c.', '  #'], { '#': 'wall', c: 'coin' }, { x: 10, y: 20, tileW: 8, tileH: 4 })],
+    })
+    const sim = new Simulation(p, new Map())
+    expect(sim.instancesOf('wall').map((w) => [w.x, w.y])).toEqual([
+      [100, 100],
+      [10, 20],
+      [26, 24],
+    ])
+    expect(sim.instancesOf('coin').map((c) => [c.x, c.y])).toEqual([[18, 20]])
+    sim.restart()
+    expect(sim.instancesOf('wall')).toHaveLength(3)
+  })
+})

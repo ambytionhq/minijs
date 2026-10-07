@@ -15,6 +15,7 @@ exports[`compile > compiles the spec example cleanly 1`] = `
     "touchButtons": false,
     "width": 320,
   },
+  "maps": [],
   "rules": [
     {
       "actions": [

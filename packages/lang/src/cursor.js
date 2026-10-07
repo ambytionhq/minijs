@@ -33,7 +33,7 @@ export function fail(code, loc, message, hint = null) {
  */
 export const RESERVED = new Set(
   (
-    'game thing control when always key mouse gamepad any random count the not and or is to at by of on in ' +
+    'game thing control map when always key mouse gamepad any random count the not and or is to at by of on in ' +
     'left right up down x y vx vy width height text pressed held released'
   ).split(' '),
 )

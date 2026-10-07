@@ -8,7 +8,7 @@ import { didYouMean, miniError } from './errors.js'
 import { isMouseAhead, parseKeyName, parseMouseButton, parsePadButton } from './parse-expr.js'
 import { parseAction, parseColorWords, parseLook, parseTrigger } from './parse-rule.js'
 
-/** @import { AnimationDecl, ControlDecl, GameSettings, InputSource, Look, Loc, Program, Rule, ThingDecl, VarDecl } from './ast.js' */
+/** @import { AnimationDecl, ControlDecl, MapDecl, GameSettings, InputSource, Look, Loc, Program, Rule, ThingDecl, VarDecl } from './ast.js' */
 /** @import { MiniError } from './errors.js' */
 /** @import { Token } from './lexer.js' */
 
@@ -18,7 +18,8 @@ import { parseAction, parseColorWords, parseLook, parseTrigger } from './parse-r
  * @property {MiniError[]} errors
  */
 
-const TOP_WORDS = ['game', 'thing', 'control', 'when', 'always']
+const TOP_WORDS = ['game', 'thing', 'control', 'map', 'when', 'always']
+const MAP_WORDS = ['tiles', 'at']
 const GAME_WORDS = ['size', 'pixel', 'background', 'gravity', 'touch']
 const THING_WORDS = ['looks', 'animation', 'size', 'starts', 'solid', 'fixed', 'falls', 'camera']
 
@@ -44,6 +45,8 @@ class Parser {
     this.things = []
     /** @type {ControlDecl[]} */
     this.controls = []
+    /** @type {MapDecl[]} */
+    this.maps = []
     /** @type {Rule[]} */
     this.rules = []
   }
@@ -69,7 +72,14 @@ class Parser {
       }
     }
     return {
-      program: { game: this.game, vars: this.vars, things: this.things, controls: this.controls, rules: this.rules },
+      program: {
+        game: this.game,
+        vars: this.vars,
+        things: this.things,
+        controls: this.controls,
+        maps: this.maps,
+        rules: this.rules,
+      },
       errors: this.errors,
     }
   }
@@ -136,6 +146,8 @@ class Parser {
         return this.thingBlock()
       case 'control':
         return this.controlBlock()
+      case 'map':
+        return this.mapBlock()
       case 'when':
       case 'always':
         return this.ruleBlock()
@@ -146,7 +158,7 @@ class Parser {
       t.loc,
       `I don't know what "${t.text}" means here.`,
       didYouMean(t.text, TOP_WORDS) ??
-        'Lines at the left edge start with game, thing, control, when, always, or a name followed by "starts at".',
+        'Lines at the left edge start with game, thing, control, map, when, always, or a name followed by "starts at".',
     )
   }
 
@@ -322,6 +334,59 @@ class Parser {
       )
     }
     this.controls.push({ name, sources, loc: word.loc })
+  }
+
+  mapBlock() {
+    const c = this.c
+    const word = c.next()
+    c.expectEndOfLine()
+    /** @type {MapDecl} */
+    const map = { x: 0, y: 0, tileW: 16, tileH: 16, rows: [], legend: [], loc: word.loc }
+    const hasBlock = this.block(() => {
+      const t = c.peek()
+      if (t.kind === 'string') {
+        c.next()
+        if (c.acceptWord('is')) {
+          if ([...t.text].length !== 1) {
+            throw fail(
+              'map-letter',
+              t.loc,
+              'A map letter must be exactly one character.',
+              'Write it like: "#" is wall',
+            )
+          }
+          if (t.text === '.' || t.text === ' ') {
+            throw fail('map-letter', t.loc, `"${t.text}" always means an empty tile.`, 'Pick another letter, like "#".')
+          }
+          if (c.isWord('a') || c.isWord('an') || c.isWord('the')) c.next()
+          map.legend.push({ char: t.text, thing: c.expectName('the name of a thing').text, loc: t.loc })
+        } else {
+          map.rows.push({ text: t.text, loc: t.loc })
+        }
+      } else if (c.acceptWord('tiles')) {
+        map.tileW = c.expectPositive('a tile width')
+        c.expectWord('by')
+        map.tileH = c.expectPositive('a tile height')
+      } else if (c.acceptWord('at')) {
+        map.x = c.expectNumber()
+        if (c.peek().kind !== 'comma') throw expected(c.peek(), 'a comma', 'Write a position like: at 0, 0')
+        c.next()
+        map.y = c.expectNumber()
+      } else {
+        throw this.unknownLine(t, MAP_WORDS)
+      }
+    })
+    if (!hasBlock || map.rows.length === 0) {
+      this.errors.push(
+        miniError(
+          'expected',
+          word.loc,
+          'I expected the rows of the map under this line.',
+          'Put each row in quotes, like: "#..c..#", then say what each letter is, like: "#" is wall',
+        ),
+      )
+    }
+    this.maps.push(map)
   }
 
   ruleBlock() {

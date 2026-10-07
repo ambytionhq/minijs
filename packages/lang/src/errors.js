@@ -20,6 +20,7 @@
  *   | 'unknown-button'
  *   | 'unknown-control'
  *   | 'duplicate-control'
+ *   | 'map-letter'
  *   | 'unknown-color'
  *   | 'duplicate-thing'
  *   | 'duplicate-variable'

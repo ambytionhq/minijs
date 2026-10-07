@@ -76,6 +76,38 @@ export function check(program) {
     }
   }
 
+  for (const map of program.maps ?? []) {
+    /** @type {Map<string, string>} */
+    const letters = new Map()
+    for (const entry of map.legend) {
+      if (letters.has(entry.char)) {
+        errors.push(
+          miniError('map-letter', entry.loc, `"${entry.char}" is given two meanings in this map.`, 'Keep one line for each letter.'),
+        )
+        continue
+      }
+      letters.set(entry.char, entry.thing)
+    }
+    /** @type {Set<string>} */
+    const reported = new Set()
+    for (const row of map.rows) {
+      const chars = [...row.text]
+      for (let i = 0; i < chars.length; i++) {
+        const ch = chars[i]
+        if (ch === '.' || ch === ' ' || letters.has(ch) || reported.has(ch)) continue
+        reported.add(ch)
+        errors.push(
+          miniError(
+            'map-letter',
+            { line: row.loc.line, col: row.loc.col + 1 + i },
+            `I don't know what "${ch}" means in this map.`,
+            `Add a line under the rows like: "${ch}" is wall. Use "." for empty tiles.`,
+          ),
+        )
+      }
+    }
+  }
+
   let camera = false
   for (const t of program.things) {
     if (!t.cameraFollows) continue
@@ -294,6 +326,10 @@ export function check(program) {
         }
         return
     }
+  }
+
+  for (const map of program.maps ?? []) {
+    for (const entry of map.legend) thing(entry.thing, entry.loc)
   }
 
   for (const rule of program.rules) {

@@ -1,13 +1,13 @@
 // Tiny AST builders so runtime tests do not depend on the parser.
 // Every node gets a dummy location.
 
-/** @import { ControlDecl, InputSource, MouseButton, PadButton, Action, CompareOp, Condition, Direction, Expr, GameSettings, InstanceProp, KeyName, KeyState, Look, Program, Rule, SettableProp, TextPart, ThingDecl, Trigger, VarDecl } from '@minijs/lang' */
+/** @import { MapDecl, ControlDecl, InputSource, MouseButton, PadButton, Action, CompareOp, Condition, Direction, Expr, GameSettings, InstanceProp, KeyName, KeyState, Look, Program, Rule, SettableProp, TextPart, ThingDecl, Trigger, VarDecl } from '@minijs/lang' */
 import { DEFAULT_GAME_SETTINGS } from '@minijs/lang'
 
 export const L = { line: 1, col: 1 }
 
 /**
- * @param {{ game?: Partial<GameSettings>; vars?: VarDecl[]; things?: ThingDecl[]; controls?: ControlDecl[]; rules?: Rule[] }} parts
+ * @param {{ game?: Partial<GameSettings>; vars?: VarDecl[]; things?: ThingDecl[]; controls?: ControlDecl[]; maps?: MapDecl[]; rules?: Rule[] }} parts
  * @returns {Program}
  */
 export function program(parts) {
@@ -16,6 +16,7 @@ export function program(parts) {
     vars: parts.vars ?? [],
     things: parts.things ?? [],
     controls: parts.controls ?? [],
+    maps: parts.maps ?? [],
     rules: parts.rules ?? [],
   }
 }
@@ -253,3 +254,21 @@ export const controlHeld = (name) => ({ kind: 'controlHeld', name, loc: L })
  * @param {'x' | 'y'} axis
  */
 export const stick = (pad, side, axis) => ({ kind: 'stick', pad, side, axis, loc: L })
+
+/**
+ * @param {string[]} rows
+ * @param {Record<string, string>} legend letter -> thing name
+ * @param {{ x?: number; y?: number; tileW?: number; tileH?: number }} [options={}]
+ * @returns {MapDecl}
+ */
+export function map(rows, legend, options = {}) {
+  return {
+    x: options.x ?? 0,
+    y: options.y ?? 0,
+    tileW: options.tileW ?? 16,
+    tileH: options.tileH ?? 16,
+    rows: rows.map((text) => ({ text, loc: L })),
+    legend: Object.entries(legend).map(([char, thingName]) => ({ char, thing: thingName, loc: L })),
+    loc: L,
+  }
+}

@@ -256,6 +256,19 @@ export class Simulation {
     for (const type of this.catalog.types) {
       for (const start of type.decl.starts) this.world.spawn(type.id, start.x, start.y)
     }
+    // Maps place their things after the `starts at` ones, row by row, left to right.
+    for (const map of this.program.maps ?? []) {
+      /** @type {Map<string, number>} */
+      const letters = new Map(map.legend.map((e) => [e.char, this.catalog.typeId(e.thing)]))
+      map.rows.forEach((row, r) => {
+        let c = 0
+        for (const ch of row.text) {
+          const t = letters.get(ch)
+          if (t !== undefined) this.world.spawn(t, map.x + c * map.tileW, map.y + r * map.tileH)
+          c++
+        }
+      })
+    }
     this.updateCamera()
     this.camera.prevX = this.camera.x
     this.camera.prevY = this.camera.y
