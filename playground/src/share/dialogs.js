@@ -2,6 +2,7 @@
 
 import { compile } from '@minijs/lang'
 import playerSource from 'virtual:minijs-player'
+import { IS_DESKTOP } from '../desktop/env.js'
 import { fileKind } from '../files/paths.js'
 import { createProject } from '../projects/registry.js'
 import { go } from '../router.js'
@@ -122,14 +123,14 @@ export function openExportDialog({ fs, runPath, name }) {
     title: 'Export',
     width: '560px',
     render(body, close) {
-      /** @param {string} icon @param {string} title @param {string} text @param {string} action @param {() => Promise<void>} fn */
-      const option = (icon, title, text, action, fn) => {
+      /** @param {string} icon @param {string} title @param {string} text @param {string} action @param {() => Promise<void>} fn @param {string} [actionIcon] */
+      const option = (icon, title, text, action, fn, actionIcon = 'ph-download-simple') => {
         const card = el('div', 'export-option')
         const i = el('i', `ph ${icon}`)
         i.setAttribute('aria-hidden', 'true')
         const words = el('div', 'export-words')
         words.append(el('h3', '', title), el('p', 'muted small', text))
-        const b = button('ph-download-simple', action, 'btn btn-primary')
+        const b = button(actionIcon, action, 'btn btn-primary')
         b.addEventListener('click', async () => {
           b.disabled = true
           try {
@@ -144,6 +145,7 @@ export function openExportDialog({ fs, runPath, name }) {
         card.append(i, words, b)
         return card
       }
+      if (IS_DESKTOP) body.append(appOption(option, { fs, runPath, name }))
       body.append(
         option(
           'ph-globe-simple',
@@ -178,6 +180,44 @@ export function openExportDialog({ fs, runPath, name }) {
       )
     },
   })
+}
+
+/** What players on each system do the first time they open an unsigned app. */
+const FIRST_OPEN = /** @type {Record<string, string>} */ ({
+  macos: 'Zip it to send it. On another Mac, the first time: right-click the app, then Open.',
+  windows: 'Zip the folder to send it. Windows may warn the first time: More info, then Run anyway.',
+  linux: 'Zip the folder to send it. The game runs on 64-bit Linux.',
+})
+
+const SYSTEM_NAME = /** @type {Record<string, string>} */ ({ macos: 'Mac', windows: 'Windows', linux: 'Linux' })
+
+/**
+ * Desktop only: "Export as app".
+ * @param {(icon: string, title: string, text: string, action: string, fn: () => Promise<void>, actionIcon?: string) => HTMLElement} option
+ * @param {{ fs: ProjectFs; runPath: string; name: string }} project
+ */
+function appOption(option, { fs, runPath, name }) {
+  const os = document.documentElement.dataset.desktop ?? 'macos'
+  return option(
+    'ph-app-window',
+    `Game as a ${SYSTEM_NAME[os] ?? ''} app`,
+    'An app that opens straight into the game, with no editor. Players don\'t need minijs.',
+    'Choose folder',
+    async () => {
+      const { program, errors } = compile(await fs.readText(runPath))
+      if (!program) throw new Error(`Fix the problems in the game before exporting it. Line ${errors[0]?.line}: ${errors[0]?.message}`)
+      const code = await encodePack(await packProject(fs, runPath, name))
+      const desktop = await import('../desktop/bridge.js')
+      const made = await desktop.exportApp({ title: name, code })
+      if (!made) return
+      toast(`Made "${name}". ${FIRST_OPEN[os] ?? ''}`, {
+        action: 'Show',
+        onAction: () => void desktop.reveal(made),
+        seconds: 12,
+      })
+    },
+    'ph-folder-simple',
+  )
 }
 
 /**

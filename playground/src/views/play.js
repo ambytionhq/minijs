@@ -12,31 +12,42 @@ const view = /** @type {HTMLElement} */ (document.getElementById('view-play'))
 let game = null
 
 /**
- * @param {{ title: string; fs: ProjectFs; main: string; remixLabel: string; onRemix: () => void }} options
+ * `standalone` is an exported desktop game: no way back to the Studio, and
+ * full screen means the whole window.
+ * @param {{ title: string; fs: ProjectFs; main: string; remixLabel?: string; onRemix?: () => void; standalone?: boolean }} options
  */
-export async function mountPlay({ title, fs, main, remixLabel, onRemix }) {
+export async function mountPlay({ title, fs, main, remixLabel, onRemix, standalone = false }) {
   await unmountPlay()
   view.hidden = false
+  view.classList.toggle('view-play-standalone', standalone)
   document.title = `${title} | minijs`
   view.innerHTML = `
     <header class="play-bar">
-      <a class="btn btn-ghost" href="#/"><i class="ph ph-squares-four" aria-hidden="true"></i>Projects</a>
+      ${standalone ? '<span class="play-made"><i class="ph ph-sparkle" aria-hidden="true"></i>Made with minijs</span>' : '<a class="btn btn-ghost" href="#/"><i class="ph ph-squares-four" aria-hidden="true"></i>Projects</a>'}
       <h1 class="play-title"></h1>
       <div class="play-tools">
-        <button class="btn btn-ghost" type="button" data-remix><i class="ph ph-code" aria-hidden="true"></i><span></span></button>
+        ${standalone ? '' : '<button class="btn btn-ghost" type="button" data-remix><i class="ph ph-code" aria-hidden="true"></i><span></span></button>'}
         <button class="icon-btn icon-btn-lg" type="button" data-full aria-label="Full screen" title="Full screen"><i class="ph ph-corners-out" aria-hidden="true"></i></button>
       </div>
     </header>
     <div class="play-stage"><canvas tabindex="0" aria-label="Game screen"></canvas></div>
-    <p class="play-hint"><i class="ph ph-game-controller" aria-hidden="true"></i>Keyboard, mouse, gamepad or touch.</p>`
+    <p class="play-hint"><i class="ph ph-game-controller" aria-hidden="true"></i>Keyboard, mouse, gamepad or touch.${standalone ? ' F11 for full screen.' : ''}</p>`
   const titleEl = /** @type {HTMLElement} */ (view.querySelector('.play-title'))
   titleEl.textContent = title
-  const remix = /** @type {HTMLButtonElement} */ (view.querySelector('[data-remix]'))
-  const remixText = /** @type {HTMLElement} */ (remix.querySelector('span'))
-  remixText.textContent = remixLabel
-  remix.addEventListener('click', onRemix)
+  const remix = /** @type {HTMLButtonElement | null} */ (view.querySelector('[data-remix]'))
+  if (remix && remixLabel && onRemix) {
+    const remixText = /** @type {HTMLElement} */ (remix.querySelector('span'))
+    remixText.textContent = remixLabel
+    remix.addEventListener('click', onRemix)
+  }
   const stageEl = /** @type {HTMLElement} */ (view.querySelector('.play-stage'))
-  view.querySelector('[data-full]')?.addEventListener('click', () => {
+  view.querySelector('[data-full]')?.addEventListener('click', async () => {
+    if (standalone) {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window')
+      const win = getCurrentWindow()
+      await win.setFullscreen(!(await win.isFullscreen()))
+      return
+    }
     if (document.fullscreenElement) void document.exitFullscreen()
     else void stageEl.requestFullscreen?.()
   })

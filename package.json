@@ -8,7 +8,8 @@
   "workspaces": [
     "packages/*",
     "playground",
-    "apps/*"
+    "apps/*",
+    "site"
   ],
   "scripts": {
     "dev": "npm run dev -w playground",
@@ -18,7 +19,10 @@
     "bench": "vitest bench --run",
     "desktop:dev": "npm run dev -w apps/desktop",
     "desktop:build": "npm run build -w apps/desktop",
-    "games:export": "node scripts/export-games.mjs"
+    "games:export": "node scripts/export-games.mjs",
+    "site:dev": "npm run games:export && npm run dev -w site",
+    "site:build": "npm run build && npm run games:export && npm run build -w site && node scripts/assemble-site.mjs",
+    "screenshots": "npm run build && npm run games:export && node scripts/capture-screenshots.mjs"
   },
   "devDependencies": {
     "vitest": "^3.2.0"

@@ -2,13 +2,14 @@
 // the tutorial. Game cards show a live frame of the real game, and start
 // playing while the pointer is over them.
 
-import { canOpenFolders, forgetFolder, pickFolder } from '../files/disk-fs.js'
+import { canOpenFolders, forgetFolder, pickFolder } from '../files/folders.js'
 import { IdbFs, deleteBrowserProject, renameBrowserProject } from '../files/idb-fs.js'
 import { fileKind } from '../files/paths.js'
 import { FIRST_GAME } from '../learn/lessons.js'
 import { EXAMPLES } from '../projects/examples.js'
 import { createProject, firstFile, listProjects, timeAgo } from '../projects/registry.js'
-import { APP_VERSION, IS_DESKTOP, applyUpdate, onUpdateState } from '../pwa.js'
+import { IS_DESKTOP } from '../desktop/env.js'
+import { APP_VERSION, applyUpdate, onUpdateState } from '../pwa.js'
 import { go } from '../router.js'
 import { importZip, openPasteDialog } from '../share/dialogs.js'
 import { saveFile } from '../share/save-file.js'
@@ -134,7 +135,14 @@ function sectionHead(title, subtitle, extra = []) {
   return head
 }
 
-async function newGame() {
+/** @param {string} name */
+export function noAccess(name) {
+  return IS_DESKTOP
+    ? `I can't find the folder "${name}". It may have been moved or deleted.`
+    : `The browser did not allow access to "${name}".`
+}
+
+export async function newGame() {
   const name = await askText({ title: 'New game', label: 'Name', value: 'My game', action: 'Create' })
   if (!name) return
   try {
@@ -142,6 +150,26 @@ async function newGame() {
     go({ view: 'project', project: project.id, file: 'game.mini' })
   } catch (error) {
     toast(`I couldn't make the project: ${message(error)}`, { tone: 'error' })
+  }
+}
+
+/** Pick a folder on this computer and open it, offering a starter game if it has none. */
+export async function openFolder() {
+  try {
+    const folder = await pickFolder()
+    if (!folder) return
+    const list = await folder.list()
+    if (!list.some((e) => fileKind(e.path) === 'mini')) {
+      const ok = await confirmAction({
+        title: 'Add a starter game?',
+        message: `"${folder.name}" has no game files yet. Add a starter game.mini so there is something to play?`,
+        action: 'Add it',
+      })
+      if (ok) await folder.writeText('game.mini', STARTER_GAME)
+    }
+    go({ view: 'project', project: folder.id, file: null })
+  } catch (error) {
+    toast(message(error), { tone: 'error' })
   }
 }
 
@@ -248,24 +276,7 @@ export async function mountHome() {
   tools.append(importBtn, zipInput)
   if (canOpenFolders()) {
     const folderBtn = button('ph-folder-open', 'Open folder', 'btn btn-ghost')
-    folderBtn.addEventListener('click', async () => {
-      try {
-        const folder = await pickFolder()
-        if (!folder) return
-        const list = await folder.list()
-        if (!list.some((e) => fileKind(e.path) === 'mini')) {
-          const ok = await confirmAction({
-            title: 'Add a starter game?',
-            message: `"${folder.name}" has no game files yet. Add a starter game.mini so there is something to play?`,
-            action: 'Add it',
-          })
-          if (ok) await folder.writeText('game.mini', STARTER_GAME)
-        }
-        go({ view: 'project', project: folder.id, file: null })
-      } catch (error) {
-        toast(message(error), { tone: 'error' })
-      }
-    })
+    folderBtn.addEventListener('click', () => void openFolder())
     tools.append(folderBtn)
   }
   const helpBtn = /** @type {HTMLButtonElement} */ (el('button', 'icon-btn icon-btn-lg'))
@@ -368,10 +379,10 @@ export async function mountHome() {
       if (s === 'offline-ready') update.append(icon('ph-wifi-slash'), 'Ready to work offline')
       else if (s === 'installing') update.append(icon('ph-download-simple'), 'Saving for offline use')
       else if (s === 'update-ready') {
-        const b = button('ph-sparkle', 'Update ready: reload', 'link-btn')
-        b.addEventListener('click', applyUpdate)
+        const b = button('ph-sparkle', IS_DESKTOP ? 'Update ready: install' : 'Update ready: reload', 'link-btn')
+        b.addEventListener('click', () => void applyUpdate().catch((e) => toast(message(e), { tone: 'error' })))
         update.append(b)
-      }
+      } else if (s === 'downloading') update.append(icon('ph-download-simple'), 'Installing the update')
     }),
   )
   const company = /** @type {HTMLAnchorElement} */ (el('a', 'muted', 'Made by Ambytion'))
@@ -449,7 +460,7 @@ async function fillProjects(grid, count, folders) {
         async () => {
           const ok = await confirmAction({
             title: 'Delete this project?',
-            message: `"${record.name}" and all its files will be gone from this browser. Download a zip first if you might want it back.`,
+            message: `"${record.name}" and all its files will be gone from ${IS_DESKTOP ? 'this app' : 'this browser'}. Download a zip first if you might want it back.`,
             action: 'Delete',
             danger: true,
           })
@@ -482,9 +493,11 @@ async function fillProjects(grid, count, folders) {
     for (const folder of list.folders) {
       const row = el('div', 'folder-row')
       const open = button('ph-folder-open', folder.name, 'folder-open')
+      const where = /** @type {{ root?: string }} */ (folder).root
+      if (where) open.title = where
       open.addEventListener('click', async () => {
         if (await folder.ensureAccess()) go({ view: 'project', project: folder.id, file: null })
-        else toast(`The browser did not allow access to "${folder.name}".`, { tone: 'error' })
+        else toast(noAccess(folder.name), { tone: 'error' })
       })
       const forget = button('ph-x', 'Forget', 'btn btn-ghost')
       forget.addEventListener('click', async () => {

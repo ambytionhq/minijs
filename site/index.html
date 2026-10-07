@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#0c0d10" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f3f4f2" media="(prefers-color-scheme: light)" />
+    <title>minijs: make games by writing sentences</title>
+    <meta
+      name="description"
+      content="minijs is a game language made of plain English rules. Make 2D games in your browser or on your desktop, then share them with a link."
+    />
+    <link rel="canonical" href="https://minijs.ambytion.net/" />
+    <link rel="icon" type="image/png" href="/favicon-64.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="minijs" />
+    <meta property="og:title" content="minijs: make games by writing sentences" />
+    <meta property="og:description" content="A game language made of plain English rules. Free Studio for the web, Mac, Windows and Linux." />
+    <meta property="og:url" content="https://minijs.ambytion.net/" />
+    <meta property="og:image" content="https://minijs.ambytion.net/og.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="nav-wrap">
+      <nav class="nav" aria-label="Main">
+        <a class="brand" href="/" aria-label="minijs home">
+          <img src="/icon-1200.png" alt="" width="28" height="28" />
+          <span>minijs</span>
+        </a>
+        <div class="nav-links">
+          <a href="#games">Games</a>
+          <a href="#language">Language</a>
+          <a href="#download">Download</a>
+        </div>
+        <a class="btn btn-primary btn-sm" href="/studio/">
+          Open Studio
+          <span class="btn-orb" aria-hidden="true"><i class="ph-light ph-arrow-up-right"></i></span>
+        </a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <!-- Hero: the pitch on the left, a real game you can play on the right. -->
+      <section class="hero">
+        <div class="hero-copy reveal">
+          <h1><span>Write a sentence.</span> <span>Watch it play.</span></h1>
+          <p class="lede">minijs is a game language made of plain English rules. Make 2D games in your browser or on your desktop.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary btn-lg" href="/studio/">
+              Open Studio
+              <span class="btn-orb" aria-hidden="true"><i class="ph-light ph-arrow-up-right"></i></span>
+            </a>
+            <a class="btn btn-ghost btn-lg" href="#download" data-download-label>Download</a>
+          </div>
+        </div>
+
+        <div class="hero-stage reveal" style="--delay: 120ms">
+          <div class="bezel bezel-hero">
+            <div class="bezel-core game-frame">
+              <iframe
+                src="/play/cloud-hopper.html"
+                title="Cloud Hopper, a platformer made in minijs. Click it, then use the arrow keys and space."
+                loading="eager"
+                allow="gamepad; fullscreen"
+              ></iframe>
+            </div>
+          </div>
+          <div class="rule-chip rule-chip-a" aria-hidden="true"><code>when player touches star</code></div>
+          <div class="rule-chip rule-chip-b" aria-hidden="true"><code>add 1 to stars</code></div>
+        </div>
+      </section>
+
+      <!-- A live editor: the language explains itself. -->
+      <section class="section try" id="language" aria-labelledby="try-title">
+        <div class="section-head reveal">
+          <p class="eyebrow">Try it here</p>
+          <h2 id="try-title">Every line is a rule you can read.</h2>
+          <p class="section-sub">Change a number or a color. The game restarts the moment your sentence makes sense.</p>
+        </div>
+
+        <div class="bezel reveal">
+          <div class="bezel-core try-grid">
+            <div class="try-editor">
+              <div class="try-bar">
+                <span class="try-file"><i class="ph-light ph-file-code" aria-hidden="true"></i>gems.mini</span>
+                <button class="link" type="button" id="try-reset">Start over</button>
+              </div>
+              <label class="sr-only" for="try-source">Game code</label>
+              <textarea id="try-source" spellcheck="false" autocapitalize="off" autocomplete="off" wrap="off"></textarea>
+            </div>
+            <div class="try-play">
+              <div class="try-canvas">
+                <canvas id="try-canvas" tabindex="0" aria-label="The game. Click it, then use the arrow keys."></canvas>
+              </div>
+              <p class="try-status" id="try-status" role="status" aria-live="polite">Starting</p>
+              <p class="try-hint"><i class="ph-light ph-keyboard" aria-hidden="true"></i>Click the game, then use the arrow keys.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Showcase: three games, one file each. -->
+      <section class="section" id="games" aria-labelledby="games-title">
+        <div class="section-head reveal">
+          <h2 id="games-title">Three games, every line visible.</h2>
+          <p class="section-sub">Each one is a single minijs file. Play it, then open it in the Studio and change how it works.</p>
+        </div>
+
+        <div class="bento">
+          <article class="bento-cell bento-feature reveal">
+            <div class="bezel">
+              <div class="bezel-core">
+                <a class="shot" href="/play/cloud-hopper.html">
+                  <img src="/shots/cloud-hopper.webp" alt="Cloud Hopper: a red-capped hero runs across grassy islands toward a gold star." width="1920" height="1080" loading="lazy" />
+                </a>
+                <div class="game-info">
+                  <div>
+                    <h3>Cloud Hopper</h3>
+                    <p>A sky-high platformer. Hop the gaps, dodge the saws, grab all 20 stars.</p>
+                  </div>
+                  <div class="game-actions">
+                    <a class="btn btn-primary btn-sm" href="/play/cloud-hopper.html"><i class="ph-light ph-play" aria-hidden="true"></i>Play</a>
+                    <a class="btn btn-ghost btn-sm" href="/studio/#/p/example%3Acloud-hopper/game.mini"><i class="ph-light ph-code" aria-hidden="true"></i>See the code</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="bento-cell reveal" style="--delay: 80ms">
+            <div class="bezel">
+              <div class="bezel-core">
+                <a class="shot" href="/play/star-defender.html">
+                  <img src="/shots/star-defender.webp" alt="Star Defender: a small ship fires up at falling rocks in deep space." width="1920" height="1080" loading="lazy" />
+                </a>
+                <div class="game-info">
+                  <div>
+                    <h3>Star Defender</h3>
+                    <p>Rocks and aliens fall faster every wave. Hold fire and survive.</p>
+                  </div>
+                  <div class="game-actions">
+                    <a class="btn btn-primary btn-sm" href="/play/star-defender.html"><i class="ph-light ph-play" aria-hidden="true"></i>Play</a>
+                    <a class="btn btn-ghost btn-sm" href="/studio/#/p/example%3Astar-defender/game.mini"><i class="ph-light ph-code" aria-hidden="true"></i>See the code</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="bento-cell reveal" style="--delay: 160ms">
+            <div class="bezel">
+              <div class="bezel-core">
+                <a class="shot" href="/play/crypt-dash.html">
+                  <img src="/shots/crypt-dash.webp" alt="Crypt Dash: a purple-hooded explorer in a torch-lit maze, with ghosts, gems and a gold key." width="1920" height="1080" loading="lazy" />
+                </a>
+                <div class="game-info">
+                  <div>
+                    <h3>Crypt Dash</h3>
+                    <p>Sneak past the ghosts, find 8 gems and the key, then take the stairs out.</p>
+                  </div>
+                  <div class="game-actions">
+                    <a class="btn btn-primary btn-sm" href="/play/crypt-dash.html"><i class="ph-light ph-play" aria-hidden="true"></i>Play</a>
+                    <a class="btn btn-ghost btn-sm" href="/studio/#/p/example%3Acrypt-dash/game.mini"><i class="ph-light ph-code" aria-hidden="true"></i>See the code</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- The Studio: screenshots stacked like cards, then what it does. -->
+      <section class="section studio" aria-labelledby="studio-title">
+        <div class="section-head reveal">
+          <h2 id="studio-title">A whole studio. Nothing to install.</h2>
+          <p class="section-sub">Projects save as you type, and the Studio keeps working with no internet.</p>
+        </div>
+
+        <div class="cascade">
+          <figure class="cascade-back reveal">
+            <div class="bezel">
+              <div class="bezel-core">
+                <img src="/shots/studio-tutorial.webp" alt="The minijs tutorial: steps on the left, the code in the middle and the game on the right." width="2880" height="1800" loading="lazy" />
+              </div>
+            </div>
+          </figure>
+          <figure class="cascade-front reveal" style="--delay: 120ms">
+            <div class="bezel">
+              <div class="bezel-core">
+                <picture>
+                  <source srcset="/shots/studio-workspace-light.webp" media="(prefers-color-scheme: light)" />
+                  <img src="/shots/studio-workspace-dark.webp" alt="minijs Studio with Cloud Hopper open: files, the game code, and the game running." width="2880" height="1800" loading="lazy" />
+                </picture>
+              </div>
+            </div>
+          </figure>
+        </div>
+
+        <ul class="features">
+          <li class="reveal">
+            <i class="ph-light ph-wifi-slash" aria-hidden="true"></i>
+            <h3>Works offline</h3>
+            <p>Open it once and it keeps running on a plane, in a classroom, anywhere.</p>
+          </li>
+          <li class="reveal" style="--delay: 60ms">
+            <i class="ph-light ph-link-simple" aria-hidden="true"></i>
+            <h3>Share with a link</h3>
+            <p>The whole game, pictures included, fits inside the link. Nothing is uploaded.</p>
+          </li>
+          <li class="reveal" style="--delay: 120ms">
+            <i class="ph-light ph-package" aria-hidden="true"></i>
+            <h3>Export anywhere</h3>
+            <p>One HTML file that plays in any browser, a zip of the project, or a desktop app.</p>
+          </li>
+          <li class="reveal" style="--delay: 180ms">
+            <i class="ph-light ph-graduation-cap" aria-hidden="true"></i>
+            <h3>A tutorial that checks</h3>
+            <p>Eight short steps from an empty sky to a finished platformer, checked as you go.</p>
+          </li>
+        </ul>
+      </section>
+
+      <!-- The vocabulary, moving: shows how much a few words can do. -->
+      <section class="marquee" aria-label="Rules people write in minijs">
+        <div class="marquee-track">
+          <ul>
+            <li>when player touches coin</li>
+            <li>add 1 to score</li>
+            <li>move player right 2</li>
+            <li>when space key is pressed</li>
+            <li>make a bullet at player x, player y</li>
+            <li>when every 2 seconds</li>
+            <li>when up key is pressed and player is on ground</li>
+            <li>show text "You win!" in gold</li>
+            <li>when lives is 0</li>
+            <li>play walk on player</li>
+          </ul>
+          <ul aria-hidden="true">
+            <li>when player touches coin</li>
+            <li>add 1 to score</li>
+            <li>move player right 2</li>
+            <li>when space key is pressed</li>
+            <li>make a bullet at player x, player y</li>
+            <li>when every 2 seconds</li>
+            <li>when up key is pressed and player is on ground</li>
+            <li>show text "You win!" in gold</li>
+            <li>when lives is 0</li>
+            <li>play walk on player</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Download. -->
+      <section class="section download" id="download" aria-labelledby="download-title">
+        <div class="bezel reveal">
+          <div class="bezel-core download-grid">
+            <div class="download-copy">
+              <h2 id="download-title">Take it off the web.</h2>
+              <p class="section-sub">
+                minijs Studio for Mac, Windows and Linux opens real folders and turns any game into an app players can double-click.
+              </p>
+              <div class="cta-row">
+                <a class="btn btn-primary btn-lg" id="download-main" href="https://github.com/ambytionhq/minijs-releases/releases/latest">
+                  <i class="ph-light ph-download-simple" aria-hidden="true"></i><span>Download</span>
+                </a>
+              </div>
+              <p class="download-others" id="download-others">
+                Also for
+                <a href="https://github.com/ambytionhq/minijs-releases/releases/latest" data-os="mac">Mac</a>,
+                <a href="https://github.com/ambytionhq/minijs-releases/releases/latest" data-os="windows">Windows</a> and
+                <a href="https://github.com/ambytionhq/minijs-releases/releases/latest" data-os="linux">Linux</a>. Free, about 4 MB, and it updates itself.
+              </p>
+            </div>
+            <div class="download-art" aria-hidden="true">
+              <div class="icon-tray">
+                <img src="/icon-1200.png" alt="" width="1200" height="1200" loading="lazy" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Questions. -->
+      <section class="section faq" aria-labelledby="faq-title">
+        <h2 id="faq-title" class="reveal">Questions</h2>
+        <div class="faq-list">
+          <details class="reveal">
+            <summary>Who is minijs for?<i class="ph-light ph-plus" aria-hidden="true"></i></summary>
+            <p>People making their first game, and the teachers helping them. If you can write a sentence, you can make a game.</p>
+          </details>
+          <details class="reveal">
+            <summary>Is it free?<i class="ph-light ph-plus" aria-hidden="true"></i></summary>
+            <p>Yes. The Studio is free on the web and on desktop, and the games you make are yours to share, give away or sell.</p>
+          </details>
+          <details class="reveal">
+            <summary>Do I need the internet?<i class="ph-light ph-plus" aria-hidden="true"></i></summary>
+            <p>Only to open the Studio the first time. After that it works offline, in the browser and in the desktop app.</p>
+          </details>
+          <details class="reveal">
+            <summary>How do I share a game?<i class="ph-light ph-plus" aria-hidden="true"></i></summary>
+            <p>Press Share for a link that holds the whole game. Or export one HTML file, or, in the desktop app, a game app of its own.</p>
+          </details>
+          <details class="reveal">
+            <summary>What can I make?<i class="ph-light ph-plus" aria-hidden="true"></i></summary>
+            <p>Platformers, shooters, mazes and other 2D arcade games, with pictures, animations, tile maps, gamepads and touch buttons.</p>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <a class="brand" href="/" aria-label="minijs home">
+          <img src="/icon-1200.png" alt="" width="24" height="24" />
+          <span>minijs</span>
+        </a>
+        <nav class="footer-links" aria-label="Footer">
+          <a href="/studio/">Studio</a>
+          <a href="/studio/#/learn">Tutorial</a>
+          <a href="#games">Games</a>
+          <a href="#download">Download</a>
+        </nav>
+        <a class="muted" href="https://ambytion.net">Made by Ambytion</a>
+      </div>
+    </footer>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

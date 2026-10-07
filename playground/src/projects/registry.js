@@ -2,7 +2,7 @@
 // and folders on this computer. Ids look like "example:cloud-hopper",
 // "browser:p1abc" and "disk:k2xyz".
 
-import { canOpenFolders, rememberedFolders } from '../files/disk-fs.js'
+import { canOpenFolders, rememberedFolders } from '../files/folders.js'
 import { IdbFs, createBrowserProject, listBrowserProjects } from '../files/idb-fs.js'
 import { fileKind } from '../files/paths.js'
 import { loadSetting, saveSetting } from '../storage.js'
@@ -10,12 +10,12 @@ import { EXAMPLES } from './examples.js'
 
 /** @import { ProjectFs } from '../files/project.js' */
 /** @import { ProjectRecord } from '../files/idb-fs.js' */
-/** @import { DiskFs } from '../files/disk-fs.js' */
+/** @import { FolderFs } from '../files/folders.js' */
 
 /**
  * @typedef {object} ProjectList
  * @property {ProjectRecord[]} browser newest first
- * @property {DiskFs[]} folders
+ * @property {FolderFs[]} folders
  * @property {boolean} storageWorks false when this browser can't keep projects (private mode)
  */
 

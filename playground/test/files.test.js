@@ -8,6 +8,8 @@ import { IdbFs, createBrowserProject, deleteBrowserProject, listBrowserProjects,
 import { MemoryFs } from '../src/files/memory-fs.js'
 import { basename, dirname, extname, fileKind, join, nameProblem, normalize } from '../src/files/paths.js'
 import { FsError, freeName, sortEntries } from '../src/files/project.js'
+import { TauriFs } from '../src/files/tauri-fs.js'
+import { nodeBackend, tempFolder } from './node-backend.js'
 
 beforeEach(() => {
   globalThis.indexedDB = new IDBFactory()
@@ -20,6 +22,7 @@ const paths = async (fs) => (await fs.list()).map((e) => (e.kind === 'dir' ? `${
 const STORES = {
   memory: async () => new MemoryFs('test'),
   browser: async () => createBrowserProject('test'),
+  'desktop folder': async () => new TauriFs(await tempFolder(), 'disk:test', nodeBackend),
 }
 
 for (const [label, make] of Object.entries(STORES)) {

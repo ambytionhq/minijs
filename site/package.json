@@ -1,0 +1,23 @@
+{
+  "name": "@minijs/site",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "minijs.ambytion.net: the landing page, with the Studio at /studio/ and playable games at /play/.",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource/geist-mono": "^5.3.0",
+    "@fontsource/geist-sans": "^5.3.0",
+    "@minijs/lang": "0.0.0",
+    "@minijs/runtime": "0.0.0",
+    "@phosphor-icons/web": "^2.1.2"
+  },
+  "devDependencies": {
+    "vite": "^8.3.3"
+  }
+}

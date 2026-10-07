@@ -1937,6 +1937,30 @@ a.btn {
   gap: 4px;
 }
 
+.play-made {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #a1a1aa;
+}
+
+/* Exported desktop games: the title sits in the middle, the game gets the room. */
+.view-play-standalone .play-title {
+  margin: 0 auto;
+  font-size: 15px;
+  color: #e4e4e7;
+}
+
+.view-play-standalone .play-made {
+  min-width: 140px;
+}
+
+.view-play-standalone .play-tools {
+  min-width: 140px;
+  justify-content: flex-end;
+}
+
 .play-stage {
   display: grid;
   place-items: center;

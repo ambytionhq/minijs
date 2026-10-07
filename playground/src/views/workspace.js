@@ -3,6 +3,7 @@
 
 import { compile } from '@minijs/lang'
 import { start } from '@minijs/runtime'
+import { IS_DESKTOP } from '../desktop/env.js'
 import { imageCandidates, ProjectAssetLoader } from '../files/project-assets.js'
 import { basename, dirname, fileKind, isInside, join, nameProblem } from '../files/paths.js'
 import { freeName } from '../files/project.js'
@@ -183,7 +184,9 @@ export async function mountWorkspace({ project, file = null, lessonPanel = null,
       ? 'Example'
       : project.type === 'disk'
         ? 'Folder on this computer'
-        : 'In this browser'
+        : IS_DESKTOP
+          ? 'In this app'
+          : 'In this browser'
   document.title = `${project.name} | minijs Studio`
   await getEditor()
   if (!sameProject) {

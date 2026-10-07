@@ -1,0 +1,100 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "minijs Studio",
+  "mainBinaryName": "minijs-studio",
+  "version": "../../../package.json",
+  "identifier": "net.ambytion.minijs",
+  "build": {
+    "beforeDevCommand": "npm --prefix ../.. run dev -- --port 5174 --strictPort",
+    "devUrl": "http://localhost:5174",
+    "beforeBuildCommand": "npm --prefix ../.. run build",
+    "frontendDist": "../../../playground/dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "minijs Studio",
+        "width": 1360,
+        "height": 860,
+        "minWidth": 720,
+        "minHeight": 520,
+        "center": true,
+        "dragDropEnabled": false,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' blob: data: asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' ipc: http://ipc.localhost blob: data:; worker-src 'self' blob:; frame-src 'self' blob:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "publisher": "Ambytion",
+    "copyright": "Copyright 2026 Ambytion. Apache License 2.0.",
+    "homepage": "https://minijs.ambytion.net",
+    "category": "DeveloperTool",
+    "shortDescription": "Make 2D games by writing plain sentences.",
+    "longDescription": "minijs Studio is a small editor for minijs, a game language made of plain English rules. Write a rule, see it play, and export games anyone can run.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "mini"
+        ],
+        "name": "minijs game",
+        "description": "minijs game file",
+        "role": "Editor",
+        "mimeType": "text/x-minijs"
+      }
+    ],
+    "macOS": {
+      "minimumSystemVersion": "11.0",
+      "dmg": {
+        "background": "dmg/background.tiff",
+        "windowSize": {
+          "width": 660,
+          "height": 448
+        },
+        "appPosition": {
+          "x": 170,
+          "y": 214
+        },
+        "applicationFolderPosition": {
+          "x": 490,
+          "y": 214
+        }
+      }
+    },
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    },
+    "linux": {
+      "deb": {
+        "section": "games"
+      }
+    },
+    "createUpdaterArtifacts": false
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZENkZBN0JCMkY1RDUxQjEKUldTeFVWMHZ1NmR2L2ZRbGZIQitFcXprR21mcnpQWjROazByMWNzQlFneXJaOGlJTXpKQU54UmMK",
+      "endpoints": [
+        "https://github.com/ambytionhq/minijs-releases/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

@@ -1,0 +1,82 @@
+# Builds minijs Studio for macOS, Windows and Linux when a version tag is
+# pushed (for example v0.2.0), and publishes the installers plus the signed
+# update files to the public releases repository that the app checks.
+#
+# Needs two repository secrets:
+#   RELEASES_TOKEN                 a token that can create releases in ambytionhq/minijs-releases
+#   TAURI_SIGNING_PRIVATE_KEY      contents of the updater private key (see apps/desktop/README.md)
+# and, if the key has a password, TAURI_SIGNING_PRIVATE_KEY_PASSWORD.
+
+name: Release desktop app
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target universal-apple-darwin
+          - platform: windows-latest
+            args: ''
+          - platform: ubuntu-22.04
+            args: ''
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux build tools
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri -> target
+
+      - run: npm ci
+      - run: npm test
+
+      - name: Build and publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+          tauriScript: npx tauri
+          owner: ambytionhq
+          repo: minijs-releases
+          tagName: ${{ github.ref_name }}
+          releaseName: minijs Studio ${{ github.ref_name }}
+          releaseBody: |
+            Download the installer for your computer below.
+
+            - **Mac:** the `.dmg`. The app is not signed by Apple yet, so the first time, right-click minijs Studio in Applications and choose Open.
+            - **Windows:** the `.exe` (or `.msi`). If Windows warns, choose More info, then Run anyway.
+            - **Linux:** the `.AppImage` (any distribution) or the `.deb` (Debian, Ubuntu).
+
+            Already have minijs Studio? It updates itself: look for the banner.
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: true
+          args: ${{ matrix.args }} --config src-tauri/tauri.release.conf.json

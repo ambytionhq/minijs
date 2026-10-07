@@ -10,19 +10,20 @@ import '@fontsource/geist-mono/500.css'
 import '@phosphor-icons/web/regular'
 import './styles.css'
 
+import { IS_DESKTOP } from './desktop/env.js'
 import { MemoryFs } from './files/memory-fs.js'
 import { createLessonPanel } from './learn/lesson-panel.js'
 import { FIRST_GAME } from './learn/lessons.js'
 import { EXAMPLES } from './projects/examples.js'
 import { createProject, projectById, tutorialProject } from './projects/registry.js'
-import { applyUpdate, onUpdateState, startOffline } from './pwa.js'
+import { applyUpdate, checkForUpdates, onUpdateProgress, onUpdateState, startOffline, updateVersion } from './pwa.js'
 import { go, parseRoute } from './router.js'
 import { decodePack, packFiles } from './share/pack.js'
 import { openExportDialog, openShareDialog, savePack } from './share/dialogs.js'
 import { askText, confirmAction } from './ui/dialog.js'
 import { openHelp } from './ui/help.js'
 import { toast } from './ui/toast.js'
-import { mountHome, unmountHome } from './views/home.js'
+import { mountHome, newGame, noAccess, openFolder, unmountHome } from './views/home.js'
 import { mountPlay, unmountPlay } from './views/play.js'
 import { changeOpenText, currentProject, mountWorkspace, openFile, unmountWorkspace } from './views/workspace.js'
 
@@ -52,7 +53,7 @@ async function show(route) {
         return
       }
       if (project.type === 'disk' && !(await /** @type {any} */ (project).ensureAccess())) {
-        toast(`The browser did not allow access to "${project.name}".`, { tone: 'error' })
+        toast(noAccess(project.name), { tone: 'error' })
         go({ view: 'home' })
         return
       }
@@ -154,9 +155,6 @@ function route() {
   })
 }
 
-window.addEventListener('hashchange', route)
-route()
-
 // Workspace buttons.
 
 /** @param {(p: { fs: ProjectFs; runPath: string; name: string }) => Promise<unknown>} fn */
@@ -195,16 +193,106 @@ document.getElementById('view-workspace')?.addEventListener('copy-project', asyn
 
 // Updates: a quiet banner, never a forced reload.
 const banner = /** @type {HTMLElement} */ (document.getElementById('update-banner'))
+const bannerText = /** @type {HTMLElement} */ (document.getElementById('update-text'))
+const updateNow = /** @type {HTMLButtonElement} */ (document.getElementById('update-now'))
 let dismissed = false
 onUpdateState((s) => {
-  banner.hidden = s !== 'update-ready' || dismissed
+  banner.hidden = !(s === 'update-ready' || s === 'downloading') || dismissed
+  updateNow.disabled = s === 'downloading'
+  if (s === 'update-ready') {
+    bannerText.textContent = IS_DESKTOP
+      ? `minijs Studio ${updateVersion} is ready to install.`
+      : 'A new version of minijs Studio is ready.'
+    updateNow.textContent = IS_DESKTOP ? 'Install and restart' : 'Reload'
+  }
 })
-document.getElementById('update-now')?.addEventListener('click', async () => {
+onUpdateProgress((done) => {
+  bannerText.textContent = done === null ? 'Downloading the update' : `Downloading the update: ${Math.round(done * 100)}%`
+})
+updateNow.addEventListener('click', async () => {
+  // Save open work before the page reloads or the app restarts.
   await unmountWorkspace()
-  applyUpdate()
+  try {
+    await applyUpdate()
+  } catch (error) {
+    toast(`The update didn't install: ${message(error)}`, { tone: 'error', seconds: 8 })
+    route()
+  }
 })
 document.getElementById('update-later')?.addEventListener('click', () => {
   dismissed = true
   banner.hidden = true
 })
-void startOffline()
+
+// Desktop menu bar items.
+/** @type {Record<string, () => void | Promise<void>>} */
+const MENU = {
+  'new-project': () => newGame(),
+  'open-folder': () => openFolder(),
+  projects: () => go({ view: 'home' }),
+  share: withProject(openShareDialog),
+  export: withProject(openExportDialog),
+  tutorial: () => go({ view: 'learn' }),
+  reference: () => openHelp(),
+  website: async () => {
+    const { openUrl } = await import('@tauri-apps/plugin-opener')
+    await openUrl('https://minijs.ambytion.net')
+  },
+  'check-updates': async () => {
+    const result = await checkForUpdates()
+    if (result === 'newest') toast('You have the newest version of minijs Studio.')
+    if (result === 'failed') toast('I couldn\'t check for updates. Are you online?', { tone: 'error' })
+  },
+}
+
+/**
+ * Open .mini files double-clicked in the file manager: their folder becomes the project.
+ * @param {string[]} paths
+ */
+async function openFiles(paths) {
+  const { folderForFile } = await import('./files/tauri-fs.js')
+  const last = paths[paths.length - 1]
+  if (!last) return
+  const { fs, file } = await folderForFile(last)
+  go({ view: 'project', project: fs.id, file })
+}
+
+/**
+ * An exported game: play it full window, nothing else.
+ * @param {{ game: string | null; title: string | null }} info
+ */
+async function startPlayer(info) {
+  const pack = await decodePack(info.game ?? '')
+  if (!pack) {
+    document.body.textContent = 'This game file is damaged. Export the game again.'
+    return
+  }
+  const title = info.title || pack.name
+  await mountPlay({ title, fs: new MemoryFs(pack.name, packFiles(pack)), main: pack.main, standalone: true })
+  document.title = title
+}
+
+async function boot() {
+  if (IS_DESKTOP) {
+    const desktop = await import('./desktop/bridge.js')
+    const info = await desktop.startDesktop({
+      menu: (id) => void Promise.resolve(MENU[id]?.()).catch((e) => toast(message(e), { tone: 'error' })),
+      openFiles: (paths) => void openFiles(paths).catch((e) => toast(message(e), { tone: 'error' })),
+    })
+    if (info.game) {
+      await startPlayer(info).catch((e) => toast(message(e), { tone: 'error' }))
+      requestAnimationFrame(() => void desktop.showWindow())
+      return
+    }
+    window.addEventListener('hashchange', route)
+    route()
+    await routing
+    requestAnimationFrame(() => void desktop.showWindow())
+  } else {
+    window.addEventListener('hashchange', route)
+    route()
+  }
+  void startOffline()
+}
+
+void boot()
