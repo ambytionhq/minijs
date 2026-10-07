@@ -1,5 +1,6 @@
 /** @import { Expr, InstanceProp } from '@minijs/lang' */
 import { miniError } from '@minijs/lang'
+import { stickIndex } from '../input.js'
 /** @import { Catalog } from '../catalog.js' */
 /** @import { NumFn } from './context.js' */
 
@@ -23,6 +24,10 @@ export function lowerExpr(expr, catalog) {
     case 'count': {
       const t = catalog.typeId(expr.thing)
       return (c) => c.world.counts[t]
+    }
+    case 'stick': {
+      const i = stickIndex(expr.pad, expr.side, expr.axis)
+      return (c) => c.input.stick(i)
     }
     case 'mouse':
       return expr.axis === 'x' ? (c) => c.input.mouseX + c.camera.x : (c) => c.input.mouseY + c.camera.y

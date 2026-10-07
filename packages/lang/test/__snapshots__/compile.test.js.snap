@@ -2,6 +2,7 @@
 
 exports[`compile > compiles the spec example cleanly 1`] = `
 {
+  "controls": [],
   "game": {
     "background": "skyblue",
     "gravity": 0.4,
@@ -11,6 +12,7 @@ exports[`compile > compiles the spec example cleanly 1`] = `
       "line": 1,
     },
     "pixelArt": true,
+    "touchButtons": false,
     "width": 320,
   },
   "rules": [

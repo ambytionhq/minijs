@@ -9,6 +9,7 @@ import { FixedLoop, browserScheduler } from './loop.js'
 import { Canvas2DRenderer } from './render/canvas2d.js'
 import { drawWorld } from './render/draw-world.js'
 import { Simulation } from './simulation.js'
+import { createTouchButtons, hasTouchScreen } from './touch.js'
 
 /**
  * @typedef {object} StartOptions
@@ -17,13 +18,17 @@ import { Simulation } from './simulation.js'
  * @property {boolean} [fit] Fit the canvas to its parent element and follow resizes. Default true.
  * @property {() => number} [random]
  * @property {FrameScheduler} [scheduler]
+ * @property {'auto' | 'always' | 'never'} [touchButtons] On-screen buttons for games with `touch buttons`:
+ *   'auto' (default) shows them on touch screens, 'always' everywhere, 'never' hides them.
+ * @property {EventTarget} [keyTarget] Where to listen for keys. Default `window`. Pass the canvas (with a
+ *   tabindex) when the page has other text inputs, so typing elsewhere does not drive the game.
  */
 
-/** @typedef {'error' | 'stop'} GameEvent */
+/** @typedef {'error' | 'stop' | 'log'} GameEvent */
 
 /**
  * @template E extends GameEvent
- * @typedef {E extends 'error' ? (error: MiniError) => void : () => void} Listener
+ * @typedef {E extends 'error' ? (error: MiniError) => void : E extends 'log' ? (text: string, tick: number) => void : () => void} Listener
  */
 
 export class Game {
@@ -39,6 +44,9 @@ export class Game {
   loop
   errorListeners = new Set()
   stopListeners = new Set()
+  logListeners = new Set()
+  /** @type {(() => void) | null} */
+  removeTouchButtons = null
   /** @type {MiniError[]} */
   allErrors = []
   /** @type {Canvas2DRenderer} */
@@ -93,8 +101,9 @@ export class Game {
       return () => this.errorListeners.delete(fn)
     }
     const fn = listener
-    this.stopListeners.add(fn)
-    return () => this.stopListeners.delete(fn)
+    const set = event === 'log' ? this.logListeners : this.stopListeners
+    set.add(fn)
+    return () => set.delete(fn)
   }
 
   get errors() {
@@ -126,16 +135,20 @@ export class Game {
     this.destroyed = true
     this.loop.stop()
     this.input.detach()
+    this.removeTouchButtons?.()
+    this.removeTouchButtons = null
     this.resizeObserver?.disconnect()
     this.resizeObserver = null
     this.errorListeners.clear()
     this.stopListeners.clear()
+    this.logListeners.clear()
   }
 
   /** @private */
   attach() {
     const { width, height } = this.simulation.program.game
-    this.input.attach(window, this.canvas, width, height)
+    this.input.attach(this.options.keyTarget ?? window, this.canvas, width, height)
+    this.updateTouchButtons()
     this.fitToParent()
     this.loop.start()
   }
@@ -153,6 +166,9 @@ export class Game {
       onError: (error) => this.emitError(error),
       onStop: () => {
         for (const fn of this.stopListeners) fn()
+      },
+      onLog: (text, tick) => {
+        for (const fn of this.logListeners) fn(text, tick)
       },
     })
   }
@@ -174,6 +190,18 @@ export class Game {
   createRenderer(program) {
     const { width, height, pixelArt } = program.game
     return new Canvas2DRenderer(this.canvas, width, height, pixelArt)
+  }
+
+  /** Show or hide the on-screen buttons for the current program. @private */
+  updateTouchButtons() {
+    this.removeTouchButtons?.()
+    this.removeTouchButtons = null
+    const mode = this.options.touchButtons ?? 'auto'
+    const parent = this.canvas.parentElement
+    const want = mode === 'always' || (mode === 'auto' && hasTouchScreen())
+    if (parent && want && this.simulation.program.game.touchButtons) {
+      this.removeTouchButtons = createTouchButtons(parent, this.input)
+    }
   }
 
   /** @private */

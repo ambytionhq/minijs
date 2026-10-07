@@ -9,6 +9,7 @@ import { loadImages, StaticAssetLoader } from './assets.js'
 import { Catalog } from './catalog.js'
 import { TouchIndex } from './collide.js'
 import { CELL_SIZE } from './config.js'
+import { ControlState } from './controls.js'
 import { Input } from './input.js'
 /** @import { Camera } from './lower/context.js' */
 import { RuleContext } from './lower/context.js'
@@ -25,6 +26,7 @@ import { World } from './world.js'
  * @property {() => number} [random] Random source in [0, 1). Defaults to Math.random. Inject for deterministic tests.
  * @property {(error: MiniError) => void} [onError]
  * @property {() => void} [onStop]
+ * @property {(text: string, tick: number) => void} [onLog] Receives `log "..."` lines.
  */
 
 /**
@@ -74,6 +76,10 @@ export class Simulation {
   onError
   /** @type {(() => void) | null} */
   onStop
+  /** @type {((text: string, tick: number) => void) | null} */
+  onLog
+  /** @type {ControlState} */
+  controls
   restartRequested = false
   stopRequested = false
 
@@ -103,6 +109,8 @@ export class Simulation {
     this.input = options.input ?? new Input()
     this.onError = options.onError ?? null
     this.onStop = options.onStop ?? null
+    this.onLog = options.onLog ?? null
+    this.controls = new ControlState(program.controls ?? [])
     this.world = new World(this.catalog)
     this.vars = new Float64Array(this.catalog.varInitial)
     this.touches = new TouchIndex(this.catalog)
@@ -112,6 +120,7 @@ export class Simulation {
       catalog: this.catalog,
       vars: this.vars,
       input: this.input,
+      controls: this.controls,
       camera: this.camera,
       text: this.text,
       screenWidth: program.game.width,
@@ -125,6 +134,7 @@ export class Simulation {
           this.restartRequested = true
         },
         error: (error) => this.reportError(error),
+        log: (text) => this.onLog?.(text, this.tickCount),
       },
     })
     this.rules = new RuleSet(program.rules, this.catalog, this.text, this.touches)
@@ -138,6 +148,7 @@ export class Simulation {
     const c = this.context
 
     this.input.snapshot()
+    this.controls.update(this.input)
     world.prevX.set(world.x)
     world.prevY.set(world.y)
     this.camera.prevX = this.camera.x
@@ -185,6 +196,7 @@ export class Simulation {
     this.context.world = this.world
     this.vars.set(this.catalog.varInitial)
     this.text.clear()
+    this.controls.reset()
     this.rules.reset()
     this.populate()
   }

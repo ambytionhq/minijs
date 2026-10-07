@@ -1,0 +1,42 @@
+# Cookie Clicker, tiny edition.
+# Shows: clicking on things, counters, buying helpers, and text in different colors.
+
+game
+  size 320 by 200
+  background #2b2118
+
+cookies starts at 0
+helpers starts at 0
+price starts at 10
+
+thing cookie
+  looks like peru circle 32
+  starts at 128, 56
+
+thing shop
+  looks like sea green box 96 by 24
+  starts at 208, 160
+
+when mouse is clicked on the cookie
+  add 1 to cookies
+  change cookie to look like sandy brown circle 32
+
+when mouse is clicked
+  change cookie to look like peru circle 32
+
+when mouse is clicked on the shop and cookies is more than price - 1
+  subtract price from cookies
+  add 1 to helpers
+  add 5 to price
+
+when every 1 second
+  add helpers to cookies
+
+when cookies is above 99
+  show text "Cookie master!" at 8, 190 in gold
+
+always
+  show text "Cookies: {cookies}" at 8, 16 in wheat
+  show text "Helpers: {helpers}" at 8, 30 in wheat
+  show text "Buy helper ({price})" at 212, 176 in white
+  show text "Click the cookie!" at 112, 140 in tan

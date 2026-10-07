@@ -15,8 +15,14 @@ const v = (/** @type {string} */ name) => ({ kind: 'var', name })
 describe('triggers', () => {
   it('parses every event trigger', () => {
     expect(trig('game starts')).toEqual({ kind: 'gameStarts', guard: null })
-    expect(trig('mouse is clicked')).toEqual({ kind: 'mouseClick', thing: null, guard: null })
-    expect(trig('mouse is clicked on the button')).toEqual({ kind: 'mouseClick', thing: 'button', guard: null })
+    expect(trig('mouse is clicked')).toEqual({ kind: 'mouseClick', button: 'left', state: 'pressed', thing: null, guard: null })
+    expect(trig('mouse is clicked on the button')).toEqual({
+      kind: 'mouseClick',
+      button: 'left',
+      state: 'pressed',
+      thing: 'button',
+      guard: null,
+    })
     expect(trig('every 2 seconds')).toEqual({ kind: 'every', seconds: 2, guard: null })
     expect(trig('every 1 second')).toEqual({ kind: 'every', seconds: 1, guard: null })
     expect(trig('after 0.5 seconds')).toEqual({ kind: 'after', seconds: 0.5, guard: null })
@@ -157,7 +163,7 @@ describe('actions', () => {
     expect(parseErrorOf(() => parseAction(cursor('jmup player')))).toEqual({
       code: 'unknown-word',
       message: 'I don\'t know how to "jmup".',
-      hint: 'Actions start with: move, push, stop, set, add, subtract, make, remove, change, play, show, restart.',
+      hint: 'Actions start with: move, push, stop, set, add, subtract, make, remove, change, play, show, log, restart.',
       line: 1,
       col: 1,
     })

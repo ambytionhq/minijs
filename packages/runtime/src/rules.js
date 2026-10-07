@@ -6,7 +6,7 @@
 /** @import { Catalog } from './catalog.js' */
 /** @import { TouchIndex, PairHandler } from './collide.js' */
 import { TICKS_PER_SECOND } from './config.js'
-import { keyIndex } from './input.js'
+import { keyIndex, mouseIndex, padIndex } from './input.js'
 import { lowerActions } from './lower/action.js'
 import { lowerCondition } from './lower/condition.js'
 /** @import { ActionFn, BoolFn, RuleContext } from './lower/context.js' */
@@ -102,22 +102,25 @@ function compileTrigger(trigger, actions, catalog, touches) {
       })
     }
     case 'mouseClick': {
+      const i = mouseIndex(trigger.button)
       const guard = trigger.guard ? lowerCondition(trigger.guard, catalog) : null
+      const states = trigger.state
       if (trigger.thing === null) {
         return pre((c) => {
-          if (c.input.isClicked() && (guard === null || guard(c))) actions(c)
+          if (c.input.mouse[states][i] === 1 && (guard === null || guard(c))) actions(c)
         })
       }
       const t = catalog.typeId(trigger.thing)
       return pre((c) => {
-        if (!c.input.isClicked()) return
-        const px = c.input.mouseX + c.camera.x
-        const py = c.input.mouseY + c.camera.y
+        if (c.input.mouse[states][i] !== 1) return
+        // Every instance under the pointer, top to bottom of the list.
         const world = c.world
         const list = world.lists[t]
         const count = world.counts[t]
-        for (let i = 0; i < count; i++) {
-          const id = list[i]
+        const px = c.input.mouseX + c.camera.x
+        const py = c.input.mouseY + c.camera.y
+        for (let k = 0; k < count; k++) {
+          const id = list[k]
           if (world.removing[id] === 1) continue
           const x = world.x[id]
           const y = world.y[id]
@@ -125,6 +128,22 @@ function compileTrigger(trigger, actions, catalog, touches) {
             withBinding(c, t, id, guard, actions)
           }
         }
+      })
+    }
+    case 'pad': {
+      const i = padIndex(trigger.pad, trigger.button)
+      const guard = trigger.guard ? lowerCondition(trigger.guard, catalog) : null
+      const field = trigger.state
+      return pre((c) => {
+        if (c.input.pads[field][i] === 1 && (guard === null || guard(c))) actions(c)
+      })
+    }
+    case 'control': {
+      const i = catalog.controlId(trigger.name)
+      const guard = trigger.guard ? lowerCondition(trigger.guard, catalog) : null
+      const field = trigger.state
+      return pre((c) => {
+        if (c.controls[field][i] === 1 && (guard === null || guard(c))) actions(c)
       })
     }
     case 'every': {

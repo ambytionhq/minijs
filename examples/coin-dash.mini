@@ -1,0 +1,68 @@
+# Coin Dash: a top-down arcade game.
+# Shows: no gravity, arrow-key movement, a patrolling enemy, lives, and a win and lose screen.
+# Collect 10 coins. Don't let the guard catch you.
+
+game
+  size 320 by 180
+  background dark slate gray
+
+score starts at 0
+lives starts at 3
+
+thing player
+  looks like gold box 10 by 10
+  starts at 40, 80
+  solid
+
+thing wall
+  looks like slate gray box 320 by 8
+  starts at 0, 0
+  starts at 0, 172
+  solid
+  fixed
+
+thing guard
+  looks like tomato box 12 by 12
+  starts at 150, 40
+  starts at 220, 130
+
+thing coin
+  looks like gold circle 3
+
+when game starts
+  set guard vx to 1.5
+  make a coin at 160, 90
+
+when left key is held
+  move player left 2
+when right key is held
+  move player right 2
+when up key is held
+  move player up 2
+when down key is held
+  move player down 2
+
+# Guards turn around every two seconds.
+when every 2 seconds
+  set guard vx to 0 - guard vx
+
+when player touches coin
+  remove the coin
+  add 1 to score
+  make a coin at random 20 to 300, random 20 to 150
+
+when player touches guard
+  subtract 1 from lives
+  set player x to 40
+  set player y to 80
+
+when score is 10
+  show text "You got them all!" in gold
+  stop game
+
+when lives is 0
+  show text "Caught! Press Restart." in tomato
+  stop game
+
+always
+  show text "Coins {score}   Lives {lives}" at 6, 12

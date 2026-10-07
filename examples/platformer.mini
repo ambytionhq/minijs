@@ -1,0 +1,46 @@
+game
+  size 320 by 180
+  pixel art
+  background sky blue
+  gravity 0.4
+
+score starts at 0
+
+thing player
+  looks like orange box 12 by 16
+  starts at 40, 100
+  solid
+  falls
+  camera follows
+
+thing ground
+  looks like seagreen box 640 by 20
+  starts at 0, 160
+  solid
+  fixed
+
+thing coin
+  looks like gold circle 4
+
+when left key is held
+  move player left 2
+
+when right key is held
+  move player right 2
+
+when up key is pressed and player is on ground
+  push player up 7
+
+when player touches coin
+  remove the coin
+  add 1 to score
+
+when every 2 seconds
+  make a coin at random 0 to 600, 140
+
+when score is 10
+  show text "You win!"
+  stop game
+
+always
+  show text "Score: {score}" at 4, 4

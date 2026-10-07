@@ -1,0 +1,43 @@
+# Dodge: rocks fall from the sky. Every rock that falls past you is a point.
+# Shows: gravity on some things only, random spawning, "leaves the screen", and a timer.
+
+game
+  size 240 by 320
+  pixel art
+  background midnight blue
+  gravity 0.08
+
+score starts at 0
+best starts at 0
+
+thing player
+  looks like aquamarine box 14 by 10
+  starts at 113, 290
+
+thing rock
+  looks like light slate gray box 12 by 12
+  falls
+
+when left key is held and player x is above 0
+  move player left 3
+when right key is held and player x is below 226
+  move player right 3
+
+when every 0.6 seconds
+  make a rock at random 0 to 228, -14
+
+# After 20 seconds, a surprise wave.
+when after 20 seconds
+  make a rock at random 0 to 228, -14
+  make a rock at random 0 to 228, -40
+
+when rock leaves the screen
+  remove the rock
+  add 1 to score
+
+when rock touches player
+  show text "Bonk! Score {score}" in salmon
+  stop game
+
+always
+  show text "{score}" at 8, 16 in white

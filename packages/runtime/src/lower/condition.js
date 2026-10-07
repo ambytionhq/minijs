@@ -1,6 +1,7 @@
 /** @import { CompareOp, Condition } from '@minijs/lang' */
 /** @import { Catalog } from '../catalog.js' */
-import { keyIndex } from '../input.js'
+import { keyIndex, mouseIndex, padIndex } from '../input.js'
+import { instanceUnderPointer } from './context.js'
 /** @import { BoolFn, NumFn } from './context.js' */
 import { lowerExpr } from './expr.js'
 
@@ -23,6 +24,22 @@ export function lowerCondition(condition, catalog) {
     case 'keyHeld': {
       const key = keyIndex(condition.key)
       return (c) => c.input.isHeld(key)
+    }
+    case 'mouseHeld': {
+      const i = mouseIndex(condition.button)
+      return (c) => c.input.mouse.held[i] === 1
+    }
+    case 'mouseOver': {
+      const t = catalog.typeId(condition.thing)
+      return (c) => instanceUnderPointer(c, t) >= 0
+    }
+    case 'padHeld': {
+      const i = padIndex(condition.pad, condition.button)
+      return (c) => c.input.pads.held[i] === 1
+    }
+    case 'controlHeld': {
+      const i = catalog.controlId(condition.name)
+      return (c) => c.controls.held[i] === 1
     }
     case 'and': {
       const left = lowerCondition(condition.left, catalog)

@@ -4,6 +4,7 @@
 /** @import { MiniError } from '@minijs/lang' */
 /** @import { Catalog } from '../catalog.js' */
 /** @import { Input } from '../input.js' */
+/** @import { ControlState } from '../controls.js' */
 /** @import { TextLayer } from '../text.js' */
 /** @import { World } from '../world.js' */
 
@@ -20,6 +21,7 @@
  * @property {() => void} stop
  * @property {() => void} restart
  * @property {(error: MiniError) => void} error
+ * @property {(text: string) => void} log
  */
 
 /** @typedef {(c: RuleContext) => number} NumFn */
@@ -37,6 +39,8 @@ export class RuleContext {
   catalog
   /** @type {Input} */
   input
+  /** @type {ControlState} */
+  controls
   /** @type {Camera} */
   camera
   /** @type {TextLayer} */
@@ -60,12 +64,13 @@ export class RuleContext {
    */
   current
 
-  /** @param {{ world: World; catalog: Catalog; vars: Float64Array; input: Input; camera: Camera; text: TextLayer; screenWidth: number; screenHeight: number; random: () => number; control: Control }} options */
+  /** @param {{ world: World; catalog: Catalog; vars: Float64Array; input: Input; controls: ControlState; camera: Camera; text: TextLayer; screenWidth: number; screenHeight: number; random: () => number; control: Control }} options */
   constructor(options) {
     this.world = options.world
     this.catalog = options.catalog
     this.vars = options.vars
     this.input = options.input
+    this.controls = options.controls
     this.camera = options.camera
     this.text = options.text
     this.screenWidth = options.screenWidth
@@ -124,4 +129,26 @@ function runOn(c, typeId, id, fn) {
   c.current[typeId] = id
   fn(c, id)
   c.current[typeId] = previous
+}
+
+/**
+ * Live instance of a type under the pointer (world coordinates), or -1.
+ * @param {RuleContext} c
+ * @param {number} typeId
+ * @returns {number}
+ */
+export function instanceUnderPointer(c, typeId) {
+  const px = c.input.mouseX + c.camera.x
+  const py = c.input.mouseY + c.camera.y
+  const world = c.world
+  const list = world.lists[typeId]
+  const count = world.counts[typeId]
+  for (let i = 0; i < count; i++) {
+    const id = list[i]
+    if (world.removing[id] === 1) continue
+    const x = world.x[id]
+    const y = world.y[id]
+    if (px >= x && px <= x + world.w[id] && py >= y && py <= y + world.h[id]) return id
+  }
+  return -1
 }

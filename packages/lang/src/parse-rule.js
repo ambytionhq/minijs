@@ -5,7 +5,7 @@ import { CSS_COLOR_NAMES, normalizeColor } from './colors.js'
 import { Cursor, ParseError, expected, fail } from './cursor.js'
 import { didYouMean } from './errors.js'
 import { lex } from './lexer.js'
-import { PROP_WORDS, parseCondition, parseExpr, parseKeyName } from './parse-expr.js'
+import { PROP_WORDS, isMouseAhead, parseCondition, parseExpr, parseKeyName, parseMouseButton, parsePadButton } from './parse-expr.js'
 
 /** @import { Action, Condition, Direction, Expr, Look, SettableProp, TextPart, Trigger } from './ast.js' */
 /** @import { Token } from './lexer.js' */
@@ -22,6 +22,7 @@ export const ACTION_WORDS = [
   'change',
   'play',
   'show',
+  'log',
   'restart',
 ]
 
@@ -39,14 +40,22 @@ const NUMBER_NAME = 'the name of a number'
 export function parseTrigger(c) {
   const loc = c.peek().loc
   if (c.acceptWords('game', 'starts')) return { kind: 'gameStarts', guard: parseGuard(c), loc }
-  if (c.acceptWords('mouse', 'is', 'clicked')) {
+  if (isMouseEventAhead(c)) {
+    const button = parseMouseButton(c)
+    c.expectWord('is')
+    const state = c.acceptWord('clicked') ? 'pressed' : parseState(c, '"clicked", "pressed", "held" or "released"')
     /** @type {string | null} */
     let thing = null
     if (c.acceptWord('on')) {
       c.acceptWord('the')
       thing = c.expectName(THING).text
     }
-    return { kind: 'mouseClick', thing, guard: parseGuard(c), loc }
+    return { kind: 'mouseClick', button, state, thing, guard: parseGuard(c), loc }
+  }
+  if (isPadEventAhead(c)) {
+    const { pad, button } = parsePadButton(c)
+    c.expectWord('is')
+    return { kind: 'pad', pad, button, state: parseState(c), guard: parseGuard(c), loc }
   }
   if (c.isWord('every') || c.isWord('after')) {
     const kind = /** @type {'every' | 'after'} */ (c.next().text)
@@ -58,20 +67,15 @@ export function parseTrigger(c) {
     const key = parseKeyName(c)
     c.expectWord('key')
     c.expectWord('is')
-    const state = c.peek()
-    if (state.kind !== 'word' || (state.text !== 'pressed' && state.text !== 'held' && state.text !== 'released')) {
-      throw expected(state, '"pressed", "held" or "released"')
-    }
-    c.next()
-    return {
-      kind: 'key',
-      key,
-      state: /** @type {'pressed' | 'held' | 'released'} */ (state.text),
-      guard: parseGuard(c),
-      loc,
-    }
+    return { kind: 'key', key, state: parseState(c), guard: parseGuard(c), loc }
   }
   const o = c.isWord('the') ? 1 : 0
+  if (c.peek(o).kind === 'word' && c.isWord('is', o + 1) && STATES.has(c.peek(o + 2).text) && c.peek(o + 2).kind === 'word') {
+    c.acceptWord('the')
+    const name = c.expectName('the name of a control').text
+    c.expectWord('is')
+    return { kind: 'control', name, state: parseState(c), guard: parseGuard(c), loc }
+  }
   if (c.peek(o).kind === 'word' && c.isWord('touches', o + 1)) {
     c.acceptWord('the')
     const a = c.expectName(THING).text
@@ -89,6 +93,41 @@ export function parseTrigger(c) {
     return { kind: 'leavesScreen', thing, guard: parseGuard(c), loc }
   }
   return { kind: 'condition', condition: parseCondition(c), loc }
+}
+
+const STATES = new Set(['pressed', 'held', 'released'])
+
+/**
+ * @param {Cursor} c
+ * @param {string} [what]
+ * @returns {'pressed' | 'held' | 'released'}
+ */
+function parseState(c, what = '"pressed", "held" or "released"') {
+  const t = c.peek()
+  if (t.kind !== 'word' || !STATES.has(t.text)) throw expected(t, what)
+  c.next()
+  return /** @type {'pressed' | 'held' | 'released'} */ (t.text)
+}
+
+/**
+ * A mouse button event, not a condition like `mouse is over coin` or `mouse x is above 3`.
+ * @param {Cursor} c
+ */
+function isMouseEventAhead(c) {
+  if (!isMouseAhead(c)) return false
+  const o = c.isWord('mouse') ? 2 : 3
+  return c.isWord('clicked', o) || (c.peek(o).kind === 'word' && STATES.has(c.peek(o).text))
+}
+
+/**
+ * `gamepad [N] BUTTON is ...`, not `gamepad stick x is above 0.5`.
+ * @param {Cursor} c
+ */
+function isPadEventAhead(c) {
+  if (!c.isWord('gamepad')) return false
+  let o = 1
+  if (c.peek(o).kind === 'number') o++
+  return c.isWord('is', o + 1)
 }
 
 /**
@@ -209,6 +248,10 @@ export function parseAction(c) {
       c.expectWord('on')
       return { kind: 'playAnimation', thing: thingName(c), animation, loc }
     }
+    case 'log': {
+      c.next()
+      return { kind: 'log', parts: parseText(c.expectString('some text in quotes, like "score is {score}"')), loc }
+    }
     case 'show': {
       c.next()
       c.expectWord('text')
@@ -229,7 +272,7 @@ export function parseAction(c) {
     loc,
     `I don't know how to "${first.text}".`,
     didYouMean(first.text, ACTION_WORDS) ??
-      'Actions start with: move, push, stop, set, add, subtract, make, remove, change, play, show, restart.',
+      'Actions start with: move, push, stop, set, add, subtract, make, remove, change, play, show, log, restart.',
   )
 }
 

@@ -130,6 +130,8 @@ export function lowerAction(action, catalog, text) {
       return eachTarget(catalog.typeId(action.thing), (c, id) => {
         c.world.anim[id] = -1
       })
+    case 'log':
+      return lowerLog(action.parts, catalog)
     case 'showText':
       return lowerShowText(action.parts, action.at, action.color, catalog, text)
     case 'stopGame':
@@ -226,5 +228,21 @@ function lowerShowText(parts, at, color, catalog, text) {
     } else {
       slot.centered = true
     }
+  }
+}
+
+/**
+ * `log "..."`: builds the line and hands it to the host (the playground console).
+ * Allocates a string per run, which is fine for a debugging tool.
+ * @param {TextPart[]} parts
+ * @param {Catalog} catalog
+ * @returns {ActionFn}
+ */
+function lowerLog(parts, catalog) {
+  const pieces = parts.map((p) => (p.kind === 'literal' ? p.text : lowerExpr(p.expr, catalog)))
+  return (c) => {
+    let s = ''
+    for (const piece of pieces) s += typeof piece === 'string' ? piece : formatNumber(piece(c))
+    c.control.log(s)
   }
 }

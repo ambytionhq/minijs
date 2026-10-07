@@ -5,7 +5,9 @@ import {
   editDistance,
   formatError,
   isKeyName,
+  isPadButton,
   keyNameFromCode,
+  PAD_BUTTONS,
   miniError,
   suggest,
 } from '../src/index.js'
@@ -64,7 +66,9 @@ describe('keys', () => {
     expect(isKeyName('left')).toBe(true)
     expect(isKeyName('q')).toBe(true)
     expect(isKeyName('7')).toBe(true)
-    expect(isKeyName('ctrl')).toBe(false)
+    expect(isKeyName('ctrl')).toBe(true)
+    expect(isKeyName('meta')).toBe(false)
+    expect(isKeyName('any')).toBe(false)
   })
   it('maps KeyboardEvent.code values', () => {
     expect(keyNameFromCode('ArrowLeft')).toBe('left')
@@ -72,12 +76,33 @@ describe('keys', () => {
     expect(keyNameFromCode('KeyW')).toBe('w')
     expect(keyNameFromCode('Digit3')).toBe('3')
     expect(keyNameFromCode('ShiftRight')).toBe('shift')
-    expect(keyNameFromCode('ControlLeft')).toBeNull()
+    expect(keyNameFromCode('ControlLeft')).toBe('ctrl')
+    expect(keyNameFromCode('AltRight')).toBe('alt')
+    expect(keyNameFromCode('Tab')).toBe('tab')
+    expect(keyNameFromCode('Backspace')).toBe('backspace')
+    expect(keyNameFromCode('Delete')).toBe('delete')
+    expect(keyNameFromCode('Numpad5')).toBe('5')
+    expect(keyNameFromCode('MetaLeft')).toBeNull()
+    expect(keyNameFromCode('F5')).toBeNull()
+  })
+  it('lists gamepad buttons in standard layout order', () => {
+    expect(PAD_BUTTONS.slice(0, 4)).toEqual(['a', 'b', 'x', 'y'])
+    expect(PAD_BUTTONS.indexOf('start')).toBe(9)
+    expect(PAD_BUTTONS.indexOf('up')).toBe(12)
+    expect(isPadButton('lt')).toBe(true)
+    expect(isPadButton('jump')).toBe(false)
   })
 })
 
 describe('defaults', () => {
   it('has spec default game settings', () => {
-    expect(DEFAULT_GAME_SETTINGS).toEqual({ width: 480, height: 270, pixelArt: false, background: 'black', gravity: 0 })
+    expect(DEFAULT_GAME_SETTINGS).toEqual({
+      width: 480,
+      height: 270,
+      pixelArt: false,
+      background: 'black',
+      gravity: 0,
+      touchButtons: false,
+    })
   })
 })

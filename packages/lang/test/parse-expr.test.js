@@ -102,7 +102,7 @@ describe('expression errors', () => {
     expect(parseErrorOf(() => parseCondition(cursor('banana key is held')))).toEqual({
       code: 'unknown-key',
       message: 'I don\'t know the key "banana".',
-      hint: 'Keys are: left, right, up, down, space, enter, shift, escape, a to z, 0 to 9.',
+      hint: 'Keys are: left, right, up, down, space, enter, shift, escape, tab, backspace, delete, ctrl, alt, a to z, 0 to 9, or any.',
       line: 1,
       col: 1,
     })

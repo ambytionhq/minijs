@@ -2,16 +2,20 @@
 // `and` / `or` join conditions, never numbers.
 
 import { didYouMean } from './errors.js'
-import { KEY_NAMES, isKeyName } from './keys.js'
+import { KEY_NAMES, MAX_PADS, PAD_BUTTONS, isKeyName, isPadButton } from './keys.js'
 import { Cursor, expected, fail } from './cursor.js'
 
-/** @import { Condition, Expr, InstanceProp, KeyName } from './ast.js' */
+/** @import { Condition, Expr, InstanceProp, KeyChoice } from './ast.js' */
+/** @import { MouseButton, PadButton } from './keys.js' */
 /** @import { Token } from './lexer.js' */
 
 /** @type {ReadonlySet<string>} */
 export const PROP_WORDS = new Set(['x', 'y', 'vx', 'vy', 'width', 'height'])
 
-const KEY_LIST_HINT = 'Keys are: left, right, up, down, space, enter, shift, escape, a to z, 0 to 9.'
+const KEY_LIST_HINT =
+  'Keys are: left, right, up, down, space, enter, shift, escape, tab, backspace, delete, ctrl, alt, a to z, 0 to 9, or any.'
+const PAD_LIST_HINT = `Gamepad buttons are: ${PAD_BUTTONS.join(', ')}.`
+const MOUSE_BUTTON_WORDS = new Set(['left', 'right', 'middle'])
 
 /**
  * @param {Cursor} c
@@ -67,6 +71,7 @@ function parseFactor(c) {
     const thing = c.expectName('the name of a thing').text
     return { kind: 'count', thing, loc }
   }
+  if (c.isWord('gamepad') && isStickAhead(c)) return parseStick(c)
   if (c.acceptWord('mouse')) {
     const axis = c.peek()
     if (axis.kind !== 'word' || (axis.text !== 'x' && axis.text !== 'y')) throw expected(axis, '"x" or "y"')
@@ -130,7 +135,29 @@ function parseAtom(c) {
     c.expectWord('held', 'Inside a condition, only "is held" works for keys.')
     return { kind: 'keyHeld', key, loc }
   }
+  if (isMouseAhead(c) && !c.isWord('x', 1) && !c.isWord('y', 1)) {
+    const button = parseMouseButton(c)
+    c.expectWord('is')
+    if (button === 'left' && c.acceptWord('over')) {
+      c.acceptWord('the')
+      return { kind: 'mouseOver', thing: c.expectName('the name of a thing').text, loc }
+    }
+    c.expectWord('held', 'Inside a condition, write "mouse is held" or "mouse is over coin".')
+    return { kind: 'mouseHeld', button, loc }
+  }
+  if (c.isWord('gamepad') && !isStickAhead(c)) {
+    const { pad, button } = parsePadButton(c)
+    c.expectWord('is')
+    c.expectWord('held', 'Inside a condition, only "is held" works for gamepad buttons.')
+    return { kind: 'padHeld', pad, button, loc }
+  }
   const o = c.isWord('the') ? 1 : 0
+  if (c.peek(o).kind === 'word' && c.isWord('is', o + 1) && c.isWord('held', o + 2)) {
+    c.acceptWord('the')
+    const name = c.expectName('the name of a control').text
+    c.pos += 2 // is held
+    return { kind: 'controlHeld', name, loc }
+  }
   if (c.peek(o).kind === 'word' && c.isWord('is', o + 1) && c.isWord('on', o + 2)) {
     c.acceptWord('the')
     const thing = c.expectName('the name of a thing').text
@@ -160,9 +187,9 @@ function parseAtom(c) {
 }
 
 /**
- * A key name before the word `key`. Digit keys arrive as number tokens.
+ * A key name before the word `key`. Digit keys arrive as number tokens. `any` means any key.
  * @param {Cursor} c
- * @returns {KeyName}
+ * @returns {KeyChoice}
  */
 export function parseKeyName(c) {
   const t = c.peek()
@@ -171,9 +198,106 @@ export function parseKeyName(c) {
   if (t.kind === 'word') word = t.text
   else if (t.kind === 'number') word = String(t.value)
   else throw expected(t, 'a key name', KEY_LIST_HINT)
+  if (word === 'any') {
+    c.next()
+    return 'any'
+  }
   if (!isKeyName(word)) {
     throw fail('unknown-key', t.loc, `I don't know the key "${word}".`, didYouMean(word, KEY_NAMES) ?? KEY_LIST_HINT)
   }
   c.next()
   return word
+}
+
+/**
+ * True at `mouse is ...` or `left|right|middle mouse ...`.
+ * @param {Cursor} c
+ */
+export function isMouseAhead(c) {
+  const t = c.peek()
+  if (c.isWord('mouse')) return c.isWord('is', 1)
+  return t.kind === 'word' && MOUSE_BUTTON_WORDS.has(t.text) && c.isWord('mouse', 1)
+}
+
+/**
+ * `[left|right|middle] mouse`. Plain `mouse` is the left button.
+ * @param {Cursor} c
+ * @returns {MouseButton}
+ */
+export function parseMouseButton(c) {
+  /** @type {MouseButton} */
+  let button = 'left'
+  const t = c.peek()
+  if (t.kind === 'word' && MOUSE_BUTTON_WORDS.has(t.text)) {
+    button = /** @type {MouseButton} */ (t.text)
+    c.next()
+  }
+  c.expectWord('mouse')
+  return button
+}
+
+/**
+ * Optional gamepad number after `gamepad` (1 to 4). Defaults to 1.
+ * @param {Cursor} c
+ * @returns {number}
+ */
+function parsePadNumber(c) {
+  const t = c.peek()
+  if (t.kind !== 'number') return 1
+  c.next()
+  if (!Number.isInteger(t.value) || t.value < 1 || t.value > MAX_PADS) {
+    throw fail('bad-number', t.loc, `There is no gamepad ${t.value}.`, `Gamepads are numbered 1 to ${MAX_PADS}.`)
+  }
+  return t.value
+}
+
+/**
+ * Is this `gamepad [N] [left|right] stick ...`?
+ * @param {Cursor} c
+ */
+function isStickAhead(c) {
+  let o = 1
+  if (c.peek(o).kind === 'number') o++
+  if (c.isWord('left', o) || c.isWord('right', o)) o++
+  return c.isWord('stick', o)
+}
+
+/**
+ * `gamepad [N] [left|right] stick x|y`: -1 to 1, 0 in the middle.
+ * @param {Cursor} c
+ * @returns {Expr}
+ */
+function parseStick(c) {
+  const loc = c.next().loc // gamepad
+  const pad = parsePadNumber(c)
+  /** @type {'left' | 'right'} */
+  let side = 'left'
+  if (c.isWord('left') || c.isWord('right')) side = /** @type {'left' | 'right'} */ (c.next().text)
+  c.expectWord('stick')
+  const axis = c.peek()
+  if (axis.kind !== 'word' || (axis.text !== 'x' && axis.text !== 'y')) throw expected(axis, '"x" or "y"')
+  c.next()
+  return { kind: 'stick', pad, side, axis: /** @type {'x' | 'y'} */ (axis.text), loc }
+}
+
+/**
+ * `gamepad [N] BUTTON`, after checking the next word is `gamepad`.
+ * @param {Cursor} c
+ * @returns {{ pad: number; button: PadButton }}
+ */
+export function parsePadButton(c) {
+  c.expectWord('gamepad')
+  const pad = parsePadNumber(c)
+  const t = c.peek()
+  if (t.kind !== 'word') throw expected(t, 'a gamepad button like "a" or "start"', PAD_LIST_HINT)
+  if (!isPadButton(t.text)) {
+    throw fail(
+      'unknown-button',
+      t.loc,
+      `I don't know the gamepad button "${t.text}".`,
+      didYouMean(t.text, PAD_BUTTONS) ?? PAD_LIST_HINT,
+    )
+  }
+  c.next()
+  return { pad, button: t.text }
 }

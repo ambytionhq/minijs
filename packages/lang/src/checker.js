@@ -50,6 +50,32 @@ export function check(program) {
       )
     }
   }
+  /** @type {Set<string>} */
+  const controls = new Set()
+  for (const ctl of program.controls) {
+    if (controls.has(ctl.name)) {
+      errors.push(
+        miniError(
+          'duplicate-control',
+          ctl.loc,
+          `There are two controls called "${ctl.name}".`,
+          'Put all its keys and buttons in one control block.',
+        ),
+      )
+    } else if (things.has(ctl.name) || vars.has(ctl.name)) {
+      errors.push(
+        miniError(
+          'name-clash',
+          ctl.loc,
+          `"${ctl.name}" is used as a control and as a ${things.has(ctl.name) ? 'thing' : 'number'}.`,
+          'Rename one of them.',
+        ),
+      )
+    } else {
+      controls.add(ctl.name)
+    }
+  }
+
   let camera = false
   for (const t of program.things) {
     if (!t.cameraFollows) continue
@@ -75,6 +101,8 @@ export function check(program) {
     if (things.has(name)) return true
     if (vars.has(name)) {
       errors.push(miniError('unknown-thing', loc, `"${name}" is a number, not a thing.`))
+    } else if (controls.has(name)) {
+      errors.push(miniError('unknown-thing', loc, `"${name}" is a control, not a thing.`))
     } else {
       errors.push(
         miniError(
@@ -98,6 +126,10 @@ export function check(program) {
       errors.push(
         miniError('unknown-variable', loc, `"${name}" is a thing, not a number.`, `Did you mean "${name} x"?`),
       )
+    } else if (controls.has(name)) {
+      errors.push(
+        miniError('unknown-variable', loc, `"${name}" is a control, not a number.`, `Did you mean "${name} is held"?`),
+      )
     } else {
       errors.push(
         miniError(
@@ -108,6 +140,34 @@ export function check(program) {
         ),
       )
     }
+  }
+
+  /**
+   * @param {string} name
+   * @param {Loc} loc
+   */
+  function control(name, loc) {
+    if (controls.has(name)) return
+    if (things.has(name) || vars.has(name)) {
+      const kind = things.has(name) ? 'thing' : 'number'
+      errors.push(
+        miniError(
+          'unknown-control',
+          loc,
+          `"${name}" is a ${kind}, not a control.`,
+          kind === 'number' ? `To compare it, write something like: ${name} is 3` : null,
+        ),
+      )
+      return
+    }
+    errors.push(
+      miniError(
+        'unknown-control',
+        loc,
+        `I don't know the control "${name}".`,
+        didYouMean(name, controls) ?? `Make it first with a block like: control ${name}`,
+      ),
+    )
   }
 
   /** @param {Expr} e */
@@ -139,7 +199,11 @@ export function check(program) {
         walkExpr(cond.right)
         return
       case 'onGround':
+      case 'mouseOver':
         thing(cond.thing, cond.loc)
+        return
+      case 'controlHeld':
+        control(cond.name, cond.loc)
         return
       case 'and':
       case 'or':
@@ -168,6 +232,9 @@ export function check(program) {
         break
       case 'leavesScreen':
         thing(t.thing, t.loc)
+        break
+      case 'control':
+        control(t.name, t.loc)
         break
     }
     walkCondition(t.guard)
@@ -216,6 +283,9 @@ export function check(program) {
         }
         return
       }
+      case 'log':
+        for (const part of a.parts) if (part.kind === 'expr') walkExpr(part.expr)
+        return
       case 'showText':
         for (const part of a.parts) if (part.kind === 'expr') walkExpr(part.expr)
         if (a.at) {

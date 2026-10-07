@@ -6,9 +6,12 @@
   "license": "Apache-2.0",
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "playground"
   ],
   "scripts": {
+    "dev": "npm run dev -w playground",
+    "build": "npm run build -w playground",
     "test": "vitest run",
     "test:watch": "vitest",
     "bench": "vitest bench --run"

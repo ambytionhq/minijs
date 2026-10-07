@@ -96,6 +96,7 @@ export class Catalog {
 
   typeIds = new Map()
   varIds = new Map()
+  controlIds = new Map()
   lookIds = new Map()
   /** @type {ReadonlyMap<string, LoadedImage>} */
   images
@@ -113,6 +114,7 @@ export class Catalog {
       this.varNames.push(v.name)
     })
     this.varInitial = Float64Array.from(program.vars, (v) => v.initial)
+    ;(program.controls ?? []).forEach((ctl, i) => this.controlIds.set(ctl.name, i))
 
     let cameraType = -1
     program.things.forEach((decl, id) => {
@@ -167,6 +169,16 @@ export class Catalog {
   typeId(name) {
     const id = this.typeIds.get(name)
     if (id === undefined) throw new ProgramShapeError(`Unknown thing "${name}"`)
+    return id
+  }
+
+  /**
+   * @param {string} name
+   * @returns {number}
+   */
+  controlId(name) {
+    const id = this.controlIds.get(name)
+    if (id === undefined) throw new ProgramShapeError(`Unknown control "${name}"`)
     return id
   }
 

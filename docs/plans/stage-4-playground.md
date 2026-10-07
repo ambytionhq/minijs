@@ -1,8 +1,8 @@
 # Stage 4: Playground, Examples, Docs Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
-**Status: NOT STARTED.** Owner: next model. **Requires Stage 2 done** (`compile` exists). Stage 3 (engine) is done.
+**Status: DONE (2026-10-06, Claude Opus 5.5).** `npm test` 206/206, bench 1.62 ms mean for 2,000 things. Deviations are listed under "As built" at the bottom.
 
 **Goal:** A dev playground page where you type `.mini` text and watch the game run live, a set of example games, CI, and a README that teaches the language.
 
@@ -64,7 +64,7 @@
 
 **Files:** `examples/*.mini`, `scripts/make-example-assets.mjs`, `examples/assets/`, `packages/runtime/test/examples.test.js`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```js
 import { readdirSync, readFileSync } from 'node:fs'
@@ -95,17 +95,17 @@ describe('examples', () => {
 })
 ```
 
-- [ ] **Step 2: Run, expect FAIL** (no examples).
-- [ ] **Step 3: Write the examples.** `platformer.mini` is spec section 7 verbatim. Each other example: 25 to 60 lines, a comment header saying what it shows, uses only spec features. `hero.mini` uses `looks like "hero-idle.png"` and `animation walk "hero-1.png", "hero-2.png", "hero-3.png" at 8 fps`, playing `walk` while left/right is held and `stop animation on hero` on release.
-- [ ] **Step 4: Asset script.** `scripts/make-example-assets.mjs` writes 16x16 PNGs with `node:zlib` (`deflateSync`) and a hand-built PNG chunk writer (signature, IHDR, IDAT, IEND, CRC32 table). Each frame is a flat-colored character silhouette with the legs offset per frame. Run `node scripts/make-example-assets.mjs` to create `examples/assets/hero-idle.png`, `hero-1.png`, `hero-2.png`, `hero-3.png`.
-- [ ] **Step 5: Run, expect PASS.**
+- [x] **Step 2: Run, expect FAIL** (no examples).
+- [x] **Step 3: Write the examples.** `platformer.mini` is spec section 7 verbatim. Each other example: 25 to 60 lines, a comment header saying what it shows, uses only spec features. `hero.mini` uses `looks like "hero-idle.png"` and `animation walk "hero-1.png", "hero-2.png", "hero-3.png" at 8 fps`, playing `walk` while left/right is held and `stop animation on hero` on release.
+- [x] **Step 4: Asset script.** `scripts/make-example-assets.mjs` writes 16x16 PNGs with `node:zlib` (`deflateSync`) and a hand-built PNG chunk writer (signature, IHDR, IDAT, IEND, CRC32 table). Each frame is a flat-colored character silhouette with the legs offset per frame. Run `node scripts/make-example-assets.mjs` to create `examples/assets/hero-idle.png`, `hero-1.png`, `hero-2.png`, `hero-3.png`.
+- [x] **Step 5: Run, expect PASS.**
 
 ### Task 2: Playground shell
 
 **Files:** `playground/package.json`, `playground/vite.config.js`, `playground/index.html`, `playground/src/styles.css`, root `package.json`
 
-- [ ] **Step 1:** Add `"playground"` back to root `workspaces` and add root script `"dev": "npm run dev -w playground"`.
-- [ ] **Step 2:** `playground/package.json`:
+- [x] **Step 1:** Add `"playground"` back to root `workspaces` and add root script `"dev": "npm run dev -w playground"`.
+- [x] **Step 2:** `playground/package.json`:
 
 ```json
 {
@@ -130,10 +130,10 @@ describe('examples', () => {
 
 Verify each package exists on npm (`npm view <name> version`) before installing; adjust versions to what exists.
 
-- [ ] **Step 3:** `vite.config.js` serves `examples/assets` as the asset base: `publicDir: '../examples'` so `"hero-1.png"` resolves at `/assets/hero-1.png` with `assetsBase: '/assets/'`.
-- [ ] **Step 4:** `index.html` structure: `<header>` (name, example picker `<select>`, Run/Stop/Restart buttons), `<main class="split">` with `<section class="editor-pane">` and `<section class="game-pane">` (canvas wrapper with fixed aspect from game size, problems list below, perf readout). Labels above controls; the picker has a visible `<label>`.
-- [ ] **Step 5:** `styles.css` defines tokens on `:root` (`--bg`, `--surface`, `--border`, `--text`, `--text-muted`, `--accent`, `--accent-text`, `--danger`), dark overrides under `@media (prefers-color-scheme: dark)`, body background explicit, grid layout per Global Constraints.
-- [ ] **Step 6:** `npm install`, `npm run dev`, open the page; empty editor and black canvas render with no console errors in both color schemes.
+- [x] **Step 3:** `vite.config.js` serves `examples/assets` as the asset base: `publicDir: '../examples'` so `"hero-1.png"` resolves at `/assets/hero-1.png` with `assetsBase: '/assets/'`.
+- [x] **Step 4:** `index.html` structure: `<header>` (name, example picker `<select>`, Run/Stop/Restart buttons), `<main class="split">` with `<section class="editor-pane">` and `<section class="game-pane">` (canvas wrapper with fixed aspect from game size, problems list below, perf readout). Labels above controls; the picker has a visible `<label>`.
+- [x] **Step 5:** `styles.css` defines tokens on `:root` (`--bg`, `--surface`, `--border`, `--text`, `--text-muted`, `--accent`, `--accent-text`, `--danger`), dark overrides under `@media (prefers-color-scheme: dark)`, body background explicit, grid layout per Global Constraints.
+- [x] **Step 6:** `npm install`, `npm run dev`, open the page; empty editor and black canvas render with no console errors in both color schemes.
 
 ### Task 3: Editor with live diagnostics
 
@@ -152,38 +152,49 @@ export interface Editor {
 export function createEditor(parent: HTMLElement, initial: string): Editor
 ```
 
-- [ ] Map each `MiniError` to a CodeMirror `Diagnostic` spanning from (line, col) to the end of that word (or end of line). `message` = `${error.message}${error.hint ? ' ' + error.hint : ''}`, severity `error`.
-- [ ] `main.js` loop: on change, debounce 300 ms, `compile(text)`; `editor.setProblems(errors)`; `renderProblems(errors)`; if `program` then `game ? game.reload(program) : (game = await start(program, canvas, { assetsBase: '/assets/' }))`. Runtime errors from `game.on('error')` are appended to the problems list (not the editor).
-- [ ] While there are compile errors the last good game keeps running, and the problems list says so in one line above the list: "Showing your last working version."
-- [ ] Clicking a problem calls `editor.jumpTo(line, col)`.
+- [x] Map each `MiniError` to a CodeMirror `Diagnostic` spanning from (line, col) to the end of that word (or end of line). `message` = `${error.message}${error.hint ? ' ' + error.hint : ''}`, severity `error`.
+- [x] `main.js` loop: on change, debounce 300 ms, `compile(text)`; `editor.setProblems(errors)`; `renderProblems(errors)`; if `program` then `game ? game.reload(program) : (game = await start(program, canvas, { assetsBase: '/assets/' }))`. Runtime errors from `game.on('error')` are appended to the problems list (not the editor).
+- [x] While there are compile errors the last good game keeps running, and the problems list says so in one line above the list: "Showing your last working version."
+- [x] Clicking a problem calls `editor.jumpTo(line, col)`.
 
 ### Task 4: Toolbar, examples, persistence, perf readout
 
 **Files:** `playground/src/examples.js`, `playground/src/storage.js`, `playground/src/perf.js`, `playground/src/problems.js`, `playground/test/storage.test.js`
 
-- [ ] Example picker lists every `examples/*.mini` by file name (without extension). Choosing one loads it unless the current text has unsaved edits for a different example; then ask with `confirm()`.
-- [ ] `storage.js`: `loadSource(key): string | null`, `saveSource(key, text): void`, both try/catch, keyed `minijs:source:<example>`. Test with a `localStorage` stub that throws: functions return null / do nothing, never throw.
-- [ ] Run = `game.reload(program)` from current text. Stop = `game.stop()`. Restart = `game.reload(game.simulation.program)`.
-- [ ] Perf readout (`perf.js`): its own `requestAnimationFrame` loop computes fps over a rolling 60 frames, and once per second reads the change in `game.simulation.tickCount` for ticks per second. Show "60 fps" and "60 ticks/s" in Geist Mono, muted color, top-right of the game pane. Hidden below 640px wide. Stop its loop when the page is hidden (`visibilitychange`).
-- [ ] Focus: clicking the canvas focuses it (`tabindex="0"`) so arrow keys go to the game, not the editor. Show a one-line hint under the canvas: "Click the game, then use the keyboard."
+- [x] Example picker lists every `examples/*.mini` by file name (without extension). Choosing one loads it unless the current text has unsaved edits for a different example; then ask with `confirm()`.
+- [x] `storage.js`: `loadSource(key): string | null`, `saveSource(key, text): void`, both try/catch, keyed `minijs:source:<example>`. Test with a `localStorage` stub that throws: functions return null / do nothing, never throw.
+- [x] Run = `game.reload(program)` from current text. Stop = `game.stop()`. Restart = `game.reload(game.simulation.program)`.
+- [x] Perf readout (`perf.js`): its own `requestAnimationFrame` loop computes fps over a rolling 60 frames, and once per second reads the change in `game.simulation.tickCount` for ticks per second. Show "60 fps" and "60 ticks/s" in Geist Mono, muted color, top-right of the game pane. Hidden below 640px wide. Stop its loop when the page is hidden (`visibilitychange`).
+- [x] Focus: clicking the canvas focuses it (`tabindex="0"`) so arrow keys go to the game, not the editor. Show a one-line hint under the canvas: "Click the game, then use the keyboard."
 
 ### Task 5: Browser verification
 
-- [ ] Run `npm run dev`. With the browser pane: load each example, play it briefly with keys (or `KeyboardEvent` dispatch), confirm movement, collisions, text, and that the problems list is empty.
-- [ ] Type a typo (`remove cion`) and confirm: underline in editor, problem with "Did you mean "coin"?", clicking it moves the cursor, last good game keeps running.
-- [ ] Check light and dark mode, 375px and 1280px widths, `prefers-reduced-motion`.
-- [ ] Run the `design-taste-frontend` pre-flight items that apply to a tool page: em-dash scan, theme lock, color lock, shape lock, button contrast, CTA wrap, form contrast, icons from Phosphor only.
-- [ ] Save screenshots to `docs/screenshots/` (light and dark).
+- [x] Run `npm run dev`. With the browser pane: load each example, play it briefly with keys (or `KeyboardEvent` dispatch), confirm movement, collisions, text, and that the problems list is empty.
+- [x] Type a typo (`remove cion`) and confirm: underline in editor, problem with "Did you mean "coin"?", clicking it moves the cursor, last good game keeps running.
+- [x] Check light and dark mode, 375px and 1280px widths, `prefers-reduced-motion`.
+- [x] Run the `design-taste-frontend` pre-flight items that apply to a tool page: em-dash scan, theme lock, color lock, shape lock, button contrast, CTA wrap, form contrast, icons from Phosphor only.
+- [x] Save screenshots to `docs/screenshots/` (light and dark).
 
 ### Task 6: CI and README
 
 **Files:** `.github/workflows/ci.yml`, `README.md`
 
-- [ ] `ci.yml`: on push and pull_request; `actions/checkout@v4`, `actions/setup-node@v4` with Node 22 and npm cache; `npm ci`; `npm test`.
-- [ ] `README.md`: one-paragraph pitch, a 10-line example, `npm install` / `npm run dev` / `npm test`, a language cheat sheet (blocks, triggers, conditions, expressions, actions; tables copied from spec section 4), links to `docs/spec.md` and the plans. Plain hyphens only.
+- [x] `ci.yml`: on push and pull_request; `actions/checkout@v4`, `actions/setup-node@v4` with Node 22 and npm cache; `npm ci`; `npm test`.
+- [x] `README.md`: one-paragraph pitch, a 10-line example, `npm install` / `npm run dev` / `npm test`, a language cheat sheet (blocks, triggers, conditions, expressions, actions; tables copied from spec section 4), links to `docs/spec.md` and the plans. Plain hyphens only.
 
 ## Done when
 
-- [ ] `npm test` and `npm run bench` pass.
-- [ ] Playground verified in browser per Task 5 with screenshots saved.
-- [ ] `handoffs/handoff.md` updated with a new timestamped, model-stamped section.
+- [x] `npm test` and `npm run bench` pass.
+- [x] Playground verified in browser per Task 5 with screenshots saved.
+- [x] `handoffs/handoff.md` updated with a new timestamped, model-stamped section.
+
+## As built (2026-10-06)
+
+1. **Runtime change: `keyTarget` start option.** `BrowserInput` listened on `window` and called `preventDefault` on arrows and space, which broke typing in the editor. `start(program, canvas, { keyTarget })` now scopes keys (default still `window`); the playground passes the canvas (`tabindex="0"`). Pointer release is always heard on the window. Spec section 6 mentions it.
+2. **Versions:** Vite 8 (current), CodeMirror 6.x. Extra direct deps: `@codemirror/language` + `@lezer/highlight` (light `.mini` coloring in `src/mini-language.js`, cosmetic only) and `@codemirror/commands` (Tab indents).
+3. **No confirm when switching examples.** Each example keeps its own saved edits (`minijs:source:<name>`), so switching never loses work. A "Reset example" link restores the original, with a `confirm()` only when there are edits.
+4. **Underlines point at the bad name.** Checker errors carry the action's location (`remove the cion` points at `remove`); `toDiagnostic` underlines the quoted name from the message when it is on that line. Tested in `playground/test/editor.test.js`.
+5. **Stacked layout puts the game first** (below 1024px) and caps the editor at 60dvh, so phones open on something to play.
+6. **Dev hook:** in dev builds only, `window.__minijs` exposes `{ game, editor }` for browser tooling.
+7. **Browser verification** was done in a hidden browser pane, where `requestAnimationFrame` is paused. Behavior was checked by sending real `KeyboardEvent`s to the canvas and calling `simulation.tick()` directly: all five examples run with no problems, hero images load, editor keys do not reach the game, typo -> underline + "Did you mean" + click-to-jump + last game keeps running. Real-time feel at 60 fps still needs a person at the keyboard.
+8. CI also runs `npm run build`. Screenshots are JPEGs: `docs/screenshots/playground-light.jpg`, `playground-dark-problem.jpg`, `playground-phone-light.jpg`.

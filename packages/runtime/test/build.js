@@ -1,13 +1,13 @@
 // Tiny AST builders so runtime tests do not depend on the parser.
 // Every node gets a dummy location.
 
-/** @import { Action, CompareOp, Condition, Direction, Expr, GameSettings, InstanceProp, KeyName, KeyState, Look, Program, Rule, SettableProp, TextPart, ThingDecl, Trigger, VarDecl } from '@minijs/lang' */
+/** @import { ControlDecl, InputSource, MouseButton, PadButton, Action, CompareOp, Condition, Direction, Expr, GameSettings, InstanceProp, KeyName, KeyState, Look, Program, Rule, SettableProp, TextPart, ThingDecl, Trigger, VarDecl } from '@minijs/lang' */
 import { DEFAULT_GAME_SETTINGS } from '@minijs/lang'
 
 export const L = { line: 1, col: 1 }
 
 /**
- * @param {{ game?: Partial<GameSettings>; vars?: VarDecl[]; things?: ThingDecl[]; rules?: Rule[] }} parts
+ * @param {{ game?: Partial<GameSettings>; vars?: VarDecl[]; things?: ThingDecl[]; controls?: ControlDecl[]; rules?: Rule[] }} parts
  * @returns {Program}
  */
 export function program(parts) {
@@ -15,6 +15,7 @@ export function program(parts) {
     game: { ...DEFAULT_GAME_SETTINGS, loc: null, ...parts.game },
     vars: parts.vars ?? [],
     things: parts.things ?? [],
+    controls: parts.controls ?? [],
     rules: parts.rules ?? [],
   }
 }
@@ -166,10 +167,29 @@ export const when = {
   key: (key, state, guard = null) => ({ kind: 'key', key, state, guard, loc: L }),
   click: (thingName = null, guard = null) => ({
     kind: 'mouseClick',
+    button: 'left',
+    state: 'pressed',
     thing: thingName,
     guard,
     loc: L,
   }),
+  /**
+   * @param {MouseButton} button
+   * @param {KeyState} state
+   * @param {string | null} [thingName=null]
+   */
+  mouse: (button, state, thingName = null, guard = null) => ({ kind: 'mouseClick', button, state, thing: thingName, guard, loc: L }),
+  /**
+   * @param {number} pad
+   * @param {PadButton} button
+   * @param {KeyState} state
+   */
+  pad: (pad, button, state, guard = null) => ({ kind: 'pad', pad, button, state, guard, loc: L }),
+  /**
+   * @param {string} name
+   * @param {KeyState} state
+   */
+  control: (name, state, guard = null) => ({ kind: 'control', name, state, guard, loc: L }),
   touch: (a, b, guard = null) => ({ kind: 'touch', a, b, guard, loc: L }),
   leaves: (thingName, guard = null) => ({ kind: 'leavesScreen', thing: thingName, guard, loc: L }),
   every: (seconds, guard = null) => ({ kind: 'every', seconds, guard, loc: L }),
@@ -198,6 +218,38 @@ export const act = {
     color,
     loc: L,
   }),
+  log: (parts) => ({
+    kind: 'log',
+    parts: parts.map((p) => (typeof p === 'string' ? { kind: 'literal', text: p } : { kind: 'expr', expr: p })),
+    loc: L,
+  }),
   stopGame: () => ({ kind: 'stopGame', loc: L }),
   restartGame: () => ({ kind: 'restartGame', loc: L }),
 }
+
+/**
+ * @param {string} name
+ * @param {...InputSource} sources
+ * @returns {ControlDecl}
+ */
+export function control(name, ...sources) {
+  return { name, sources, loc: L }
+}
+
+/** @param {MouseButton} button */
+export const mouseHeld = (button) => ({ kind: 'mouseHeld', button, loc: L })
+/** @param {string} thingName */
+export const mouseOver = (thingName) => ({ kind: 'mouseOver', thing: thingName, loc: L })
+/**
+ * @param {number} pad
+ * @param {PadButton} button
+ */
+export const padHeld = (pad, button) => ({ kind: 'padHeld', pad, button, loc: L })
+/** @param {string} name */
+export const controlHeld = (name) => ({ kind: 'controlHeld', name, loc: L })
+/**
+ * @param {number} pad
+ * @param {'left' | 'right'} side
+ * @param {'x' | 'y'} axis
+ */
+export const stick = (pad, side, axis) => ({ kind: 'stick', pad, side, axis, loc: L })

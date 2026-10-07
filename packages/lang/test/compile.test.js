@@ -67,9 +67,10 @@ describe('compile', () => {
 
   it('compiles an empty file to defaults', () => {
     expect(compile('').program).toEqual({
-      game: { width: 480, height: 270, pixelArt: false, background: 'black', gravity: 0, loc: null },
+      game: { width: 480, height: 270, pixelArt: false, background: 'black', gravity: 0, touchButtons: false, loc: null },
       vars: [],
       things: [],
+      controls: [],
       rules: [],
     })
   })

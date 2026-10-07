@@ -1,0 +1,114 @@
+# Controls: one game, every kind of input.
+# Move with the arrows, WASD, a gamepad d-pad, or the gamepad's left stick.
+# Phones and tablets get on-screen buttons.
+# Dash with space, shift, gamepad A, or the right mouse button while moving.
+# Pop targets by touching them, or by clicking them with the mouse.
+# Open the Console and Input tabs under the game to watch it all happen.
+
+game
+  size 320 by 180
+  background dark slate gray
+  touch buttons
+
+control go-left
+  left key
+  a key
+  gamepad left
+
+control go-right
+  right key
+  d key
+  gamepad right
+
+control go-up
+  up key
+  w key
+  gamepad up
+
+control go-down
+  down key
+  s key
+  gamepad down
+
+control start-over
+  escape key
+  gamepad start
+
+control dash
+  space key
+  shift key
+  gamepad a
+  right mouse
+
+pops starts at 0
+
+thing player
+  looks like aquamarine box 10 by 10
+  starts at 155, 85
+  solid
+
+thing edge-across
+  looks like slate gray box 320 by 4
+  starts at 0, 0
+  starts at 0, 176
+  solid
+  fixed
+
+thing edge-down
+  looks like slate gray box 4 by 180
+  starts at 0, 0
+  starts at 316, 0
+  solid
+  fixed
+
+thing target
+  looks like tomato circle 6
+
+when go-left is held
+  move player left 2
+when go-right is held
+  move player right 2
+when go-up is held
+  move player up 2
+when go-down is held
+  move player down 2
+
+# The stick gives a number from -1 to 1, so it can move at any speed.
+always
+  move player right gamepad stick x * 3
+  move player down gamepad stick y * 3
+
+when dash is pressed and go-left is held
+  move player left 24
+when dash is pressed and go-right is held
+  move player right 24
+when dash is pressed and go-up is held
+  move player up 24
+when dash is pressed and go-down is held
+  move player down 24
+
+when every 1.5 seconds
+  make a target at random 20 to 290, random 20 to 150
+
+when player touches target
+  remove the target
+  add 1 to pops
+  log "touched a target, {pops} popped"
+
+when mouse is clicked on the target
+  remove the target
+  add 1 to pops
+  log "clicked a target, {pops} popped"
+
+when mouse is over the target
+  log "aiming at a target"
+
+when start-over is pressed
+  restart game
+
+when any key is pressed and pops is 0
+  log "a key was pressed"
+
+always
+  show text "Pops: {pops}" at 6, 14
+  show text "Keys, mouse, gamepad or touch" at 8, 164 in light gray

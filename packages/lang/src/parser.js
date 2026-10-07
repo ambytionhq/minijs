@@ -5,9 +5,10 @@
 import { DEFAULT_GAME_SETTINGS } from './ast.js'
 import { Cursor, ParseError, RESERVED, expected, fail } from './cursor.js'
 import { didYouMean, miniError } from './errors.js'
+import { isMouseAhead, parseKeyName, parseMouseButton, parsePadButton } from './parse-expr.js'
 import { parseAction, parseColorWords, parseLook, parseTrigger } from './parse-rule.js'
 
-/** @import { AnimationDecl, GameSettings, Look, Loc, Program, Rule, ThingDecl, VarDecl } from './ast.js' */
+/** @import { AnimationDecl, ControlDecl, GameSettings, InputSource, Look, Loc, Program, Rule, ThingDecl, VarDecl } from './ast.js' */
 /** @import { MiniError } from './errors.js' */
 /** @import { Token } from './lexer.js' */
 
@@ -17,8 +18,8 @@ import { parseAction, parseColorWords, parseLook, parseTrigger } from './parse-r
  * @property {MiniError[]} errors
  */
 
-const TOP_WORDS = ['game', 'thing', 'when', 'always']
-const GAME_WORDS = ['size', 'pixel', 'background', 'gravity']
+const TOP_WORDS = ['game', 'thing', 'control', 'when', 'always']
+const GAME_WORDS = ['size', 'pixel', 'background', 'gravity', 'touch']
 const THING_WORDS = ['looks', 'animation', 'size', 'starts', 'solid', 'fixed', 'falls', 'camera']
 
 /**
@@ -41,6 +42,8 @@ class Parser {
     this.vars = []
     /** @type {ThingDecl[]} */
     this.things = []
+    /** @type {ControlDecl[]} */
+    this.controls = []
     /** @type {Rule[]} */
     this.rules = []
   }
@@ -66,7 +69,7 @@ class Parser {
       }
     }
     return {
-      program: { game: this.game, vars: this.vars, things: this.things, rules: this.rules },
+      program: { game: this.game, vars: this.vars, things: this.things, controls: this.controls, rules: this.rules },
       errors: this.errors,
     }
   }
@@ -131,6 +134,8 @@ class Parser {
         return this.gameBlock()
       case 'thing':
         return this.thingBlock()
+      case 'control':
+        return this.controlBlock()
       case 'when':
       case 'always':
         return this.ruleBlock()
@@ -141,7 +146,7 @@ class Parser {
       t.loc,
       `I don't know what "${t.text}" means here.`,
       didYouMean(t.text, TOP_WORDS) ??
-        'Lines at the left edge start with game, thing, when, always, or a name followed by "starts at".',
+        'Lines at the left edge start with game, thing, control, when, always, or a name followed by "starts at".',
     )
   }
 
@@ -185,6 +190,8 @@ class Parser {
         game.height = c.expectPositive('a height')
       } else if (c.acceptWords('pixel', 'art')) {
         game.pixelArt = true
+      } else if (c.acceptWords('touch', 'buttons')) {
+        game.touchButtons = true
       } else if (c.acceptWord('background')) {
         game.background = parseColorWords(c, 'a color')
       } else if (c.acceptWord('gravity')) {
@@ -294,10 +301,41 @@ class Parser {
     return { name, frames, fps, loc }
   }
 
+  controlBlock() {
+    const c = this.c
+    const word = c.next()
+    const name = this.declaredName('a name for the control', 'button')
+    c.expectEndOfLine()
+    /** @type {InputSource[]} */
+    const sources = []
+    const hasBlock = this.block(() => {
+      sources.push(parseSource(c))
+    })
+    if (!hasBlock) {
+      this.errors.push(
+        miniError(
+          'expected',
+          word.loc,
+          'I expected some keys or buttons under this line.',
+          'Put them on the next lines, indented, like: space key',
+        ),
+      )
+    }
+    this.controls.push({ name, sources, loc: word.loc })
+  }
+
   ruleBlock() {
     const c = this.c
     const word = c.next()
     const trigger = word.text === 'always' ? { kind: /** @type {const} */ ('always'), loc: word.loc } : parseTrigger(c)
+    if (c.isWord('or') && trigger.kind !== 'condition' && trigger.kind !== 'always') {
+      throw fail(
+        'expected',
+        c.peek().loc,
+        '"or" can\'t join two events, like two key presses.',
+        'Make a control that lists both keys or buttons, then use it: when my-control is pressed',
+      )
+    }
     c.expectEndOfLine()
     /** @type {Rule} */
     const rule = { trigger, actions: [], loc: word.loc }
@@ -333,4 +371,25 @@ class Parser {
     if (t.kind !== 'word') return expected(t, `a setting like "${words[0]}"`)
     return fail('unknown-word', t.loc, `I don't know what "${t.text}" means here.`, didYouMean(t.text, words))
   }
+}
+
+/**
+ * One line of a control block: `space key`, `any key`, `right mouse`, `gamepad 2 a`.
+ * @param {Cursor} c
+ * @returns {InputSource}
+ */
+function parseSource(c) {
+  if (c.isWord('gamepad')) {
+    const { pad, button } = parsePadButton(c)
+    return { kind: 'pad', pad, button }
+  }
+  if (c.isWord('mouse') || (isMouseAhead(c) && !c.isWord('mouse'))) {
+    return { kind: 'mouse', button: parseMouseButton(c) }
+  }
+  if (c.isWord('key', 1)) {
+    const key = parseKeyName(c)
+    c.expectWord('key')
+    return { kind: 'key', key }
+  }
+  throw expected(c.peek(), 'a key or button, like "space key", "mouse" or "gamepad a"')
 }

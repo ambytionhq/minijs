@@ -12,7 +12,7 @@ v1 target genres: **top-down arcade** and **platformer**.
 
 ### Non-goals for v1
 
-Sound, levels and tilemaps, emoji looks, user-defined functions or macros, per-instance custom variables, `wait` inside rules, rotation, scaling, particle effects, networking, WebGL renderer, editor UI, desktop packaging.
+Sound, levels and tilemaps, emoji looks, user-defined functions or macros, per-instance custom variables, `wait` inside rules, rotation, scaling, particle effects, networking, WebGL renderer. (The Studio editor and desktop packaging come after v1, in Stages 5 and 6; some features above may arrive with Stage 7.)
 
 ## 2. Architecture
 
@@ -43,7 +43,7 @@ minijs/
       loop       fixed-timestep loop with render interpolation
       simulation headless tick orchestrator
       game       start(): wires everything to a canvas
-  playground/    Vite dev page: source pane, game canvas, error list
+  playground/    Vite dev page: source pane, game canvas, problems list
   examples/      *.mini sample games
   docs/          spec + stage plans
 ```
@@ -93,6 +93,7 @@ A file is a sequence of top-level statements:
 game                      # optional settings block, at most one
 <name> starts at <number> # global variable, any number of these
 thing <name>              # thing type block
+control <name>            # named input made of several keys and buttons
 when <trigger>            # rule block
 always                    # rule block that fires every tick
 ```
@@ -105,7 +106,10 @@ game
   pixel art                 # crisp integer scaling, default off
   background navy           # color, default black
   gravity 0.4               # pixels per tick^2 for things that fall, default 0
+  touch buttons             # on-screen arrows + A/B buttons on touch screens, default off
 ```
+
+`touch buttons`: on phones and tablets the runtime draws arrows that press the arrow keys, an A button that presses `space`, and a B button that presses `enter`. Hosts can force them on or off (section 6).
 
 ### 4.4 Variables
 
@@ -144,6 +148,27 @@ Looks:
 
 Colors: any CSS named color (`red`, `skyblue`), multi-word forms joined (`sky blue` -> `skyblue`), or `#rgb` / `#rrggbb`.
 
+### 4.5a Inputs and `control` blocks
+
+Games can listen to the keyboard, the mouse (left, right and middle buttons), up to four gamepads, and touch screens.
+
+- **Keys:** `left right up down space enter shift escape tab backspace delete ctrl alt`, letters `a`-`z`, digits `0`-`9` (number-pad digits count too), and `any` (any key).
+- **Mouse:** `mouse` is the left button; `right mouse`, `middle mouse`, `left mouse` name a button. Touch screens tap as the left button.
+- **Gamepads:** `gamepad <button>` for gamepad 1, `gamepad 2 <button>` for others (1 to 4, in the order they were plugged in). Buttons follow the standard layout: `a b x y lb rb lt rt select start ls rs up down left right` (the last four are the d-pad). A trigger counts as pressed past halfway.
+- **Sticks:** `gamepad [N] [left|right] stick x|y` is a number from -1 to 1. Values within 0.15 of the middle read as 0; the rest is rescaled so it still runs 0 to 1.
+
+A `control` names one action and lists every input that does it. It is held while any of them is held, pressed on the tick it becomes held, and released on the tick none are held, so holding two of its keys at once is still one press.
+
+```
+control jump
+  space key
+  up key
+  gamepad a
+  right mouse
+```
+
+Use it like a key: `when jump is pressed`, `when jump is held and player is on ground`, condition `jump is held`. Control names follow the same rules as thing names and must not clash with things or numbers.
+
 ### 4.6 Rules
 
 ```
@@ -165,8 +190,12 @@ Rules are checked top to bottom.
 | `<key> key is pressed` | tick the key goes down |
 | `<key> key is held` | every tick the key is down |
 | `<key> key is released` | tick the key goes up |
-| `mouse is clicked` | tick the mouse button goes down |
-| `mouse is clicked on <thing>` | once per clicked instance under the pointer |
+| `any key is pressed` (also `held`, `released`) | any key; released when the last key goes up |
+| `[left\|right\|middle] mouse is clicked` | tick that button goes down (`clicked` = `pressed`) |
+| `[button] mouse is pressed\|held\|released` | that button's state; `mouse` alone is the left button |
+| `[button] mouse is <state> on <thing>` | once per instance under the pointer, instance bound |
+| `gamepad [N] <button> is pressed\|held\|released` | gamepad button state (N defaults to 1) |
+| `<control> is pressed\|held\|released` | a `control` block (section 4.5a) |
 | `<thing> touches <thing>` | every tick, once per overlapping pair (edges touching counts) |
 | `<thing> leaves the screen` | once when an instance becomes fully outside the camera view |
 | `every <n> seconds` | every n seconds, first time at n |
@@ -175,7 +204,9 @@ Rules are checked top to bottom.
 
 Event triggers are recognized first, so `when left key is held and score is 3` is a key event with a guard (fires every tick while held), not a rising-edge condition. Every event trigger may add a guard: `when up key is pressed and player is on ground`. The guard is a condition. For key and mouse triggers, the guard is checked when the event happens. For per-instance triggers (touch, click on, leaves screen), the guard is checked per instance with the instance bound.
 
-Keys: `left right up down space enter shift escape`, letters `a`-`z`, digits `0`-`9`.
+Keys, mouse buttons, gamepads and controls are listed in section 4.5a.
+
+`or` cannot join two events (`when a key is pressed or b key is pressed` is an error whose hint points to controls). Make a `control` with both inputs instead. Combinations use guards: `when s key is pressed and ctrl key is held`.
 
 #### Conditions
 
@@ -185,7 +216,11 @@ Keys: `left right up down space enter shift escape`, letters `a`-`z`, digits `0`
 <expr> is above <expr>     # also: is more than, is greater than, is bigger than
 <expr> is below <expr>     # also: is less than, is smaller than
 <thing> is on ground       # also: is on the ground
-<key> key is held
+<key> key is held          # also: any key is held
+[button] mouse is held
+mouse is over <thing>      # pointer over any live instance
+gamepad [N] <button> is held
+<control> is held
 <cond> and <cond>
 <cond> or <cond>
 not <cond>
@@ -201,6 +236,7 @@ score                  variable
 player x / player y    instance position (also: vx, vy, width, height)
 count of coin          number of live instances
 mouse x / mouse y      pointer in world coordinates
+gamepad [N] [left|right] stick x|y   -1 to 1, 0 in the middle
 random 0 to 300        random integer, inclusive
 <expr> + - * / <expr>  arithmetic, usual precedence, left to right
 ```
@@ -223,6 +259,7 @@ random 0 to 300        random integer, inclusive
 | `stop animation on <thing>` | back to base look |
 | `show text "<text>"` | show centered text |
 | `show text "<text>" at <expr>, <expr> [in <color>]` | show text at screen position |
+| `log "<text>"` | send a line to the host's console (playground Console tab); `{...}` works like show text |
 | `stop game` | freeze simulation, keep drawing |
 | `restart game` | reset everything to start state |
 
@@ -241,7 +278,7 @@ Each `show text` action owns one text slot. Running it again replaces that slot'
 
 Every error has: `code` (stable string), `message` (plain sentence), optional `hint` (what to do), `line`, `col` (1-based). Typos get Levenshtein suggestions over known names and keywords (distance <= 2): message `I don't know what "cion" is.` hint `Did you mean "coin"?`.
 
-Error codes (lang): `indent-mixed`, `indent-uneven`, `indent-unexpected`, `unknown-word`, `expected`, `unterminated-string`, `bad-number`, `unknown-thing`, `unknown-variable`, `unknown-animation`, `unknown-key`, `unknown-color`, `duplicate-thing`, `duplicate-variable`, `name-clash`, `missing-look`, `duplicate-look`, `multiple-cameras`, `duplicate-game`.
+Error codes (lang): `indent-mixed`, `indent-uneven`, `indent-unexpected`, `unknown-word`, `expected`, `unterminated-string`, `bad-number`, `unknown-thing`, `unknown-variable`, `unknown-animation`, `unknown-key`, `unknown-button`, `unknown-control`, `duplicate-control`, `unknown-color`, `duplicate-thing`, `duplicate-variable`, `name-clash`, `missing-look`, `duplicate-look`, `multiple-cameras`, `duplicate-game`.
 
 Error codes (runtime): `image-missing`, `too-many-things`, `runtime-math` (division by zero yields 0 plus one warning).
 
@@ -249,8 +286,8 @@ Error codes (runtime): `image-missing`, `too-many-things`, `runtime-math` (divis
 
 ### 5.1 Tick order (fixed 1/60 s)
 
-1. Input snapshot: compute pressed/released edges since last tick.
-2. Pre-physics rules, in source order: `game starts`, timers, key, mouse, condition, `always`.
+1. Input snapshot: poll gamepads, compute pressed/released edges since last tick for keys, mouse buttons and gamepad buttons, apply the stick deadzone, then update controls.
+2. Pre-physics rules, in source order: `game starts`, timers, key, mouse, gamepad, control, condition, `always`.
 3. Physics for each live instance not `fixed`:
    - if `falls`: `vy += gravity`
    - `x += vx + mx`, then if `solid`: push out of other solid instances on x; zero `vx` if blocked
@@ -278,8 +315,13 @@ import { start } from '@minijs/runtime'
 
 const { program, errors } = compile(source)
 if (program) {
-  const game = await start(program, canvas, { assetsBase: '/assets/' })
+  const game = await start(program, canvas, {
+    assetsBase: '/assets/',   // or assets: a loader with load(src) -> { src, width, height, source, missing }
+    keyTarget: canvas,        // where to hear keys; default window
+    touchButtons: 'auto',     // 'auto' (touch screens, when the game asks), 'always', 'never'
+  })
   game.on('error', (e) => showError(e))   // replays earlier errors (e.g. missing images) to new listeners
+  game.on('log', (text, tick) => {})      // lines from `log "..."`
   game.on('stop', () => {})
   await game.reload(nextProgram)
   game.stop()          // stops simulation
@@ -353,6 +395,9 @@ always
 - Every shape collides as its bounding box (circles too).
 - Camera follow is unclamped (no world bounds).
 - `fixed` solid things moved by `move` do not carry riders.
+- `or` cannot join two event triggers; use a `control`.
+- Gamepads are numbered in the order the browser reports them; unplugging pad 1 makes the next one pad 1.
+- `log` builds a string every time it runs; fine for debugging, avoid it in `always` rules of shipped games.
 
 ## 8. Testing
 
@@ -369,6 +414,10 @@ always
 | 1. Foundation | `docs/plans/stage-1-foundation.md` | Claude Opus 5.5, done |
 | 2. Language | `docs/plans/stage-2-language.md` | Claude Opus 5.5, done |
 | 3. Engine | `docs/plans/stage-3-engine.md` | Claude Opus 5.5, done |
-| 4. Playground, examples, docs | `docs/plans/stage-4-playground.md` | next model |
+| 4. Playground, examples, docs | `docs/plans/stage-4-playground.md` | Claude Opus 5.5, done |
+| 4b. Inputs, console tabs, file browser | `docs/plans/stage-4b-inputs-files.md` | Claude Opus 5.5, done |
+| 5. Studio: offline, HTML game export, zip, share links | `docs/plans/stage-5-studio.md` | planned |
+| 6. Desktop app (Tauri), export game as app | `docs/plans/stage-6-desktop.md` | planned |
+| 7. Flagship game + engine features it needs | `docs/plans/stage-7-flagship.md` | planned |
 
 Stage 2 and Stage 3 are independent: both depend only on the Stage 1 AST contract. Stage 4 needs both.

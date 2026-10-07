@@ -1,0 +1,51 @@
+# Hero: pictures and animation.
+# Shows: image looks, a walk animation that plays while you move, and jumping onto platforms.
+# The pictures live in examples/assets.
+
+game
+  size 256 by 144
+  pixel art
+  background light sky blue
+  gravity 0.35
+
+thing hero
+  looks like "hero-idle.png"
+  animation walk "hero-1.png", "hero-2.png", "hero-3.png" at 8 fps
+  starts at 24, 80
+  solid
+  falls
+  camera follows
+
+thing floor
+  looks like olive drab box 800 by 16
+  starts at -100, 128
+  solid
+  fixed
+
+thing ledge
+  looks like saddle brown box 48 by 8
+  starts at 120, 96
+  starts at 200, 72
+  starts at 290, 52
+  solid
+  fixed
+
+when left key is held
+  move hero left 1.5
+  play walk on hero
+when right key is held
+  move hero right 1.5
+  play walk on hero
+
+when left key is released
+  stop animation on hero
+when right key is released
+  stop animation on hero
+
+when up key is pressed and hero is on the ground
+  push hero up 6
+when space key is pressed and hero is on the ground
+  push hero up 6
+
+always
+  show text "Arrows to walk, up to jump" at 4, 10 in dark slate gray
