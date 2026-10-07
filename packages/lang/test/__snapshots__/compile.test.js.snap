@@ -1,0 +1,449 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`compile > compiles the spec example cleanly 1`] = `
+{
+  "game": {
+    "background": "skyblue",
+    "gravity": 0.4,
+    "height": 180,
+    "loc": {
+      "col": 1,
+      "line": 1,
+    },
+    "pixelArt": true,
+    "width": 320,
+  },
+  "rules": [
+    {
+      "actions": [
+        {
+          "amount": {
+            "kind": "number",
+            "loc": {
+              "col": 20,
+              "line": 26,
+            },
+            "value": 2,
+          },
+          "dir": "left",
+          "kind": "move",
+          "loc": {
+            "col": 3,
+            "line": 26,
+          },
+          "thing": "player",
+        },
+      ],
+      "loc": {
+        "col": 1,
+        "line": 25,
+      },
+      "trigger": {
+        "guard": null,
+        "key": "left",
+        "kind": "key",
+        "loc": {
+          "col": 6,
+          "line": 25,
+        },
+        "state": "held",
+      },
+    },
+    {
+      "actions": [
+        {
+          "amount": {
+            "kind": "number",
+            "loc": {
+              "col": 21,
+              "line": 29,
+            },
+            "value": 2,
+          },
+          "dir": "right",
+          "kind": "move",
+          "loc": {
+            "col": 3,
+            "line": 29,
+          },
+          "thing": "player",
+        },
+      ],
+      "loc": {
+        "col": 1,
+        "line": 28,
+      },
+      "trigger": {
+        "guard": null,
+        "key": "right",
+        "kind": "key",
+        "loc": {
+          "col": 6,
+          "line": 28,
+        },
+        "state": "held",
+      },
+    },
+    {
+      "actions": [
+        {
+          "amount": {
+            "kind": "number",
+            "loc": {
+              "col": 18,
+              "line": 32,
+            },
+            "value": 7,
+          },
+          "dir": "up",
+          "kind": "push",
+          "loc": {
+            "col": 3,
+            "line": 32,
+          },
+          "thing": "player",
+        },
+      ],
+      "loc": {
+        "col": 1,
+        "line": 31,
+      },
+      "trigger": {
+        "guard": {
+          "kind": "onGround",
+          "loc": {
+            "col": 28,
+            "line": 31,
+          },
+          "thing": "player",
+        },
+        "key": "up",
+        "kind": "key",
+        "loc": {
+          "col": 6,
+          "line": 31,
+        },
+        "state": "pressed",
+      },
+    },
+    {
+      "actions": [
+        {
+          "kind": "remove",
+          "loc": {
+            "col": 3,
+            "line": 35,
+          },
+          "thing": "coin",
+        },
+        {
+          "amount": {
+            "kind": "number",
+            "loc": {
+              "col": 7,
+              "line": 36,
+            },
+            "value": 1,
+          },
+          "kind": "addVar",
+          "loc": {
+            "col": 3,
+            "line": 36,
+          },
+          "name": "score",
+        },
+      ],
+      "loc": {
+        "col": 1,
+        "line": 34,
+      },
+      "trigger": {
+        "a": "player",
+        "b": "coin",
+        "guard": null,
+        "kind": "touch",
+        "loc": {
+          "col": 6,
+          "line": 34,
+        },
+      },
+    },
+    {
+      "actions": [
+        {
+          "kind": "make",
+          "loc": {
+            "col": 3,
+            "line": 39,
+          },
+          "thing": "coin",
+          "x": {
+            "kind": "random",
+            "loc": {
+              "col": 18,
+              "line": 39,
+            },
+            "max": {
+              "kind": "number",
+              "loc": {
+                "col": 30,
+                "line": 39,
+              },
+              "value": 600,
+            },
+            "min": {
+              "kind": "number",
+              "loc": {
+                "col": 25,
+                "line": 39,
+              },
+              "value": 0,
+            },
+          },
+          "y": {
+            "kind": "number",
+            "loc": {
+              "col": 35,
+              "line": 39,
+            },
+            "value": 140,
+          },
+        },
+      ],
+      "loc": {
+        "col": 1,
+        "line": 38,
+      },
+      "trigger": {
+        "guard": null,
+        "kind": "every",
+        "loc": {
+          "col": 6,
+          "line": 38,
+        },
+        "seconds": 2,
+      },
+    },
+    {
+      "actions": [
+        {
+          "at": null,
+          "color": "white",
+          "kind": "showText",
+          "loc": {
+            "col": 3,
+            "line": 42,
+          },
+          "parts": [
+            {
+              "kind": "literal",
+              "text": "You win!",
+            },
+          ],
+        },
+        {
+          "kind": "stopGame",
+          "loc": {
+            "col": 3,
+            "line": 43,
+          },
+        },
+      ],
+      "loc": {
+        "col": 1,
+        "line": 41,
+      },
+      "trigger": {
+        "condition": {
+          "kind": "compare",
+          "left": {
+            "kind": "var",
+            "loc": {
+              "col": 6,
+              "line": 41,
+            },
+            "name": "score",
+          },
+          "loc": {
+            "col": 6,
+            "line": 41,
+          },
+          "op": "is",
+          "right": {
+            "kind": "number",
+            "loc": {
+              "col": 15,
+              "line": 41,
+            },
+            "value": 10,
+          },
+        },
+        "kind": "condition",
+        "loc": {
+          "col": 6,
+          "line": 41,
+        },
+      },
+    },
+    {
+      "actions": [
+        {
+          "at": {
+            "x": {
+              "kind": "number",
+              "loc": {
+                "col": 33,
+                "line": 46,
+              },
+              "value": 4,
+            },
+            "y": {
+              "kind": "number",
+              "loc": {
+                "col": 36,
+                "line": 46,
+              },
+              "value": 4,
+            },
+          },
+          "color": "white",
+          "kind": "showText",
+          "loc": {
+            "col": 3,
+            "line": 46,
+          },
+          "parts": [
+            {
+              "kind": "literal",
+              "text": "Score: ",
+            },
+            {
+              "expr": {
+                "kind": "var",
+                "loc": {
+                  "col": 22,
+                  "line": 46,
+                },
+                "name": "score",
+              },
+              "kind": "expr",
+            },
+          ],
+        },
+      ],
+      "loc": {
+        "col": 1,
+        "line": 45,
+      },
+      "trigger": {
+        "kind": "always",
+        "loc": {
+          "col": 1,
+          "line": 45,
+        },
+      },
+    },
+  ],
+  "things": [
+    {
+      "animations": [],
+      "cameraFollows": true,
+      "falls": true,
+      "fixed": false,
+      "loc": {
+        "col": 1,
+        "line": 9,
+      },
+      "look": {
+        "color": "orange",
+        "h": 16,
+        "kind": "box",
+        "loc": {
+          "col": 14,
+          "line": 10,
+        },
+        "w": 12,
+      },
+      "name": "player",
+      "size": null,
+      "solid": true,
+      "starts": [
+        {
+          "loc": {
+            "col": 3,
+            "line": 11,
+          },
+          "x": 40,
+          "y": 100,
+        },
+      ],
+    },
+    {
+      "animations": [],
+      "cameraFollows": false,
+      "falls": false,
+      "fixed": true,
+      "loc": {
+        "col": 1,
+        "line": 16,
+      },
+      "look": {
+        "color": "seagreen",
+        "h": 20,
+        "kind": "box",
+        "loc": {
+          "col": 14,
+          "line": 17,
+        },
+        "w": 640,
+      },
+      "name": "ground",
+      "size": null,
+      "solid": true,
+      "starts": [
+        {
+          "loc": {
+            "col": 3,
+            "line": 18,
+          },
+          "x": 0,
+          "y": 160,
+        },
+      ],
+    },
+    {
+      "animations": [],
+      "cameraFollows": false,
+      "falls": false,
+      "fixed": false,
+      "loc": {
+        "col": 1,
+        "line": 22,
+      },
+      "look": {
+        "color": "gold",
+        "kind": "circle",
+        "loc": {
+          "col": 14,
+          "line": 23,
+        },
+        "r": 4,
+      },
+      "name": "coin",
+      "size": null,
+      "solid": false,
+      "starts": [],
+    },
+  ],
+  "vars": [
+    {
+      "initial": 0,
+      "loc": {
+        "col": 1,
+        "line": 7,
+      },
+      "name": "score",
+    },
+  ],
+}
+`;
