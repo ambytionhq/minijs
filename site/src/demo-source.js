@@ -1,16 +1,17 @@
 // The game in the "Try it here" editor. Short on purpose: every line is a rule
 // a first-timer can read, and the comments invite the first edit.
 export const DEMO_SOURCE = `# Gems: collect them with the arrow keys.
-# Try: change 2 to 4, or gold to hotpink.
+# Try: change 2 to 4, or gold to white.
 
 game
   size 320 by 180
-  background #10141c
+  background #20251f
+  touch buttons
 
 gems starts at 0
 
 thing player
-  looks like #3fbf8f box 12 by 12
+  looks like #e6c554 box 12 by 12
   starts at 154, 84
 
 thing gem

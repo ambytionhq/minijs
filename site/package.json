@@ -15,7 +15,8 @@
     "@fontsource/geist-sans": "^5.3.0",
     "@minijs/lang": "0.0.0",
     "@minijs/runtime": "0.0.0",
-    "@phosphor-icons/web": "^2.1.2"
+    "@phosphor-icons/web": "^2.1.2",
+    "gsap": "^3.15.0"
   },
   "devDependencies": {
     "vite": "^8.3.3"

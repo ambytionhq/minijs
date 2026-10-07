@@ -1,0 +1,44 @@
+/* Phosphor Light glyphs from @phosphor-icons/web, MIT licensed.
+   The local font contains only the icons used by this page. */
+@font-face {
+  font-family: 'Phosphor Site Light';
+  src: url('/fonts/phosphor-site-light.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+.ph-light {
+  font-family: 'Phosphor Site Light' !important;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.ph-light.ph-arrow-counter-clockwise::before { content: "\e038"; }
+.ph-light.ph-arrow-down::before { content: "\e03e"; }
+.ph-light.ph-arrow-left::before { content: "\e058"; }
+.ph-light.ph-arrow-right::before { content: "\e06c"; }
+.ph-light.ph-arrow-up-right::before { content: "\e092"; }
+.ph-light.ph-check-circle::before { content: "\e184"; }
+.ph-light.ph-circle-half::before { content: "\e18c"; }
+.ph-light.ph-cursor-click::before { content: "\e7c8"; }
+.ph-light.ph-download-simple::before { content: "\e20c"; }
+.ph-light.ph-fast-forward::before { content: "\e6a6"; }
+.ph-light.ph-file-code::before { content: "\e914"; }
+.ph-light.ph-graduation-cap::before { content: "\e62c"; }
+.ph-light.ph-heart::before { content: "\e2a8"; }
+.ph-light.ph-keyboard::before { content: "\e2d8"; }
+.ph-light.ph-link-simple::before { content: "\e2e6"; }
+.ph-light.ph-package::before { content: "\e390"; }
+.ph-light.ph-palette::before { content: "\e6c8"; }
+.ph-light.ph-pause::before { content: "\e39e"; }
+.ph-light.ph-pencil-simple::before { content: "\e3b4"; }
+.ph-light.ph-play::before { content: "\e3d0"; }
+.ph-light.ph-plus::before { content: "\e3d4"; }
+.ph-light.ph-warning-circle::before { content: "\e4e2"; }
+.ph-light.ph-wifi-slash::before { content: "\e4f2"; }
+.ph-light.ph-x::before { content: "\e4f6"; }
