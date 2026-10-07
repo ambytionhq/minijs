@@ -53,19 +53,34 @@ function disc(b, cx, cy, r, color) {
  * A title card: big outlined name plus a small line under it.
  * @param {string} title
  * @param {string} subtitle
- * @param {{ fill: string; shade: string; outline: string; sub: string }} colors
+ * @param {{ fill: string; shade: string; outline: string; sub: string; panel?: string }} colors
  */
 function titleCard(title, subtitle, colors) {
   const scale = 2
   const width = Math.max(textWidth(title, scale), textWidth(subtitle)) + 12
-  const b = new Bitmap(width, 7 * scale + 7 + 14)
+  const height = 7 * scale + 7 + 14
+  // Words on their own layer, so the outline only goes around the letters.
+  const words = new Bitmap(width, height)
   const tx = Math.floor((width - textWidth(title, scale)) / 2)
-  // Shadow, then the face, then an outline around both.
-  b.text(title, tx + 1, 3 + 1, colors.shade, scale)
-  b.text(title, tx, 3, colors.fill, scale)
-  b.outline(colors.outline)
+  words.text(title, tx + 1, 3 + 1, colors.shade, scale)
+  words.text(title, tx, 3, colors.fill, scale)
+  words.outline(colors.outline)
   const sx = Math.floor((width - textWidth(subtitle)) / 2)
-  b.text(subtitle, sx, 7 * scale + 10, colors.sub)
+  words.text(subtitle, sx, 7 * scale + 10, colors.sub)
+  const b = new Bitmap(width, height)
+  if (colors.panel) {
+    // A dark plate so the title reads over busy backgrounds; corners cut by one pixel.
+    const panel = rgba(colors.panel)
+    b.fill(1, 0, width - 2, height, panel)
+    b.fill(0, 1, 1, height - 2, panel)
+    b.fill(width - 1, 1, 1, height - 2, panel)
+  }
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const px = words.get(x, y)
+      if (px[3] > 0) b.set(x, y, px)
+    }
+  }
   return b
 }
 
@@ -453,6 +468,7 @@ function cryptDash() {
     shade: '#4c1d95',
     outline: '#120f1a',
     sub: '#e0f2fe',
+    panel: '#120f1ae0',
   }).save(join(dir, 'title.png'))
 }
 

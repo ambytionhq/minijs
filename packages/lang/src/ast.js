@@ -34,6 +34,7 @@
  * @property {string} background
  * @property {number} gravity
  * @property {boolean} touchButtons Show on-screen arrows and A/B buttons on touch screens.
+ * @property {{ x1: number; y1: number; x2: number; y2: number } | null} cameraBounds The camera never shows outside this area.
  * @property {Loc | null} loc Location of the `game` block, or null when the file has none.
  */
 
@@ -45,6 +46,7 @@ export const DEFAULT_GAME_SETTINGS = {
   background: 'black',
   gravity: 0,
   touchButtons: false,
+  cameraBounds: null,
 }
 
 /**

@@ -99,17 +99,27 @@ describe('examples project', () => {
   let saved
   const make = () => {
     saved = new Map()
-    return new ExamplesFs(new Map([['dodge', 'game'], ['hero', 'thing h']]), new Map([['hero-1.png', 'data:image/png;base64,AA==']]), {
-      load: (k) => saved.get(k) ?? null,
-      save: (k, t) => saved.set(k, t),
-      clear: (k) => saved.delete(k),
+    return new ExamplesFs({
+      id: 'example:test',
+      name: 'Test',
+      texts: new Map([
+        ['dodge.mini', 'game'],
+        ['hero.mini', 'thing h'],
+      ]),
+      assets: new Map([['hero-1.png', 'data:image/png;base64,AA==']]),
+      edits: {
+        load: (k) => saved.get(k) ?? null,
+        save: (k, t) => saved.set(k, t),
+        clear: (k) => saved.delete(k),
+      },
     })
   }
 
-  it('lists games and assets, keeps edits, and resets', async () => {
+  it('lists texts and assets, keeps edits per project, and resets', async () => {
     const fs = make()
     expect(await paths(fs)).toEqual(['assets/', 'assets/hero-1.png', 'dodge.mini', 'hero.mini'])
     await fs.writeText('dodge.mini', 'game\n  pixel art')
+    expect(saved.has('example:test/dodge.mini')).toBe(true)
     expect(await fs.readText('dodge.mini')).toBe('game\n  pixel art')
     expect(fs.isEdited('dodge.mini')).toBe(true)
     await fs.writeText('dodge.mini', 'game')

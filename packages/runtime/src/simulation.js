@@ -288,8 +288,17 @@ export class Simulation {
     const id = this.world.first(t)
     if (id < 0) return
     const world = this.world
-    this.camera.x = world.x[id] + world.w[id] / 2 - this.program.game.width / 2
-    this.camera.y = world.y[id] + world.h[id] / 2 - this.program.game.height / 2
+    const { width, height, cameraBounds } = this.program.game
+    let x = world.x[id] + world.w[id] / 2 - width / 2
+    let y = world.y[id] + world.h[id] / 2 - height / 2
+    if (cameraBounds) {
+      // Keep the view inside the area; if the area is smaller than the screen, center it.
+      const b = cameraBounds
+      x = b.x2 - b.x1 <= width ? (b.x1 + b.x2 - width) / 2 : Math.min(Math.max(x, b.x1), b.x2 - width)
+      y = b.y2 - b.y1 <= height ? (b.y1 + b.y2 - height) / 2 : Math.min(Math.max(y, b.y1), b.y2 - height)
+    }
+    this.camera.x = x
+    this.camera.y = y
   }
 
   /**

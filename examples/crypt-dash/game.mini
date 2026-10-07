@@ -1,0 +1,234 @@
+# Crypt Dash
+# Find all 8 gems, grab the key, open the door, and take the stairs out.
+# Ghosts drift back and forth. Touch one and you start over at the entrance.
+# Move: arrows, WASD, the d-pad or the left stick. R or Start plays again.
+
+game
+  size 320 by 180
+  pixel art
+  background #1a1625
+  touch buttons
+  camera stays inside 0, 0 to 480, 320
+
+control go-left
+  left key
+  a key
+  gamepad left
+
+control go-right
+  right key
+  d key
+  gamepad right
+
+control go-up
+  up key
+  w key
+  gamepad up
+
+control go-down
+  down key
+  s key
+  gamepad down
+
+control start-over
+  r key
+  gamepad start
+
+gems starts at 0
+keys starts at 0
+lives starts at 3
+time starts at 0
+playing starts at 1
+drift starts at 0.8
+
+# Listed back to front: floor cracks first, the title last.
+thing crack
+  looks like "crack.png"
+
+thing wall
+  looks like "wall.png"
+  solid
+  fixed
+
+thing torch
+  looks like "torch-1.png"
+  animation flicker "torch-1.png", "torch-2.png" at 6 fps
+
+thing stairs
+  looks like "stairs.png"
+
+thing gem
+  looks like "gem-1.png"
+  animation shine "gem-1.png", "gem-1.png", "gem-2.png" at 4 fps
+
+thing old-key
+  looks like "key.png"
+
+thing door
+  looks like "door.png"
+  solid
+  fixed
+
+thing ghost-across
+  looks like "ghost-1.png"
+  animation float "ghost-1.png", "ghost-2.png" at 3 fps
+
+thing ghost-down
+  looks like "ghost-1.png"
+  animation float "ghost-1.png", "ghost-2.png" at 3 fps
+
+thing explorer
+  looks like "explorer-1.png"
+  animation walk "explorer-1.png", "explorer-2.png" at 8 fps
+  starts at 18, 18
+  solid
+  camera follows
+
+thing title
+  looks like "title.png"
+  starts at 95, 50
+
+map
+  "##############################"
+  "#......#.....g......#.......g#"
+  "#.g....#.###########.........#"
+  "#......#.#.........#.###D#####"
+  "###.####.#.h.......#.#.......#"
+  "#.......g#.........#.#...E...#"
+  "#.#####..#######.###.#.......#"
+  "#.#...#..............#########"
+  "#.#.k.#..h...................#"
+  "#.#...#......................#"
+  "#.##.##.######.####.###..##.##"
+  "#...v...#.........#...#......#"
+  "#.......#....g....#.v.#......#"
+  "#.......#.........#...#..#####"
+  "####.####...#######...#......#"
+  "#........h............#...g..#"
+  "#.g...................#......#"
+  "#..........###.....#.........#"
+  "#..........#.......#.....g...#"
+  "##############################"
+  "#" is wall
+  "g" is gem
+  "k" is old-key
+  "D" is door
+  "E" is stairs
+  "h" is ghost-across
+  "v" is ghost-down
+
+# Torches on the walls and cracks in the floor.
+map
+  "......t.t........t......t...t."
+  "........x..x...........x......"
+  "........................x....."
+  ".......................t.t...."
+  ".............................."
+  "....x.......................x."
+  ".............t.........x......"
+  "....................x....t..t."
+  ".....x........xx.............."
+  ".............................."
+  ".....t.....t.t..............t."
+  ".............x..x......x......"
+  "....x........................."
+  "..........................t..."
+  "..tt.........................."
+  "...x.........................."
+  "...........................x.."
+  ".............................."
+  ".............................."
+  ".............................."
+  "t" is torch
+  "x" is crack
+
+when any key is pressed
+  remove title
+when mouse is clicked
+  remove title
+
+# Moving
+
+when go-left is held and playing is 1
+  move explorer left 1.6
+when go-right is held and playing is 1
+  move explorer right 1.6
+when go-up is held and playing is 1
+  move explorer up 1.6
+when go-down is held and playing is 1
+  move explorer down 1.6
+
+always
+  move explorer right gamepad stick x * 1.6
+  move explorer down gamepad stick y * 1.6
+
+when any key is held
+  play walk on explorer
+when any key is released
+  stop animation on explorer
+
+# The crypt comes alive
+
+always
+  play flicker on torch
+  play shine on gem
+  play float on ghost-across
+  play float on ghost-down
+  move ghost-across right drift
+  move ghost-down down drift
+
+when every 2 seconds
+  set drift to 0 - drift
+
+when every 1 second and playing is 1
+  add 1 to time
+
+# Treasure
+
+when explorer touches gem
+  remove the gem
+  add 1 to gems
+  log "gem {gems} of 8"
+
+when explorer touches old-key
+  remove the old-key
+  add 1 to keys
+  log "found the key"
+
+when explorer touches door and keys is above 0
+  remove the door
+  subtract 1 from keys
+  log "the door creaks open"
+
+when explorer touches stairs and gems is below 8
+  log "the stairs won't open until you have all 8 gems"
+
+when explorer touches stairs and gems is 8 and playing is 1
+  set playing to 0
+  stop animation on explorer
+  show text "You escaped with all 8 gems in {time} seconds!" in #a78bfa
+  log "escaped in {time} seconds"
+
+# Ghosts
+
+when explorer touches ghost-across and playing is 1
+  subtract 1 from lives
+  set explorer x to 18
+  set explorer y to 18
+  log "a ghost got you"
+
+when explorer touches ghost-down and playing is 1
+  subtract 1 from lives
+  set explorer x to 18
+  set explorer y to 18
+  log "a ghost got you"
+
+when lives is 0
+  set playing to 0
+  show text "The crypt keeps you. Press R or Start to try again." in #e0f2fe
+
+when start-over is pressed
+  restart game
+
+always
+  show text "Gems {gems}/8   Keys {keys}   Lives {lives}   {time}s" at 6, 12 in #e0f2fe

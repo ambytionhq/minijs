@@ -5,6 +5,7 @@ exports[`compile > compiles the spec example cleanly 1`] = `
   "controls": [],
   "game": {
     "background": "skyblue",
+    "cameraBounds": null,
     "gravity": 0.4,
     "height": 180,
     "loc": {

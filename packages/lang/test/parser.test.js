@@ -22,6 +22,7 @@ describe('parser: spec example', () => {
       background: 'skyblue',
       gravity: 0.4,
       touchButtons: false,
+      cameraBounds: null,
       loc: { line: 1, col: 1 },
     })
     expect(program.vars).toEqual([{ name: 'score', initial: 0, loc: { line: 7, col: 1 } }])

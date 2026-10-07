@@ -117,3 +117,26 @@ describe('maps', () => {
     expect(sim.instancesOf('wall')).toHaveLength(3)
   })
 })
+
+describe('camera limits', () => {
+  it('keeps the view inside the area and centers small areas', async () => {
+    const { Simulation } = await import('../src/simulation.js')
+    const { program, thing, look } = await import('./build.js')
+    const make = (x, y, bounds) =>
+      new Simulation(
+        program({
+          game: { width: 100, height: 50, cameraBounds: bounds },
+          things: [thing('hero', { look: look.box(10, 10), at: [[x, y]], cameraFollows: true })],
+        }),
+        new Map(),
+      )
+    const free = make(0, 0, null)
+    expect([free.camera.x, free.camera.y]).toEqual([-45, -20])
+    const kept = make(0, 0, { x1: 0, y1: 0, x2: 300, y2: 200 })
+    expect([kept.camera.x, kept.camera.y]).toEqual([0, 0])
+    const far = make(290, 190, { x1: 0, y1: 0, x2: 300, y2: 200 })
+    expect([far.camera.x, far.camera.y]).toEqual([200, 150])
+    const small = make(5, 5, { x1: 0, y1: 0, x2: 60, y2: 30 })
+    expect([small.camera.x, small.camera.y]).toEqual([-20, -10])
+  })
+})

@@ -22,6 +22,7 @@ import { miniLanguage } from './mini-language.js'
  * @property {(line: number, col: number) => void} jumpTo
  * @property {(text: string, mini: boolean) => void} load Open another file: new text, fresh undo history.
  * @property {() => void} focus
+ * @property {(text: string) => void} replaceAll Replace everything as one edit people can undo.
  */
 
 /**
@@ -108,6 +109,9 @@ export function createEditor(parent, initial) {
       silent = true
       view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } })
       silent = false
+    },
+    replaceAll(text) {
+      view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } })
     },
     load(text, mini) {
       view.setState(stateFor(text, mini))

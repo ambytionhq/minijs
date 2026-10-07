@@ -9,6 +9,7 @@ game
   background #8fd3ff
   gravity 0.35
   touch buttons
+  camera stays inside -160, 0 to 2208, 228
 
 control go-left
   left key
@@ -92,7 +93,7 @@ thing hero
 
 thing title
   looks like "title.png"
-  starts at -23, 30
+  starts at -23, 80
 
 # The level. Each letter places one thing, 16 pixels apart.
 map
@@ -107,6 +108,9 @@ map
   "d.................................#########............*...cc............*....................................c............##dd......F.............d"
   "d..............*..*...............ddddddddd...S........cc........S....##...................*....ccc...............S.*S.....dddd....................d"
   "d###################..#########...ddddddddd##########.....############dd#########....###########...............############dddd####################d"
+  "dddddddddddddddddddd..ddddddddd...ddddddddddddddddddd.....ddddddddddddddddddddddd....ddddddddddd...............ddddddddddddddddddddddddddddddddddddd"
+  "dddddddddddddddddddd..ddddddddd...ddddddddddddddddddd.....ddddddddddddddddddddddd....ddddddddddd...............ddddddddddddddddddddddddddddddddddddd"
+  "dddddddddddddddddddd..ddddddddd...ddddddddddddddddddd.....ddddddddddddddddddddddd....ddddddddddd...............ddddddddddddddddddddddddddddddddddddd"
   "dddddddddddddddddddd..ddddddddd...ddddddddddddddddddd.....ddddddddddddddddddddddd....ddddddddddd...............ddddddddddddddddddddddddddddddddddddd"
   "#" is grass
   "d" is dirt
@@ -127,6 +131,9 @@ map
   "...................................................................................................................................................."
   "...................................................................................................................................................."
   "..........................^^................^............................^....^..........^^..............................^.........................."
+  "...................................................................................................................................................."
+  "...................................................................................................................................................."
+  "...................................................................................................................................................."
   "...................................................................................................................................................."
   "...................................................................................................................................................."
   "^" is spikes
@@ -211,7 +218,7 @@ when hero touches saw and playing is 1
   set hero y to 132
   stop hero
 
-when hero y is above 200 and playing is 1
+when hero y is above 240 and playing is 1
   subtract 1 from lives
   set hero x to respawn-x
   set hero y to 132

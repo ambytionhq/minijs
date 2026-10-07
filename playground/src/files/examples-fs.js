@@ -1,65 +1,67 @@
-// The built-in examples as a project. You can't add, rename or delete files
-// here, but you can edit the games: edits are kept in this browser and
-// "Reset" brings back the original. To change everything, copy it into a new project.
+// A built-in example as a project. You can't add, rename or delete files here,
+// but you can edit the games: edits are kept in this browser and "Reset" brings
+// back the original. To change everything, copy it into a new project.
 
 import { clearSource, loadSource, saveSource } from '../storage.js'
-import { basename, extname, normalize } from './paths.js'
+import { basename, normalize } from './paths.js'
 import { FsError, sortEntries } from './project.js'
 
 /** @import { Entry, ProjectFs } from './project.js' */
 
+/**
+ * @typedef {object} ExampleOptions
+ * @property {string} id e.g. "example:cloud-hopper"
+ * @property {string} name shown to people
+ * @property {Map<string, string>} texts project path -> original text (".mini" and other text files)
+ * @property {Map<string, string>} assets file name in assets/ -> URL
+ * @property {{ load: (key: string) => string | null; save: (key: string, text: string) => void; clear: (key: string) => void }} [edits]
+ */
+
 /** @implements {ProjectFs} */
 export class ExamplesFs {
-  id = 'examples'
-  name = 'Examples'
   type = /** @type {const} */ ('examples')
   readOnly = true
 
-  /**
-   * @param {Map<string, string>} games example name -> original source
-   * @param {Map<string, string>} assets file name -> URL
-   * @param {{ load: (key: string) => string | null; save: (key: string, text: string) => void; clear: (key: string) => void }} [edits]
-   */
-  constructor(games, assets, edits = { load: loadSource, save: saveSource, clear: clearSource }) {
-    this.games = games
-    this.assets = assets
-    this.edits = edits
+  /** @param {ExampleOptions} options */
+  constructor(options) {
+    this.id = options.id
+    this.name = options.name
+    this.texts = options.texts
+    this.assets = options.assets
+    this.edits = options.edits ?? { load: loadSource, save: saveSource, clear: clearSource }
   }
 
   /** @param {string} path */
-  gameName(path) {
-    const p = normalize(path)
-    return !p.includes('/') && extname(p) === 'mini' ? p.slice(0, -'.mini'.length) : null
+  editKey(path) {
+    return `${this.id}/${normalize(path)}`
   }
 
   async list() {
     /** @type {Entry[]} */
-    const entries = [...this.games.keys()].map((name) => ({ path: `${name}.mini`, kind: 'file' }))
+    const entries = [...this.texts.keys()].map((path) => ({ path, kind: 'file' }))
     if (this.assets.size > 0) entries.push({ path: 'assets', kind: 'dir' })
     for (const name of this.assets.keys()) entries.push({ path: `assets/${name}`, kind: 'file' })
     return sortEntries(entries)
   }
 
-  /** The example as shipped, ignoring edits. @param {string} path */
+  /** The text as shipped, ignoring edits. @param {string} path */
   original(path) {
-    const name = this.gameName(path)
-    const text = name === null ? undefined : this.games.get(name)
+    const text = this.texts.get(normalize(path))
     if (text === undefined) throw new FsError(`I can't find "${normalize(path)}".`)
     return text
   }
 
   /** @param {string} path */
   async readText(path) {
-    const name = this.gameName(path)
-    if (name !== null && this.games.has(name)) return this.edits.load(name) ?? this.original(path)
-    return (await this.readBlob(path)).text()
+    const p = normalize(path)
+    if (this.texts.has(p)) return this.edits.load(this.editKey(p)) ?? this.original(p)
+    return (await this.readBlob(p)).text()
   }
 
   /** @param {string} path */
   async readBlob(path) {
     const p = normalize(path)
-    const name = this.gameName(p)
-    if (name !== null && this.games.has(name)) return new Blob([await this.readText(p)], { type: 'text/plain' })
+    if (this.texts.has(p)) return new Blob([await this.readText(p)], { type: 'text/plain' })
     const url = p.startsWith('assets/') ? this.assets.get(p.slice('assets/'.length)) : undefined
     if (url === undefined) throw new FsError(`I can't find "${p}".`)
     const response = await fetch(url)
@@ -68,27 +70,26 @@ export class ExamplesFs {
   }
 
   /**
-   * Edits to an example game are kept in this browser.
+   * Edits to an example's text files are kept in this browser.
    * @param {string} path
    * @param {string} text
    */
   async writeText(path, text) {
-    const name = this.gameName(path)
-    if (name === null || !this.games.has(name)) throw readOnly()
-    if (text === this.original(path)) this.edits.clear(name)
-    else this.edits.save(name, text)
+    const p = normalize(path)
+    if (!this.texts.has(p)) throw readOnly()
+    if (text === this.original(p)) this.edits.clear(this.editKey(p))
+    else this.edits.save(this.editKey(p), text)
   }
 
   /** @param {string} path */
   isEdited(path) {
-    const name = this.gameName(path)
-    return name !== null && this.edits.load(name) !== null
+    const p = normalize(path)
+    return this.texts.has(p) && this.edits.load(this.editKey(p)) !== null
   }
 
   /** @param {string} path */
   async reset(path) {
-    const name = this.gameName(path)
-    if (name !== null) this.edits.clear(name)
+    this.edits.clear(this.editKey(path))
   }
 
   async writeBlob() {
@@ -110,24 +111,23 @@ export class ExamplesFs {
   /** @param {string} path */
   async exists(path) {
     const p = normalize(path)
-    if (p === '' || p === 'assets') return true
-    const name = this.gameName(p)
-    if (name !== null) return this.games.has(name)
+    if (p === '' || (p === 'assets' && this.assets.size > 0)) return true
+    if (this.texts.has(p)) return true
     return p.startsWith('assets/') && this.assets.has(basename(p))
   }
 
-  /** Every file, for "Copy to my projects". */
+  /** Every file with edits applied, for "Copy to my projects", share links and exports. */
   async snapshot() {
     /** @type {Record<string, string | Blob>} */
     const files = {}
     for (const entry of await this.list()) {
       if (entry.kind !== 'file') continue
-      files[entry.path] = this.gameName(entry.path) !== null ? await this.readText(entry.path) : await this.readBlob(entry.path)
+      files[entry.path] = this.texts.has(entry.path) ? await this.readText(entry.path) : await this.readBlob(entry.path)
     }
     return files
   }
 }
 
 function readOnly() {
-  return new FsError('Examples can\'t be changed like that. Copy it to your projects first.')
+  return new FsError('Examples can\'t be changed like that. Make a copy first.')
 }

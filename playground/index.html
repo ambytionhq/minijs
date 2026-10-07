@@ -2,129 +2,147 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
-    <title>minijs playground</title>
-    <meta name="description" content="Write a minijs game, see it run, keep your files in the browser or on disk." />
+    <meta name="theme-color" content="#111113" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f4f4f5" media="(prefers-color-scheme: light)" />
+    <title>minijs Studio</title>
+    <meta name="description" content="Make 2D games by writing plain sentences. Works offline, keeps your files, and exports games anyone can play." />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="./icons/favicon-64.png" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
   </head>
   <body>
-    <header class="topbar">
-      <div class="brand">
-        <i class="ph ph-game-controller" aria-hidden="true"></i>
-        <span>minijs</span>
-      </div>
-      <div class="picker">
-        <label for="project">Project</label>
-        <select id="project"></select>
-        <button id="new-project" class="btn" type="button"><i class="ph ph-plus" aria-hidden="true"></i>New</button>
-        <button id="open-folder" class="btn" type="button" hidden>
-          <i class="ph ph-folder-open" aria-hidden="true"></i>Open folder
-        </button>
-      </div>
-      <div class="actions" role="toolbar" aria-label="Game controls">
-        <button id="run" class="btn btn-primary" type="button"><i class="ph ph-play" aria-hidden="true"></i>Run</button>
-        <button id="stop" class="btn" type="button"><i class="ph ph-stop" aria-hidden="true"></i>Stop</button>
-        <button id="restart" class="btn" type="button">
-          <i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i>Restart
-        </button>
-      </div>
-    </header>
+    <div id="view-home" class="view view-home" hidden></div>
 
-    <main class="workspace">
-      <aside class="pane files-pane" aria-label="Files">
-        <div class="pane-head">
-          <h2 id="project-name">Files</h2>
-          <div class="icon-row">
-            <button id="new-file" class="icon-btn" type="button" title="New game file" aria-label="New game file">
-              <i class="ph ph-file-plus" aria-hidden="true"></i>
-            </button>
-            <button id="new-folder" class="icon-btn" type="button" title="New folder" aria-label="New folder">
-              <i class="ph ph-folder-plus" aria-hidden="true"></i>
-            </button>
-            <button id="upload" class="icon-btn" type="button" title="Add files" aria-label="Add files from your computer">
-              <i class="ph ph-upload-simple" aria-hidden="true"></i>
-            </button>
-            <button id="refresh" class="icon-btn" type="button" title="Reload files" aria-label="Reload the file list">
-              <i class="ph ph-arrows-clockwise" aria-hidden="true"></i>
-            </button>
-          </div>
-          <input id="upload-input" type="file" multiple hidden />
+    <div id="view-workspace" class="view view-workspace" hidden>
+      <header class="topbar">
+        <a class="btn btn-ghost" href="#/" id="back-home"><i class="ph ph-squares-four" aria-hidden="true"></i>Projects</a>
+        <div class="project-title">
+          <h1 id="project-title">Project</h1>
+          <span id="project-kind" class="kind-tag"></span>
         </div>
-        <div id="file-tree" class="file-tree"></div>
-        <p id="files-status" class="files-status" role="status" aria-live="polite"></p>
-        <div id="project-actions" class="project-actions"></div>
-      </aside>
+        <div class="topbar-tools">
+          <button id="share" class="btn btn-ghost" type="button"><i class="ph ph-share-network" aria-hidden="true"></i>Share</button>
+          <button id="export" class="btn btn-ghost" type="button"><i class="ph ph-download-simple" aria-hidden="true"></i>Export</button>
+          <button id="help" class="icon-btn icon-btn-lg" type="button" title="Help" aria-label="Help and language reference">
+            <i class="ph ph-question" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="actions" role="toolbar" aria-label="Game controls">
+          <button id="run" class="btn btn-primary" type="button"><i class="ph ph-play" aria-hidden="true"></i>Run</button>
+          <button id="stop" class="btn" type="button"><i class="ph ph-stop" aria-hidden="true"></i>Stop</button>
+          <button id="restart" class="btn" type="button"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i>Restart</button>
+        </div>
+      </header>
 
-      <section class="pane editor-pane" aria-label="Open file">
-        <div class="pane-head">
-          <h2 id="file-name">No file open</h2>
-          <span id="save-status" class="save-status" role="status"></span>
-        </div>
-        <div id="editor" class="editor"></div>
-        <div id="preview" class="preview" hidden>
-          <div class="preview-stage"><img id="preview-image" alt="" /></div>
-          <p id="preview-info" class="muted small"></p>
-          <p id="preview-use" class="preview-use"></p>
-        </div>
-      </section>
-
-      <section class="right-column">
-        <section class="pane game-pane" aria-label="Game">
+      <main class="workspace">
+        <aside class="pane files-pane" id="files-pane" aria-label="Files">
           <div class="pane-head">
-            <h2 id="run-name">Game</h2>
-            <span id="perf" class="perf" aria-hidden="true"></span>
-          </div>
-          <div id="stage" class="stage">
-            <canvas id="game" tabindex="0" aria-label="Game screen. Click it, then use the keyboard or a gamepad."></canvas>
-          </div>
-          <p class="hint">
-            <i class="ph ph-keyboard" aria-hidden="true"></i>Click the game, then use the keyboard, mouse or a gamepad.
-          </p>
-        </section>
-
-        <section class="pane console-pane" aria-label="Game details">
-          <div class="tabs" role="tablist" aria-label="Game details">
-            <button role="tab" id="tab-problems" data-tab="problems" aria-controls="panel-problems" aria-selected="true" type="button">
-              Problems <span id="problem-count" class="count" hidden></span>
-            </button>
-            <button role="tab" id="tab-console" data-tab="console" aria-controls="panel-console" aria-selected="false" tabindex="-1" type="button">
-              Console <span id="log-count" class="count" hidden></span>
-            </button>
-            <button role="tab" id="tab-watch" data-tab="watch" aria-controls="panel-watch" aria-selected="false" tabindex="-1" type="button">
-              Watch
-            </button>
-            <button role="tab" id="tab-input" data-tab="input" aria-controls="panel-input" aria-selected="false" tabindex="-1" type="button">
-              Input
-            </button>
-          </div>
-
-          <div id="panel-problems" class="panel" role="tabpanel" aria-labelledby="tab-problems">
-            <p id="stale" class="stale" hidden>Showing your last working version.</p>
-            <ul id="problem-list" class="problem-list"></ul>
-            <p id="no-problems" class="empty">
-              <i class="ph ph-check-circle" aria-hidden="true"></i><span id="no-problems-text">No problems.</span>
-            </p>
-          </div>
-
-          <div id="panel-console" class="panel" role="tabpanel" aria-labelledby="tab-console" hidden>
-            <div class="panel-tools">
-              <span class="muted small">Messages from your game. Add one with: log "score is {score}"</span>
-              <button id="log-clear" class="link-btn" type="button">Clear</button>
+            <h2>Files</h2>
+            <div class="icon-row">
+              <button id="new-file" class="icon-btn" type="button" title="New game file" aria-label="New game file">
+                <i class="ph ph-file-plus" aria-hidden="true"></i>
+              </button>
+              <button id="new-folder" class="icon-btn" type="button" title="New folder" aria-label="New folder">
+                <i class="ph ph-folder-plus" aria-hidden="true"></i>
+              </button>
+              <button id="upload" class="icon-btn" type="button" title="Add files" aria-label="Add files from your computer">
+                <i class="ph ph-upload-simple" aria-hidden="true"></i>
+              </button>
+              <button id="refresh" class="icon-btn" type="button" title="Reload files" aria-label="Reload the file list">
+                <i class="ph ph-arrows-clockwise" aria-hidden="true"></i>
+              </button>
             </div>
-            <ol id="log-list" class="log-list" aria-live="polite"></ol>
-            <p id="log-empty" class="muted small">Nothing yet.</p>
+            <input id="upload-input" type="file" multiple hidden />
           </div>
+          <div id="file-tree" class="file-tree"></div>
+          <p id="files-status" class="files-status" role="status" aria-live="polite"></p>
+          <div id="project-actions" class="project-actions"></div>
+        </aside>
 
-          <div id="panel-watch" class="panel" role="tabpanel" aria-labelledby="tab-watch" hidden>
-            <div id="watch-body" class="watch-body"></div>
+        <aside class="pane lesson-pane" id="lesson-pane" aria-label="Lesson" hidden></aside>
+
+        <section class="pane editor-pane" aria-label="Open file">
+          <div class="pane-head">
+            <h2 id="file-name">No file open</h2>
+            <span id="save-status" class="save-status" role="status"></span>
           </div>
-
-          <div id="panel-input" class="panel" role="tabpanel" aria-labelledby="tab-input" hidden>
-            <div id="input-body" class="watch-body"></div>
+          <div id="editor" class="editor"><pre id="editor-loading" class="editor-loading"></pre></div>
+          <div id="preview" class="preview" hidden>
+            <div class="preview-stage"><img id="preview-image" alt="" /></div>
+            <p id="preview-info" class="muted small"></p>
+            <p id="preview-use" class="preview-use"></p>
           </div>
         </section>
-      </section>
-    </main>
+
+        <section class="right-column">
+          <section class="pane game-pane" aria-label="Game">
+            <div class="pane-head">
+              <h2 id="run-name">Game</h2>
+              <span id="perf" class="perf" aria-hidden="true"></span>
+            </div>
+            <div id="stage" class="stage">
+              <canvas id="game" tabindex="0" aria-label="Game screen. Click it, then use the keyboard, mouse or a gamepad."></canvas>
+            </div>
+            <p class="hint">
+              <i class="ph ph-keyboard" aria-hidden="true"></i>Click the game, then use the keyboard, mouse or a gamepad.
+            </p>
+          </section>
+
+          <section class="pane console-pane" aria-label="Game details">
+            <div class="tabs" role="tablist" aria-label="Game details">
+              <button role="tab" id="tab-problems" data-tab="problems" aria-controls="panel-problems" aria-selected="true" type="button">
+                Problems <span id="problem-count" class="count" hidden></span>
+              </button>
+              <button role="tab" id="tab-console" data-tab="console" aria-controls="panel-console" aria-selected="false" tabindex="-1" type="button">
+                Console <span id="log-count" class="count" hidden></span>
+              </button>
+              <button role="tab" id="tab-watch" data-tab="watch" aria-controls="panel-watch" aria-selected="false" tabindex="-1" type="button">
+                Watch
+              </button>
+              <button role="tab" id="tab-input" data-tab="input" aria-controls="panel-input" aria-selected="false" tabindex="-1" type="button">
+                Input
+              </button>
+            </div>
+
+            <div id="panel-problems" class="panel" role="tabpanel" aria-labelledby="tab-problems">
+              <p id="stale" class="stale" hidden>Showing your last working version.</p>
+              <ul id="problem-list" class="problem-list"></ul>
+              <p id="no-problems" class="empty">
+                <i class="ph ph-check-circle" aria-hidden="true"></i><span id="no-problems-text">No problems.</span>
+              </p>
+            </div>
+
+            <div id="panel-console" class="panel" role="tabpanel" aria-labelledby="tab-console" hidden>
+              <div class="panel-tools">
+                <span class="muted small">Messages from your game. Add one with: log "score is {score}"</span>
+                <button id="log-clear" class="link-btn" type="button">Clear</button>
+              </div>
+              <ol id="log-list" class="log-list" aria-live="polite"></ol>
+              <p id="log-empty" class="muted small">Nothing yet.</p>
+            </div>
+
+            <div id="panel-watch" class="panel" role="tabpanel" aria-labelledby="tab-watch" hidden>
+              <div id="watch-body" class="watch-body"></div>
+            </div>
+
+            <div id="panel-input" class="panel" role="tabpanel" aria-labelledby="tab-input" hidden>
+              <div id="input-body" class="watch-body"></div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div id="view-play" class="view view-play" hidden></div>
+
+    <div id="update-banner" class="update-banner" role="status" hidden>
+      <i class="ph ph-sparkle" aria-hidden="true"></i>
+      <span>A new version of minijs Studio is ready.</span>
+      <button id="update-now" class="btn btn-primary" type="button">Reload</button>
+      <button id="update-later" class="icon-btn" type="button" aria-label="Later"><i class="ph ph-x" aria-hidden="true"></i></button>
+    </div>
 
     <script type="module" src="./src/main.js"></script>
   </body>

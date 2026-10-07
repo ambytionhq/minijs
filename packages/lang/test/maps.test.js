@@ -75,3 +75,16 @@ describe('maps', () => {
     expect(compile(THINGS + 'map\n  "# # #"\n  "#" is wall\n').program?.maps[0].rows[0].text).toBe('# # #')
   })
 })
+
+describe('camera limits', () => {
+  it('reads the area', () => {
+    expect(compile('game\n  camera stays inside 0, -10 to 640, 360\n').program?.game.cameraBounds).toEqual({ x1: 0, y1: -10, x2: 640, y2: 360 })
+    expect(compile('').program?.game.cameraBounds).toBeNull()
+  })
+  it('rejects a backwards area', () => {
+    expect(compile('game\n  camera stays inside 10, 10 to 5, 50\n').errors[0]).toMatchObject({
+      code: 'bad-number',
+      message: 'The second corner must be right of and below the first.',
+    })
+  })
+})

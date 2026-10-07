@@ -103,6 +103,7 @@ describe('defaults', () => {
       background: 'black',
       gravity: 0,
       touchButtons: false,
+      cameraBounds: null,
     })
   })
 })

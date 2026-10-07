@@ -20,7 +20,7 @@ import { parseAction, parseColorWords, parseLook, parseTrigger } from './parse-r
 
 const TOP_WORDS = ['game', 'thing', 'control', 'map', 'when', 'always']
 const MAP_WORDS = ['tiles', 'at']
-const GAME_WORDS = ['size', 'pixel', 'background', 'gravity', 'touch']
+const GAME_WORDS = ['size', 'pixel', 'background', 'gravity', 'touch', 'camera']
 const THING_WORDS = ['looks', 'animation', 'size', 'starts', 'solid', 'fixed', 'falls', 'camera']
 
 /**
@@ -204,6 +204,20 @@ class Parser {
         game.pixelArt = true
       } else if (c.acceptWords('touch', 'buttons')) {
         game.touchButtons = true
+      } else if (c.acceptWords('camera', 'stays', 'inside')) {
+        const x1 = c.expectNumber()
+        if (c.peek().kind !== 'comma') throw expected(c.peek(), 'a comma', 'Write it like: camera stays inside 0, 0 to 640, 360')
+        c.next()
+        const y1 = c.expectNumber()
+        c.expectWord('to', 'Write it like: camera stays inside 0, 0 to 640, 360')
+        const x2 = c.expectNumber()
+        if (c.peek().kind !== 'comma') throw expected(c.peek(), 'a comma', 'Write it like: camera stays inside 0, 0 to 640, 360')
+        c.next()
+        const y2 = c.expectNumber()
+        if (x2 <= x1 || y2 <= y1) {
+          throw fail('bad-number', t.loc, 'The second corner must be right of and below the first.', 'Write it like: camera stays inside 0, 0 to 640, 360')
+        }
+        game.cameraBounds = { x1, y1, x2, y2 }
       } else if (c.acceptWord('background')) {
         game.background = parseColorWords(c, 'a color')
       } else if (c.acceptWord('gravity')) {

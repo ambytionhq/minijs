@@ -1,20 +1,24 @@
 {
   "name": "minijs",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "The easiest rules-based 2D game engine, built in JavaScript.",
   "license": "Apache-2.0",
   "type": "module",
   "workspaces": [
     "packages/*",
-    "playground"
+    "playground",
+    "apps/*"
   ],
   "scripts": {
     "dev": "npm run dev -w playground",
     "build": "npm run build -w playground",
     "test": "vitest run",
     "test:watch": "vitest",
-    "bench": "vitest bench --run"
+    "bench": "vitest bench --run",
+    "desktop:dev": "npm run dev -w apps/desktop",
+    "desktop:build": "npm run build -w apps/desktop",
+    "games:export": "node scripts/export-games.mjs"
   },
   "devDependencies": {
     "vitest": "^3.2.0"
