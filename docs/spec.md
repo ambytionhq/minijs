@@ -94,6 +94,7 @@ game                      # optional settings block, at most one
 <name> starts at <number> # global variable, any number of these
 thing <name>              # thing type block
 control <name>            # named input made of several keys and buttons
+map                       # places things from a grid of letters, any number of these
 when <trigger>            # rule block
 always                    # rule block that fires every tick
 ```
@@ -107,7 +108,10 @@ game
   background navy           # color, default black
   gravity 0.4               # pixels per tick^2 for things that fall, default 0
   touch buttons             # on-screen arrows + A/B buttons on touch screens, default off
+  camera stays inside 0, 0 to 960, 270   # clamp the camera view to this world rectangle, default unclamped
 ```
+
+`camera stays inside x1, y1 to x2, y2`: the second corner must be right of and below the first (`bad-number` otherwise). The camera view never shows outside this rectangle.
 
 `touch buttons`: on phones and tablets the runtime draws arrows that press the arrow keys, an A button that presses `space`, and a B button that presses `enter`. Hosts can force them on or off (section 6).
 
@@ -147,6 +151,24 @@ Looks:
 - `"<image path>"` relative to the assets base URL.
 
 Colors: any CSS named color (`red`, `skyblue`), multi-word forms joined (`sky blue` -> `skyblue`), or `#rgb` / `#rrggbb`.
+
+### 4.5b `map` blocks
+
+```
+map
+  tiles 16 by 16        # optional, default 16 by 16
+  at 0, 0               # optional, world position of the top-left tile, default 0, 0
+  "##########"
+  "#..c..c..#"
+  "#" is wall
+  "c" is a coin
+```
+
+- Quoted lines are rows, top to bottom. A quoted line followed by `is <thing>` is a legend entry (`a`/`an`/`the` optional). `#` inside quotes is not a comment.
+- `.` and space are always empty. Legend letters are exactly one character, each with one meaning (`map-letter`).
+- Every row character not in the legend and not empty is `map-letter`, reported once per letter. Legend things must exist (`unknown-thing` with did-you-mean).
+- A map needs at least one row (`expected`).
+- At start (and restart), after all `starts at` instances, each letter spawns its thing at `(at.x + col * tileW, at.y + row * tileH)`, row by row, left to right.
 
 ### 4.5a Inputs and `control` blocks
 
@@ -278,7 +300,7 @@ Each `show text` action owns one text slot. Running it again replaces that slot'
 
 Every error has: `code` (stable string), `message` (plain sentence), optional `hint` (what to do), `line`, `col` (1-based). Typos get Levenshtein suggestions over known names and keywords (distance <= 2): message `I don't know what "cion" is.` hint `Did you mean "coin"?`.
 
-Error codes (lang): `indent-mixed`, `indent-uneven`, `indent-unexpected`, `unknown-word`, `expected`, `unterminated-string`, `bad-number`, `unknown-thing`, `unknown-variable`, `unknown-animation`, `unknown-key`, `unknown-button`, `unknown-control`, `duplicate-control`, `unknown-color`, `duplicate-thing`, `duplicate-variable`, `name-clash`, `missing-look`, `duplicate-look`, `multiple-cameras`, `duplicate-game`.
+Error codes (lang): `indent-mixed`, `indent-uneven`, `indent-unexpected`, `unknown-word`, `expected`, `unterminated-string`, `bad-number`, `unknown-thing`, `unknown-variable`, `unknown-animation`, `unknown-key`, `unknown-button`, `unknown-control`, `duplicate-control`, `map-letter`, `unknown-color`, `duplicate-thing`, `duplicate-variable`, `name-clash`, `missing-look`, `duplicate-look`, `multiple-cameras`, `duplicate-game`.
 
 Error codes (runtime): `image-missing`, `too-many-things`, `runtime-math` (division by zero yields 0 plus one warning).
 
@@ -301,7 +323,7 @@ Error codes (runtime): `image-missing`, `too-many-things`, `runtime-math` (divis
 
 ### 5.2 Render
 
-`requestAnimationFrame` drives render. Draw position = lerp(previous, current, alpha) where alpha is the fraction of the next tick accumulated. Spawned and teleported instances snap (previous = current). Draw order: thing declaration order, then instance creation order. Text drawn last. Camera centers on the `camera follows` instance, unclamped.
+`requestAnimationFrame` drives render. Draw position = lerp(previous, current, alpha) where alpha is the fraction of the next tick accumulated. Spawned and teleported instances snap (previous = current). Draw order: thing declaration order, then instance creation order. Text drawn last. Camera centers on the `camera follows` instance, clamped to `camera stays inside` when set.
 
 ### 5.3 Errors at runtime
 
@@ -393,7 +415,7 @@ always
 - `stop game` freezes everything, including key rules. Restarting after a stop needs the host (playground Restart button calls `game.reload`).
 - `<thing> touches <same thing>` binds only the first instance of each pair.
 - Every shape collides as its bounding box (circles too).
-- Camera follow is unclamped (no world bounds).
+- Camera follow is unclamped unless the game sets `camera stays inside`.
 - `fixed` solid things moved by `move` do not carry riders.
 - `or` cannot join two event triggers; use a `control`.
 - Gamepads are numbered in the order the browser reports them; unplugging pad 1 makes the next one pad 1.
