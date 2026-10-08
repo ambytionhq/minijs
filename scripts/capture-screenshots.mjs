@@ -315,16 +315,16 @@ async function main() {
       await page.shot(join(SITE_OUT, `studio-workspace-${mode}.webp`))
     }
 
+    await page.setView({ width: 390, height: 844, scale: 3, mobile: true, dark: true })
+    await page.go(`${origin}/studio/#/`)
+    await sleep(1500)
+    await page.shot(join(DOCS_OUT, 'studio-phone.webp'))
+
     await page.setView({ width: 1440, height: 900, dark: true })
     await page.go(`${origin}/studio/#/learn`)
     await sleep(2500)
     await page.shot(join(DOCS_OUT, 'studio-tutorial.webp'))
     await page.shot(join(SITE_OUT, 'studio-tutorial.webp'))
-
-    await page.setView({ width: 390, height: 844, scale: 3, mobile: true, dark: true })
-    await page.go(`${origin}/studio/#/`)
-    await sleep(1500)
-    await page.shot(join(DOCS_OUT, 'studio-phone.webp'))
   } finally {
     const exited = new Promise((resolve) => browser.once('exit', resolve))
     browser.kill()

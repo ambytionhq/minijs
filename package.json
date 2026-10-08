@@ -1,7 +1,7 @@
 {
   "name": "minijs",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The easiest rules-based 2D game engine, built in JavaScript.",
   "license": "Apache-2.0",
   "type": "module",

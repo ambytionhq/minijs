@@ -1166,6 +1166,7 @@ a.btn {
 }
 
 .learn-preview {
+  position: relative;
   display: grid;
   align-self: center;
   place-items: center;

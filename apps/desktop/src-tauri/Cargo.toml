@@ -1,6 +1,6 @@
 [package]
 name = "minijs-studio"
-version = "0.1.0"
+version = "0.1.1"
 description = "minijs Studio: make 2D games by writing plain sentences."
 authors = ["Ambytion"]
 license = "Apache-2.0"

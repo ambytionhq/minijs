@@ -29,9 +29,13 @@ when up key is pressed and player is on ground
   push player up 7
 ```
 
-![The minijs playground: code on the left, the running game on the right](docs/screenshots/playground-light.jpg)
+![minijs Studio: your recent projects come first](docs/screenshots/studio-home-dark.webp)
 
 ## Try it
+
+[Open Studio in your browser](https://minijs.ambytion.net/studio/) or [download the desktop app](https://github.com/ambytionhq/minijs/releases/latest) for Mac, Windows, and Linux.
+
+To run it locally:
 
 Needs Node 20 or newer.
 
@@ -42,9 +46,9 @@ npm run dev
 
 Open the address it prints. You get three columns:
 
-- **Files** on the left. Pick a project at the top: the built-in Examples, projects kept in this browser (**New**), or a real folder on your computer (**Open folder**, in Chrome and Edge). Make files and folders, rename them (double-click or F2), drag them into folders, delete them, and drop pictures in from your computer.
+- **Files** on the left. Open one of your projects from the home page, start a **New game**, or use **Add existing** to import a game or open a real folder (in the desktop app, Chrome, and Edge). Make files and folders, rename them (double-click or F2), drag them into folders, delete them, and drop pictures in from your computer.
 - **The open file** in the middle. Game files restart the game as you type. Pictures show a preview and the line to use them.
-- **The game** on the right, and under it four tabs: **Problems** (click one to jump to the line), **Console** (lines from `log "..."` and game events), **Watch** (live numbers and how many of each thing exist) and **Input** (keys, mouse, gamepads and controls as the game sees them).
+- **The game** on the right, and under it four tabs: **Problems** (click one to jump to the line), **Messages** (lines from `log "..."` and game events), **Game values** (live numbers and how many of each thing exist) and **Controls** (keys, mouse, gamepads and controls as the game sees them).
 
 Click the game, then play with the keyboard, mouse or a gamepad. Ctrl+S or Cmd+S saves and runs. Everything saves on its own.
 
@@ -91,6 +95,23 @@ pages, assets, manifest, and service worker while preserving `/studio/` in the
 browser. Its current relative Vite base supports both the direct project URL and
 the proxied path. Cloudflare DNS continues to point the domain at the main
 Vercel project; path routing happens in Vercel.
+
+## Desktop updates and releases
+
+Studio checks for signed updates automatically and offers **Install and restart**.
+It saves your open work before installing, and restarting always requires your choice.
+Copies installed before 0.1.1 need one manual install to switch to the public update feed.
+
+Releases live in this public repository. The release workflow uses the repository's
+`TAURI_SIGNING_PRIVATE_KEY` secret and the public key embedded in the app. Keep that
+key pair stable so existing installations can verify future updates. Set
+`TAURI_SIGNING_PRIVATE_KEY_PASSWORD` only if the signing key has a password.
+
+To release, update the root and desktop package versions and their lockfiles, push
+a matching `v<version>` tag, and watch **Release desktop app** in GitHub Actions.
+The workflow builds Mac (Intel and Apple silicon), Windows, and Linux installers
+in a draft. It publishes only after all updater targets and signatures pass checks,
+then verifies the public `latest.json` download used by the app.
 
 ## Examples
 

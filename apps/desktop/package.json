@@ -1,6 +1,6 @@
 {
   "name": "@minijs/desktop",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "minijs Studio for macOS, Windows and Linux (Tauri).",
   "license": "Apache-2.0",
