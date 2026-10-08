@@ -2,7 +2,7 @@
 // Picture sizes come from the real PNG files in the game's assets folder.
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { join, relative, sep } from 'node:path'
 import { compile } from '@minijs/lang'
 import { describe, expect, it } from 'vitest'
 import { StaticAssetLoader } from '../src/assets.js'
@@ -45,7 +45,7 @@ const files = miniFiles(root)
 
 describe('examples', () => {
   it('has the showcase games and the basics', () => {
-    const names = files.map((f) => relative(root, f))
+    const names = files.map((f) => relative(root, f).split(sep).join('/'))
     for (const name of ['cloud-hopper/game.mini', 'star-defender/game.mini', 'crypt-dash/game.mini', 'basics/platformer.mini']) {
       expect(names).toContain(name)
     }

@@ -23,21 +23,42 @@ describe('zip', () => {
     expect(crc32(new TextEncoder().encode('123456789'))).toBe(0xcbf43926)
   })
 
-  it('reads zips made by the zip command and skips junk', async () => {
+  it('reads zips made by system ZIP tools and skips junk', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'minijs-zip-'))
     mkdirSync(join(dir, 'My Game/assets'), { recursive: true })
     writeFileSync(join(dir, 'My Game/game.mini'), 'game\n')
     writeFileSync(join(dir, 'My Game/assets/a.png'), new Uint8Array([1, 2, 3]))
     writeFileSync(join(dir, 'My Game/.DS_Store'), 'x')
-    execFileSync('zip', ['-qr', 'out.zip', 'My Game'], { cwd: dir })
+    if (process.platform === 'win32') {
+      execFileSync('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', `
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::CreateFromDirectory(
+          (Join-Path (Get-Location) 'My Game'),
+          (Join-Path (Get-Location) 'out.zip'),
+          [System.IO.Compression.CompressionLevel]::Optimal,
+          $true
+        )
+      `], { cwd: dir })
+    } else {
+      execFileSync('zip', ['-qr', 'out.zip', 'My Game'], { cwd: dir })
+    }
     const files = stripCommonFolder(await readZip(new Blob([readFileSync(join(dir, 'out.zip'))])))
     expect(Object.keys(files).sort()).toEqual(['assets/a.png', 'game.mini'])
   })
 
-  it('reads its own output with the unzip command', async () => {
+  it('reads its own output with system ZIP tools', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'minijs-unzip-'))
     writeFileSync(join(dir, 'p.zip'), new Uint8Array(await (await writeZip({ 'a/b.txt': 'hello hello hello hello' })).arrayBuffer()))
-    expect(execFileSync('unzip', ['-p', 'p.zip', 'a/b.txt'], { cwd: dir }).toString()).toBe('hello hello hello hello')
+    const text = process.platform === 'win32'
+      ? execFileSync('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', `
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $zip = [System.IO.Compression.ZipFile]::OpenRead((Join-Path (Get-Location) 'p.zip'))
+          $reader = [System.IO.StreamReader]::new($zip.GetEntry('a/b.txt').Open())
+          try { [Console]::Write($reader.ReadToEnd()) }
+          finally { $reader.Dispose(); $zip.Dispose() }
+        `], { cwd: dir }).toString()
+      : execFileSync('unzip', ['-p', 'p.zip', 'a/b.txt'], { cwd: dir }).toString()
+    expect(text).toBe('hello hello hello hello')
   })
 
   it('refuses non-zips', async () => {
