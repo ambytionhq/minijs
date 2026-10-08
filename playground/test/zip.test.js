@@ -38,13 +38,13 @@ describe('zip', () => {
           [System.IO.Compression.CompressionLevel]::Optimal,
           $true
         )
-      `], { cwd: dir })
+      `], { cwd: dir, timeout: 20_000 })
     } else {
       execFileSync('zip', ['-qr', 'out.zip', 'My Game'], { cwd: dir })
     }
     const files = stripCommonFolder(await readZip(new Blob([readFileSync(join(dir, 'out.zip'))])))
     expect(Object.keys(files).sort()).toEqual(['assets/a.png', 'game.mini'])
-  })
+  }, 30_000)
 
   it('reads its own output with system ZIP tools', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'minijs-unzip-'))
@@ -56,10 +56,10 @@ describe('zip', () => {
           $reader = [System.IO.StreamReader]::new($zip.GetEntry('a/b.txt').Open())
           try { [Console]::Write($reader.ReadToEnd()) }
           finally { $reader.Dispose(); $zip.Dispose() }
-        `], { cwd: dir }).toString()
+        `], { cwd: dir, timeout: 20_000 }).toString()
       : execFileSync('unzip', ['-p', 'p.zip', 'a/b.txt'], { cwd: dir }).toString()
     expect(text).toBe('hello hello hello hello')
-  })
+  }, 30_000)
 
   it('refuses non-zips', async () => {
     await expect(readZip(new Blob(['nope']))).rejects.toThrow('This is not a zip file')
