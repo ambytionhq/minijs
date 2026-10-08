@@ -23,6 +23,23 @@ describe('zip', () => {
     expect(crc32(new TextEncoder().encode('123456789'))).toBe(0xcbf43926)
   })
 
+  it('imports Windows archive paths and still skips unsafe paths and junk', async () => {
+    const zip = await writeZip({
+      'My Game\\game.mini': 'game\n',
+      'My Game\\assets\\hero.png': new Uint8Array([1, 2, 3]),
+      'My Game\\assets\\': '',
+      'My Game\\.DS_Store': 'junk',
+      '__MACOSX\\._game.mini': 'junk',
+      '..\\escape.mini': 'unsafe',
+      'C:\\escape.mini': 'unsafe',
+      '\\absolute.mini': 'unsafe',
+    })
+    const files = stripCommonFolder(await readZip(zip))
+    expect(Object.keys(files).sort()).toEqual(['assets/hero.png', 'game.mini'])
+    expect(new TextDecoder().decode(files['game.mini'])).toBe('game\n')
+    expect(files['assets/hero.png']).toEqual(new Uint8Array([1, 2, 3]))
+  })
+
   it('reads zips made by system ZIP tools and skips junk', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'minijs-zip-'))
     mkdirSync(join(dir, 'My Game/assets'), { recursive: true })

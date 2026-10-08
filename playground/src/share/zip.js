@@ -119,7 +119,9 @@ export async function readZip(blob) {
     const extraLength = view.getUint16(at + 30, true)
     const commentLength = view.getUint16(at + 32, true)
     const localAt = view.getUint32(at + 42, true)
-    const name = decoder.decode(bytes.subarray(at + 46, at + 46 + nameLength))
+    // Windows' built-in ZIP tools can write backslashes inside entry names.
+    // Normalize before checking paths or removing the enclosing project folder.
+    const name = decoder.decode(bytes.subarray(at + 46, at + 46 + nameLength)).replaceAll('\\', '/')
     at += 46 + nameLength + extraLength + commentLength
 
     const unsafe = name.split('/').includes('..') || name.startsWith('/') || /^[A-Za-z]:/.test(name)
