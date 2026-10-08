@@ -132,6 +132,8 @@ h1 em::after { content: ''; position: absolute; z-index: -1; left: -2%; bottom: 
 .player-bar .icon-button { width: 32px; height: 32px; }
 .player-embed { flex: 1; min-height: 0; background: #171918; display: flex; align-items: center; }
 .player-embed iframe { width: 100%; height: 100%; border: 0; }
+.player-unavailable { width: 100%; padding: 24px; text-align: center; color: #f0f2e9; }
+.player-unavailable p { margin-bottom: 20px; }
 .player-help { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 15px 18px; font-size: .66rem; color: var(--muted); }
 .player-help a { text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
 .benefits { display: flex; justify-content: space-between; gap: 24px; padding-block: 26px; border-block: 1px solid var(--line); }

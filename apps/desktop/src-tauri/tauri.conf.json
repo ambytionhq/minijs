@@ -21,6 +21,8 @@
         "minWidth": 720,
         "minHeight": 520,
         "center": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
         "dragDropEnabled": false,
         "visible": false
       }
@@ -90,7 +92,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZENkZBN0JCMkY1RDUxQjEKUldTeFVWMHZ1NmR2L2ZRbGZIQitFcXprR21mcnpQWjROazByMWNzQlFneXJaOGlJTXpKQU54UmMK",
       "endpoints": [
-        "https://github.com/ambytionhq/minijs-releases/releases/latest/download/latest.json"
+        "https://github.com/ambytionhq/minijs/releases/latest/download/latest.json"
       ],
       "windows": {
         "installMode": "passive"

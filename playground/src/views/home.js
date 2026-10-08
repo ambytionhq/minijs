@@ -4,12 +4,13 @@
 
 import { canOpenFolders, forgetFolder, pickFolder } from '../files/folders.js'
 import { IdbFs, deleteBrowserProject, renameBrowserProject } from '../files/idb-fs.js'
+import { MemoryFs } from '../files/memory-fs.js'
 import { fileKind } from '../files/paths.js'
 import { FIRST_GAME } from '../learn/lessons.js'
 import { EXAMPLES } from '../projects/examples.js'
 import { createProject, firstFile, listProjects, timeAgo } from '../projects/registry.js'
 import { IS_DESKTOP } from '../desktop/env.js'
-import { APP_VERSION, applyUpdate, onUpdateState } from '../pwa.js'
+import { APP_VERSION, checkForUpdates, onUpdateState } from '../pwa.js'
 import { go } from '../router.js'
 import { importZip, openPasteDialog } from '../share/dialogs.js'
 import { saveFile } from '../share/save-file.js'
@@ -21,6 +22,7 @@ import { askText, confirmAction } from '../ui/dialog.js'
 import { openHelp } from '../ui/help.js'
 import { createPreview } from '../ui/thumbnail.js'
 import { toast } from '../ui/toast.js'
+import { appearanceControl } from '../ui/appearance.js'
 
 /** @import { ProjectFs } from '../files/project.js' */
 
@@ -28,6 +30,7 @@ const view = /** @type {HTMLElement} */ (document.getElementById('view-home'))
 
 /** @type {Array<() => void>} */
 let cleanup = []
+let generation = 0
 
 /** One-line descriptions for the small examples. */
 const BASICS = /** @type {Record<string, string>} */ ({
@@ -94,10 +97,13 @@ const previews = new IntersectionObserver(
  */
 function previewBox(fs, path, className) {
   const box = el('div', className)
+  box.classList.add('preview-loading')
+  const currentGeneration = generation
   const canvas = /** @type {HTMLCanvasElement} */ (el('canvas'))
   canvas.setAttribute('aria-hidden', 'true')
   box.append(canvas)
   if (!path) {
+    box.classList.remove('preview-loading')
     box.classList.add('preview-empty')
     box.append(icon('ph-game-controller'))
     return box
@@ -106,6 +112,11 @@ function previewBox(fs, path, className) {
   lazyBox.startPreview = async () => {
     try {
       const preview = await createPreview(canvas, fs, path)
+      box.classList.remove('preview-loading')
+      if (currentGeneration !== generation) {
+        preview?.destroy()
+        return
+      }
       if (!preview) {
         box.classList.add('preview-empty')
         box.append(icon('ph-warning-circle'))
@@ -118,7 +129,9 @@ function previewBox(fs, path, className) {
       card.addEventListener('focusout', preview.pause)
       cleanup.push(preview.destroy)
     } catch {
+      box.classList.remove('preview-loading')
       box.classList.add('preview-empty')
+      box.append(icon('ph-warning-circle'))
     }
   }
   previews.observe(box)
@@ -247,16 +260,15 @@ export async function mountHome() {
   const lessonStep = Number(loadSetting(`lesson:${FIRST_GAME.id}:step`) ?? '0') || 0
   const lessonDone = lessonStep >= FIRST_GAME.steps.length
 
-  // Top bar
-  const bar = el('header', 'home-bar')
+  // The projects page is the starting point, with no separate navigation bar.
+  const heading = el('header', 'home-heading')
   const brand = el('a', 'brand')
   brand.setAttribute('href', '#/')
   const logo = /** @type {HTMLImageElement} */ (el('img', 'brand-mark'))
   logo.src = './icons/icon-192.png'
   logo.alt = ''
   brand.append(logo, el('span', 'brand-name', 'minijs'), el('span', 'brand-studio', 'Studio'))
-  const tools = el('nav', 'home-tools')
-  tools.setAttribute('aria-label', 'Studio')
+  const tools = el('div', 'home-tools')
   const zipInput = /** @type {HTMLInputElement} */ (el('input'))
   zipInput.type = 'file'
   zipInput.accept = '.zip,application/zip'
@@ -271,66 +283,59 @@ export async function mountHome() {
       toast(message(error), { tone: 'error' })
     }
   })
-  const importBtn = button('ph-file-zip', 'Import zip', 'btn btn-ghost')
-  importBtn.addEventListener('click', () => zipInput.click())
-  tools.append(importBtn, zipInput)
+  const addMenu = button('ph-folder-open', 'Add existing', 'btn')
+  const additions = [
+    ['ph-file-zip', 'Import a game', () => zipInput.click()],
+    ['ph-clipboard-text', 'Paste a game', () => openPasteDialog()],
+  ]
   if (canOpenFolders()) {
-    const folderBtn = button('ph-folder-open', 'Open folder', 'btn btn-ghost')
-    folderBtn.addEventListener('click', () => void openFolder())
-    tools.append(folderBtn)
+    additions.push(['ph-folder-open', 'Open folder', () => openFolder()])
   }
+  attachMenu(addMenu, additions)
   const helpBtn = /** @type {HTMLButtonElement} */ (el('button', 'icon-btn icon-btn-lg'))
   helpBtn.type = 'button'
   helpBtn.setAttribute('aria-label', 'Help and language reference')
   helpBtn.title = 'Help'
   helpBtn.append(icon('ph-question'))
   helpBtn.addEventListener('click', () => void openHelp())
-  tools.append(helpBtn)
-  bar.append(brand, tools)
-
-  // Intro: what to do now, and the tutorial.
-  const intro = el('section', 'home-intro')
-  const words = el('div', 'intro-words')
+  const settings = el('div', 'studio-settings')
+  settings.append(helpBtn, appearanceControl())
+  const words = el('div', 'home-heading-copy')
   words.append(
-    el('h1', '', 'What will you make today?'),
-    el('p', 'intro-lead', 'Write a few plain sentences and they become a game you can play right away. Everything saves by itself and works offline.'),
+    brand,
+    el('h1', '', 'Your projects'),
+    el('p', 'muted', 'Pick up where you left off, or start something new.'),
   )
-  const ctas = el('div', 'intro-actions')
   const newBtn = button('ph-plus', 'New game', 'btn btn-primary btn-lg')
   newBtn.addEventListener('click', () => void newGame())
-  const pasteBtn = button('ph-clipboard-text', 'Paste a game', 'btn btn-lg')
-  pasteBtn.addEventListener('click', () => void openPasteDialog())
-  ctas.append(newBtn, pasteBtn)
-  words.append(ctas)
+  tools.append(addMenu, newBtn, zipInput)
+  heading.append(words, tools)
 
   const learn = /** @type {HTMLAnchorElement} */ (el('a', 'learn-card'))
   learn.href = '#/learn'
   const learnTop = el('div', 'learn-top')
   learnTop.append(el('span', 'learn-label', 'Tutorial'), el('span', 'learn-time', '10 minutes'))
-  learn.append(learnTop, el('h2', '', FIRST_GAME.title))
-  const steps = el('ol', 'learn-steps')
-  FIRST_GAME.steps.forEach((step, i) => {
-    const li = el('li', i < lessonStep ? 'is-done' : i === lessonStep ? 'is-next' : '')
-    li.append(icon(i < lessonStep ? 'ph-check-circle' : i === lessonStep ? 'ph-arrow-circle-right' : 'ph-circle'), el('span', '', step.title))
-    steps.append(li)
-  })
-  learn.append(steps)
+  const learnCopy = el('div', 'learn-copy')
+  learnCopy.append(learnTop, el('h2', '', FIRST_GAME.title), el('p', 'muted', 'Make a platformer, one rule at a time.'))
+  const finishedLesson = FIRST_GAME.steps.reduce((source, step) => step.apply(source), FIRST_GAME.starter)
+  const lessonPreview = previewBox(new MemoryFs('Tutorial preview', { 'game.mini': finishedLesson }), 'game.mini', 'learn-preview')
+  learn.append(learnCopy, lessonPreview)
   const learnGo = el('span', 'learn-go')
   learnGo.append(lessonDone ? 'Open it again' : lessonStep > 0 ? `Continue at step ${lessonStep + 1}` : 'Start the tutorial', icon('ph-arrow-right'))
   learn.append(learnGo)
-  intro.append(words, learn)
 
   // Showcase games.
   const showcase = el('section', 'home-section')
-  showcase.append(sectionHead('Showcase games', 'Made entirely in minijs. Play one, then open it to see exactly how it works.'))
+  showcase.append(sectionHead('Find your next idea', 'Try a game, then make your own version.'))
   const bento = el('div', 'showcase-grid')
   const showcases = [...EXAMPLES.values()].filter((e) => e.info.kind === 'showcase')
+  const genres = { 'cloud-hopper': 'Platformer', 'star-defender': 'Arcade', 'crypt-dash': 'Adventure' }
   showcases.forEach(({ info, fs }, i) => {
     const card = el('article', `card showcase-card ${i === 0 ? 'is-feature' : ''}`)
     card.append(previewBox(fs, info.main, 'card-preview'))
     const body = el('div', 'card-body')
     const text = el('div', 'card-text')
-    text.append(el('h3', '', info.name), el('p', 'muted', info.blurb))
+    text.append(el('span', 'game-genre', genres[info.folder] ?? 'Game'), el('h3', '', info.name), el('p', 'muted', info.blurb))
     const actions = el('div', 'card-actions')
     const play = button('ph-play', 'Play', 'btn btn-primary')
     play.addEventListener('click', () => go({ view: 'demo', example: info.folder }))
@@ -341,13 +346,19 @@ export async function mountHome() {
     card.append(body)
     bento.append(card)
   })
-  showcase.append(bento)
+  showcase.append(bento, learn)
 
   // Your projects (filled in once loaded).
   const mine = el('section', 'home-section')
   const mineGrid = el('div', 'project-grid')
+  mineGrid.setAttribute('aria-busy', 'true')
+  for (let i = 0; i < 2; i++) {
+    const skeleton = el('div', 'project-skeleton')
+    skeleton.setAttribute('aria-hidden', 'true')
+    mineGrid.append(skeleton)
+  }
   const mineCount = el('span', 'count')
-  mine.append(sectionHead('Your projects', undefined, [mineCount]), mineGrid)
+  mine.append(sectionHead('Recently edited', undefined, [mineCount]), mineGrid)
 
   const folders = el('section', 'home-section')
   folders.hidden = true
@@ -356,14 +367,15 @@ export async function mountHome() {
   const basics = EXAMPLES.get('example:basics')
   const small = el('section', 'home-section')
   if (basics) {
-    small.append(sectionHead('Small examples', 'Short games that each show one idea. Good for borrowing lines from.'))
+    small.append(sectionHead('Little games to learn from', 'Borrow a rule, try an idea, or start from one of these.'))
     const list = el('div', 'basics-grid')
     for (const [path] of basics.fs.texts) {
       const a = /** @type {HTMLAnchorElement} */ (el('a', 'basics-item'))
       a.href = `#/p/${encodeURIComponent(basics.fs.id)}/${encodeURIComponent(path)}`
       const t = el('div')
       t.append(el('span', 'basics-name', path.replace(/\.mini$/, '').replace(/-/g, ' ')), el('span', 'muted small', BASICS[path] ?? ''))
-      a.append(icon('ph-game-controller'), t, icon('ph-arrow-up-right'))
+      const icons = { 'platformer.mini': 'ph-person-simple-run', 'coin-dash.mini': 'ph-coins', 'dodge.mini': 'ph-meteor', 'clicker.mini': 'ph-cursor-click', 'hero.mini': 'ph-image', 'controls.mini': 'ph-game-controller' }
+      a.append(icon(icons[path] ?? 'ph-file-code'), t, icon('ph-arrow-up-right'))
       list.append(a)
     }
     small.append(list)
@@ -377,25 +389,48 @@ export async function mountHome() {
     onUpdateState((s) => {
       update.replaceChildren()
       if (s === 'offline-ready') update.append(icon('ph-wifi-slash'), 'Ready to work offline')
+      else if (s === 'checking') update.append(icon('ph-arrows-clockwise'), 'Checking for updates')
       else if (s === 'installing') update.append(icon('ph-download-simple'), 'Saving for offline use')
       else if (s === 'update-ready') {
         const b = button('ph-sparkle', IS_DESKTOP ? 'Update ready: install' : 'Update ready: reload', 'link-btn')
-        b.addEventListener('click', () => void applyUpdate().catch((e) => toast(message(e), { tone: 'error' })))
+        b.addEventListener('click', () => view.dispatchEvent(new CustomEvent('install-update', { bubbles: true })))
         update.append(b)
       } else if (s === 'downloading') update.append(icon('ph-download-simple'), 'Installing the update')
+      else if (s === 'error') update.append(icon('ph-warning-circle'), IS_DESKTOP ? 'Could not check for updates' : 'Offline setup unavailable')
     }),
   )
   const company = /** @type {HTMLAnchorElement} */ (el('a', 'muted', 'Made by Ambytion'))
   company.href = 'https://ambytion.net'
   company.target = '_blank'
   company.rel = 'noopener'
-  footer.append(version, update, company)
+  footer.append(version, update, settings, company)
+  if (IS_DESKTOP) {
+    const check = button('ph-arrows-clockwise', 'Check for updates', 'link-btn')
+    check.addEventListener('click', async () => {
+      check.disabled = true
+      const result = await checkForUpdates()
+      check.disabled = false
+      if (result === 'newest') toast('You have the newest version of minijs Studio.')
+      if (result === 'failed') toast('Could not check for updates. Check your connection and try again.', { tone: 'error' })
+    })
+    footer.insertBefore(check, company)
+  }
 
   const main = el('main', 'home-main')
-  main.append(intro, showcase, mine, folders, small)
-  view.replaceChildren(bar, main, footer)
+  main.id = 'home-content'
+  main.tabIndex = -1
+  main.append(heading, mine, folders, showcase, small)
+  view.replaceChildren(main, footer)
 
-  await fillProjects(mineGrid, mineCount, folders)
+  try {
+    await fillProjects(mineGrid, mineCount, folders)
+  } catch (error) {
+    const retry = button('ph-arrows-clockwise', 'Try again', 'btn')
+    retry.addEventListener('click', () => void mountHome())
+    mineGrid.replaceChildren(el('p', 'files-status', 'Your projects could not open. Try again in a moment.'), retry)
+  } finally {
+    mineGrid.setAttribute('aria-busy', 'false')
+  }
 }
 
 /**
@@ -408,12 +443,13 @@ async function fillProjects(grid, count, folders) {
   const tutorialId = loadSetting('tutorial-project')
   grid.replaceChildren()
   count.textContent = String(list.browser.length)
+  count.hidden = list.browser.length === 0
   if (!list.storageWorks) {
     grid.append(el('p', 'muted', 'This browser is not keeping files (a private window can do that). Open a folder or export your games to keep them.'))
   }
-  for (const record of list.browser) {
+  for (const [index, record] of list.browser.entries()) {
     const fs = new IdbFs(record.id, record.name)
-    const card = el('article', 'card project-card')
+    const card = el('article', `card project-card${index === 0 ? ' is-recent' : ''}`)
     const path = await firstFile(fs).catch(() => null)
     const link = /** @type {HTMLAnchorElement} */ (el('a', 'card-link'))
     link.href = `#/p/${encodeURIComponent(fs.id)}`
@@ -423,6 +459,9 @@ async function fillProjects(grid, count, folders) {
     const text = el('div', 'card-text')
     const title = el('h3', '', record.name)
     text.append(title, el('p', 'muted small', `${fs.id === tutorialId ? 'Tutorial, ' : ''}edited ${timeAgo(record.updated)}`))
+    const continueLabel = el('span', 'project-continue', index === 0 ? 'Continue creating' : 'Open project')
+    continueLabel.append(icon('ph-arrow-right'))
+    text.append(continueLabel)
     const more = /** @type {HTMLButtonElement} */ (el('button', 'icon-btn'))
     more.type = 'button'
     more.setAttribute('aria-label', `More for ${record.name}`)
@@ -477,18 +516,26 @@ async function fillProjects(grid, count, folders) {
   }
   if (list.browser.length === 0 && list.storageWorks) {
     const empty = el('div', 'empty-card')
-    empty.append(
-      icon('ph-sparkle'),
-      el('h3', '', 'Your games will live here'),
-      el('p', 'muted', 'Start a new game, finish the tutorial, or open a showcase game and make your own copy.'),
+    const emptyWords = el('div', 'empty-words')
+    emptyWords.append(
+      el('h3', '', 'Make something that’s yours'),
+      el('p', 'muted', 'Your games save as you go. Start with a blank canvas, or learn by making your first platformer.'),
     )
+    const actions = el('div', 'empty-actions')
+    const create = button('ph-plus', 'Create your first game', 'btn btn-primary')
+    create.addEventListener('click', () => void newGame())
+    const lesson = /** @type {HTMLAnchorElement} */ (el('a', 'btn btn-ghost', 'Start the tutorial'))
+    lesson.href = '#/learn'
+    actions.append(create, lesson)
+    emptyWords.append(actions)
+    empty.append(icon('ph-folder-simple-plus'), emptyWords)
     grid.append(empty)
   }
 
   folders.replaceChildren()
   folders.hidden = list.folders.length === 0
   if (list.folders.length > 0) {
-    folders.append(sectionHead('Folders on this computer', 'Changes save straight into these folders.'))
+    folders.append(sectionHead('Your folders', 'Changes save straight into these folders.'))
     const rows = el('div', 'folder-list')
     for (const folder of list.folders) {
       const row = el('div', 'folder-row')
@@ -512,6 +559,8 @@ async function fillProjects(grid, count, folders) {
 }
 
 export function unmountHome() {
+  generation++
+  previews.disconnect()
   for (const fn of cleanup) fn()
   cleanup = []
   document.querySelector('.menu')?.remove()

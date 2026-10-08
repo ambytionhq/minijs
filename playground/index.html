@@ -4,42 +4,41 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#111113" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#f4f4f5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#171918" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f6f7f4" media="(prefers-color-scheme: light)" />
+    <script>
+      try {
+        const theme = localStorage.getItem('minijs-site-theme') ?? localStorage.getItem('minijs:appearance')
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme
+      } catch {}
+    </script>
     <title>minijs Studio</title>
     <meta name="description" content="Make 2D games by writing plain sentences. Works offline, keeps your files, and exports games anyone can play." />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" type="image/png" href="./icons/favicon-64.png" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <link rel="preload" href="../node_modules/@fontsource/geist-sans/files/geist-sans-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body>
+    <div class="desktop-window-grip" data-tauri-drag-region aria-hidden="true"></div>
+    <a class="skip-link" href="#home-content">Skip to content</a>
     <div id="view-home" class="view view-home" hidden></div>
 
     <div id="view-workspace" class="view view-workspace" hidden>
-      <header class="topbar">
-        <a class="btn btn-ghost" href="#/" id="back-home"><i class="ph ph-squares-four" aria-hidden="true"></i>Projects</a>
-        <div class="project-title">
-          <h1 id="project-title">Project</h1>
-          <span id="project-kind" class="kind-tag"></span>
-        </div>
-        <div class="topbar-tools">
-          <button id="share" class="btn btn-ghost" type="button"><i class="ph ph-share-network" aria-hidden="true"></i>Share</button>
-          <button id="export" class="btn btn-ghost" type="button"><i class="ph ph-download-simple" aria-hidden="true"></i>Export</button>
-          <button id="help" class="icon-btn icon-btn-lg" type="button" title="Help" aria-label="Help and language reference">
-            <i class="ph ph-question" aria-hidden="true"></i>
-          </button>
-        </div>
-        <div class="actions" role="toolbar" aria-label="Game controls">
-          <button id="run" class="btn btn-primary" type="button"><i class="ph ph-play" aria-hidden="true"></i>Run</button>
-          <button id="stop" class="btn" type="button"><i class="ph ph-stop" aria-hidden="true"></i>Stop</button>
-          <button id="restart" class="btn" type="button"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i>Restart</button>
-        </div>
-      </header>
-
-      <main class="workspace">
+      <main class="workspace" id="workspace-content" tabindex="-1">
+        <aside class="workspace-sidebar" aria-label="Your project">
+          <a class="workspace-back" href="#/" id="back-home"><i class="ph ph-arrow-left" aria-hidden="true"></i>Your projects</a>
+          <div class="project-title">
+            <h1 id="project-title">Your game</h1>
+            <span id="project-kind" class="kind-tag"></span>
+          </div>
+          <div class="project-sharing">
+            <button id="share" class="btn btn-ghost" type="button"><i class="ph ph-share-network" aria-hidden="true"></i>Share</button>
+            <button id="export" class="btn btn-ghost" type="button"><i class="ph ph-download-simple" aria-hidden="true"></i>Export</button>
+          </div>
         <aside class="pane files-pane" id="files-pane" aria-label="Files">
           <div class="pane-head">
-            <h2>Files</h2>
+            <h2><span class="files-label">Files</span><button id="toggle-files" class="files-toggle" type="button" aria-expanded="false" aria-controls="file-tree">Files<i class="ph ph-caret-down" aria-hidden="true"></i></button></h2>
             <div class="icon-row">
               <button id="new-file" class="icon-btn" type="button" title="New game file" aria-label="New game file">
                 <i class="ph ph-file-plus" aria-hidden="true"></i>
@@ -62,10 +61,14 @@
         </aside>
 
         <aside class="pane lesson-pane" id="lesson-pane" aria-label="Lesson" hidden></aside>
+          <div class="workspace-settings studio-settings">
+            <button id="help" class="btn btn-ghost" type="button" title="Help" aria-label="Help with your game"><i class="ph ph-question" aria-hidden="true"></i>Help</button>
+          </div>
+        </aside>
 
         <section class="pane editor-pane" aria-label="Open file">
           <div class="pane-head">
-            <h2 id="file-name">No file open</h2>
+            <div class="file-heading"><i class="ph ph-file-code" aria-hidden="true"></i><h2 id="file-name">No file open</h2></div>
             <span id="save-status" class="save-status" role="status"></span>
           </div>
           <div id="editor" class="editor"><pre id="editor-loading" class="editor-loading"></pre></div>
@@ -79,8 +82,13 @@
         <section class="right-column">
           <section class="pane game-pane" aria-label="Game">
             <div class="pane-head">
-              <h2 id="run-name">Game</h2>
-              <span id="perf" class="perf" aria-hidden="true"></span>
+              <div class="file-heading"><i class="ph ph-game-controller" aria-hidden="true"></i><h2 id="run-name">Game</h2></div>
+              <div class="game-controls" role="toolbar" aria-label="Game controls">
+                <button id="run" class="btn btn-primary" type="button"><i class="ph ph-play" aria-hidden="true"></i>Play</button>
+                <button id="stop" class="icon-btn icon-btn-lg" type="button" title="Stop" aria-label="Stop game"><i class="ph ph-stop" aria-hidden="true"></i></button>
+                <button id="restart" class="icon-btn icon-btn-lg" type="button" title="Restart" aria-label="Restart game"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i></button>
+              </div>
+              <span id="perf" class="perf" aria-hidden="true" hidden></span>
             </div>
             <div id="stage" class="stage">
               <canvas id="game" tabindex="0" aria-label="Game screen. Click it, then use the keyboard, mouse or a gamepad."></canvas>
@@ -96,13 +104,13 @@
                 Problems <span id="problem-count" class="count" hidden></span>
               </button>
               <button role="tab" id="tab-console" data-tab="console" aria-controls="panel-console" aria-selected="false" tabindex="-1" type="button">
-                Console <span id="log-count" class="count" hidden></span>
+                Messages <span id="log-count" class="count" hidden></span>
               </button>
               <button role="tab" id="tab-watch" data-tab="watch" aria-controls="panel-watch" aria-selected="false" tabindex="-1" type="button">
-                Watch
+                Game values
               </button>
               <button role="tab" id="tab-input" data-tab="input" aria-controls="panel-input" aria-selected="false" tabindex="-1" type="button">
-                Input
+                Controls
               </button>
             </div>
 

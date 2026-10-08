@@ -36,8 +36,7 @@ function startAppearance() {
   const choose = (value) => {
     preference = value
     try {
-      if (value === 'system') localStorage.removeItem('minijs-site-theme')
-      else localStorage.setItem('minijs-site-theme', value)
+      localStorage.setItem('minijs-site-theme', value)
     } catch {}
     apply()
   }
@@ -47,7 +46,13 @@ function startAppearance() {
     choose(dark ? 'light' : 'dark')
   })
   systemTheme.addEventListener('change', apply)
-  cleanups.push(() => systemTheme.removeEventListener('change', apply))
+  const sync = (event) => {
+    if (event.key !== 'minijs-site-theme') return
+    preference = ['light', 'dark'].includes(event.newValue) ? event.newValue : 'system'
+    apply()
+  }
+  window.addEventListener('storage', sync)
+  cleanups.push(() => { systemTheme.removeEventListener('change', apply); window.removeEventListener('storage', sync) })
   apply()
 }
 
@@ -127,7 +132,7 @@ function labelDownloads() {
   document.querySelector('#download-main span').textContent = `Download for ${systems[system]}`
   const others = document.getElementById('download-others')
   const rest = Object.entries(systems).filter(([key]) => key !== system)
-  const link = (label) => `<a href="https://github.com/ambytionhq/minijs-releases/releases/latest">${label}</a>`
+  const link = (label) => `<a href="https://github.com/ambytionhq/minijs/releases/latest">${label}</a>`
   others.innerHTML = `Also for ${link(rest[0][1])} and ${link(rest[1][1])}. Free, about 4&nbsp;MB, and it updates itself.`
 }
 
@@ -139,6 +144,21 @@ function startHeroPlayer() {
   const status = document.getElementById('hero-player-status')
   let loadTimeout = 0
   const help = status.innerHTML
+  const unavailable = () => {
+    window.clearTimeout(loadTimeout)
+    const message = document.createElement('div')
+    message.className = 'player-unavailable'
+    const text = document.createElement('p')
+    text.textContent = 'Cloud Hopper couldn’t load.'
+    const retry = document.createElement('button')
+    retry.type = 'button'
+    retry.className = 'btn btn-primary btn-sm'
+    retry.textContent = 'Try again'
+    retry.addEventListener('click', load, { once: true })
+    message.append(text, retry)
+    embed.replaceChildren(message)
+    status.textContent = 'Check your connection, then try again.'
+  }
   const stop = () => {
     window.clearTimeout(loadTimeout)
     embed.replaceChildren()
@@ -147,7 +167,8 @@ function startHeroPlayer() {
     status.innerHTML = help
     play.focus({ preventScroll: true })
   }
-  play.addEventListener('click', () => {
+  const load = () => {
+    window.clearTimeout(loadTimeout)
     const iframe = document.createElement('iframe')
     iframe.title = 'Cloud Hopper. Click the game, then use arrow keys to move and space to jump.'
     iframe.allow = 'gamepad; fullscreen'
@@ -157,8 +178,20 @@ function startHeroPlayer() {
     status.textContent = 'Loading Cloud Hopper…'
     iframe.addEventListener('load', () => {
       window.clearTimeout(loadTimeout)
+      // An iframe's load event also fires for a 404 page. Only offer the
+      // keyboard instructions after the actual game canvas has loaded.
+      try {
+        if (!iframe.contentDocument?.querySelector('#game canvas')) {
+          unavailable()
+          return
+        }
+      } catch {
+        unavailable()
+        return
+      }
       status.innerHTML = help
     }, { once: true })
+    iframe.addEventListener('error', unavailable, { once: true })
     embed.replaceChildren(iframe)
     close.focus({ preventScroll: true })
     loadTimeout = window.setTimeout(() => {
@@ -168,7 +201,8 @@ function startHeroPlayer() {
       link.textContent = 'Open full game'
       status.append(link)
     }, 8000)
-  })
+  }
+  play.addEventListener('click', load)
   close.addEventListener('click', stop)
   player.addEventListener('keydown', (event) => { if (event.key === 'Escape') stop() })
   cleanups.push(() => { window.clearTimeout(loadTimeout); embed.replaceChildren() })

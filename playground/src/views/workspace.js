@@ -44,6 +44,11 @@ const projectTitle = $('project-title')
 const projectKind = $('project-kind')
 const projectActions = $('project-actions')
 const filesPane = $('files-pane')
+const toggleFiles = $('toggle-files')
+toggleFiles.addEventListener('click', () => {
+  const expanded = filesPane.classList.toggle('is-expanded')
+  toggleFiles.setAttribute('aria-expanded', String(expanded))
+})
 const lessonPane = $('lesson-pane')
 const editorBox = $('editor')
 const editorLoading = $('editor-loading')
@@ -52,12 +57,6 @@ const previewImage = /** @type {HTMLImageElement} */ ($('preview-image'))
 const previewInfo = $('preview-info')
 const previewUse = $('preview-use')
 const uploadInput = /** @type {HTMLInputElement} */ ($('upload-input'))
-const topbar = /** @type {HTMLElement} */ (view.querySelector('.topbar'))
-
-// Keep the desktop layout exactly one screen tall under the top bar.
-new ResizeObserver(() => {
-  document.documentElement.style.setProperty('--topbar-height', `${topbar.offsetHeight}px`)
-}).observe(topbar)
 
 // ---------------------------------------------------------------------------
 // State
@@ -84,6 +83,7 @@ let compileTimer = 0
 let saveTimer = 0
 /** @type {(() => Promise<void>) | null} */
 let pendingSave = null
+let saving = Promise.resolve()
 /** @type {string | null} */
 let previewUrl = null
 /** @type {CompileWatcher | null} */
@@ -179,19 +179,16 @@ export async function mountWorkspace({ project, file = null, lessonPanel = null,
   lessonPane.replaceChildren(...(lessonPanel ? [lessonPanel] : []))
   projectTitle.textContent = project.name
   projectKind.textContent = lessonPanel
-    ? 'Lesson'
+    ? 'Your first game'
     : project.type === 'examples'
-      ? 'Example'
+      ? 'Example game'
       : project.type === 'disk'
-        ? 'Folder on this computer'
-        : IS_DESKTOP
-          ? 'In this app'
-          : 'In this browser'
+        ? 'Saved to your folder'
+        : 'Saves automatically'
   document.title = `${project.name} | minijs Studio`
   await getEditor()
   if (!sameProject) {
     tree.resetFolds()
-    consolePanel.log('info', `Opened ${project.name}`)
   }
   await refreshTree()
   const target = file && entries.some((e) => e.path === file && e.kind === 'file') ? file : await firstFile(project)
@@ -218,6 +215,22 @@ export async function unmountWorkspace() {
   watcher = null
   mounted = false
   view.hidden = true
+}
+
+/** Refuse to restart for an update if the open work could not be saved. */
+export async function prepareWorkspaceUpdate() {
+  if (!mounted) return
+  const wasInert = view.inert
+  view.inert = true
+  try {
+    await flushSave()
+    if (saveStatus.dataset.state === 'error') {
+      throw new Error(saveStatus.textContent || 'Your changes could not be saved.')
+    }
+    await unmountWorkspace()
+  } finally {
+    view.inert = wasInert
+  }
 }
 
 /**
@@ -255,7 +268,7 @@ function setSaveStatus(text, state = 'ok') {
 
 function updateHeaders() {
   fileName.textContent = openPath ?? 'No file open'
-  runName.textContent = runPath ? `Game: ${basename(runPath)}` : 'Game'
+  runName.textContent = 'Your game'
 }
 
 /** @param {unknown} error */
@@ -364,7 +377,7 @@ export async function openFile(path) {
       e.load(text, kind === 'mini')
       showEditor(true)
       const examples = fs.type === 'examples' ? /** @type {ExamplesFs} */ (fs) : null
-      setSaveStatus(examples?.isEdited(path) ? 'Edited, kept in this browser' : '')
+      setSaveStatus(examples?.isEdited(path) ? 'Your changes are saved' : '')
       if (kind === 'mini') {
         runPath = path
         void update()
@@ -532,7 +545,8 @@ async function flushSave() {
   window.clearTimeout(saveTimer)
   const save = pendingSave
   pendingSave = null
-  if (save) await save()
+  if (save) saving = saving.then(save)
+  await saving
 }
 
 /** @param {string} text */
@@ -546,7 +560,7 @@ function onEdit(text) {
       await target.writeText(path, text)
       if (target.type === 'examples') {
         const examples = /** @type {ExamplesFs} */ (target)
-        setSaveStatus(examples.isEdited(path) ? 'Edited, kept in this browser' : 'Same as the original')
+        setSaveStatus(examples.isEdited(path) ? 'Your changes are saved' : 'Same as the original')
         renderTree()
         renderProjectActions()
       } else {

@@ -67,7 +67,7 @@ runtime problems -> Game emits 'error' with the same MiniError shape
 4. **Spatial hash broadphase.** Only thing types that appear in a `touches` rule, or are `solid`, enter the hash. Typical cost O(n).
 5. **Fixed 60 Hz update, decoupled render.** Logic always ticks at 1/60 s. Max 5 catch-up steps per frame; excess time is dropped (no death spiral). Render runs at display rate with interpolation between previous and current positions, so 120/144 Hz screens look smooth.
 6. **Renderer interface.** Canvas2D ships in v1. A batched WebGL renderer can implement the same interface later.
-7. **Cheap scaling.** `pixel art` mode renders at internal resolution and scales by an integer factor with smoothing off. Non-pixel-art mode caps devicePixelRatio at 2. Offscreen things are culled.
+7. **Cheap scaling.** `pixel art` mode renders at internal resolution with smoothing off, then uses nearest-neighbor CSS scaling to fit its container without cropping. Non-pixel-art mode caps devicePixelRatio at 2. Offscreen things are culled; stopped games keep their final frame without redrawing.
 8. **Budget.** Benchmark: 2,000 moving things with a touch rule and solids. Target mean tick time under 4 ms on a mid laptop (leaves headroom inside the 16.6 ms frame). Tracked by `npm run bench`.
 
 ## 4. Language
@@ -103,7 +103,7 @@ always                    # rule block that fires every tick
 ```
 game
   size 480 by 270           # internal resolution, default 480 by 270
-  pixel art                 # crisp integer scaling, default off
+  pixel art                 # native pixels with nearest-neighbor scaling, default off
   background navy           # color, default black
   gravity 0.4               # pixels per tick^2 for things that fall, default 0
   touch buttons             # on-screen arrows + A/B buttons on touch screens, default off

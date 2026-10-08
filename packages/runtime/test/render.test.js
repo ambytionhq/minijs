@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeScale } from '../src/render/canvas2d.js'
+import { Canvas2DRenderer, computeScale } from '../src/render/canvas2d.js'
 import { drawWorld } from '../src/render/draw-world.js'
 import { RecordingRenderer } from '../src/render/renderer.js'
 import { Simulation } from '../src/simulation.js'
@@ -81,23 +81,48 @@ describe('drawWorld', () => {
 })
 
 describe('computeScale', () => {
-  it('uses integer scale for pixel art', () => {
+  it('keeps pixel art at native resolution while filling the available width', () => {
     expect(computeScale(320, 180, 1000, 700, 1, true)).toEqual({
-      canvasWidth: 960,
-      canvasHeight: 540,
-      cssWidth: 960,
-      cssHeight: 540,
-      scale: 3,
+      canvasWidth: 320,
+      canvasHeight: 180,
+      cssWidth: 1000,
+      cssHeight: 562.5,
+      scale: 1,
     })
   })
-  it('includes device pixel ratio in pixel art scale', () => {
-    expect(computeScale(320, 180, 1000, 700, 2, true)).toMatchObject({ canvasWidth: 1920, cssWidth: 960, scale: 6 })
+  it('avoids multiplying the pixel art backing store on Retina displays', () => {
+    expect(computeScale(320, 180, 1000, 700, 3, true)).toMatchObject({ canvasWidth: 320, cssWidth: 1000, scale: 1 })
   })
-  it('never scales pixel art below 1', () => {
-    expect(computeScale(320, 180, 100, 100, 1, true).scale).toBe(1)
+  it('fits the whole game into a mobile embed shorter than its native height', () => {
+    expect(computeScale(320, 180, 325, 136, 1, true)).toEqual({
+      canvasWidth: 320, canvasHeight: 180, cssWidth: 136 * 320 / 180, cssHeight: 136, scale: 1,
+    })
+  })
+  it('fits narrow previews without cropping their sides', () => {
+    expect(computeScale(320, 180, 100, 100, 1, true)).toMatchObject({ cssWidth: 100, cssHeight: 56.25 })
   })
   it('caps device pixel ratio for smooth mode', () => {
     const fit = computeScale(400, 200, 800, 800, 3, false)
     expect(fit).toEqual({ canvasWidth: 1600, canvasHeight: 800, cssWidth: 800, cssHeight: 400, scale: 4 })
+  })
+})
+
+describe('Canvas2DRenderer resize', () => {
+  it('keeps a paused frame when only its CSS display size changes', () => {
+    let resets = 0
+    const canvas = {
+      _width: 0, _height: 0, style: {}, getContext: () => ({}),
+      get width() { return this._width },
+      set width(value) { this._width = value; resets++ },
+      get height() { return this._height },
+      set height(value) { this._height = value; resets++ },
+    }
+    const renderer = new Canvas2DRenderer(canvas, 320, 180, true)
+    resets = 0
+    renderer.resize(600, 400, 2)
+    renderer.resize(200, 100, 3)
+    expect(resets).toBe(0)
+    expect(canvas.style.height).toBe('100px')
+    expect(canvas.style.imageRendering).toBe('pixelated')
   })
 })

@@ -65,7 +65,10 @@ export class Game {
     this.loop = new FixedLoop(
       {
         tick: () => this.simulation.tick(),
-        render: (alpha) => drawWorld(this.renderer, this.simulation, alpha),
+        render: (alpha) => {
+          drawWorld(this.renderer, this.simulation, this.simulation.stopped ? 1 : alpha)
+          if (this.simulation.stopped) this.loop.stop()
+        },
       },
       options.scheduler ?? browserScheduler,
     )
@@ -124,9 +127,11 @@ export class Game {
     this.attach()
   }
 
-  /** Freeze the simulation. Drawing continues so the last frame stays visible. */
+  /** Freeze the simulation and keep its last frame without redrawing it. */
   stop() {
     this.simulation.stop()
+    this.loop.stop()
+    drawWorld(this.renderer, this.simulation, 1)
   }
 
   /** Stop everything and release listeners. The canvas keeps its last frame. */
@@ -216,6 +221,7 @@ export class Game {
     const apply = () => {
       const rect = parent.getBoundingClientRect()
       this.renderer.resize(rect.width, rect.height, window.devicePixelRatio || 1)
+      if (!this.loop.isRunning) drawWorld(this.renderer, this.simulation, 1)
     }
     apply()
     if (this.resizeObserver === null && typeof ResizeObserver !== 'undefined') {

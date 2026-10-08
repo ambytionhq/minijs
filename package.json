@@ -21,7 +21,7 @@
     "desktop:build": "npm run build -w apps/desktop",
     "games:export": "node scripts/export-games.mjs",
     "site:dev": "npm run games:export && npm run dev -w site",
-    "site:build": "npm run build && npm run games:export && npm run build -w site && node scripts/assemble-site.mjs",
+    "site:build": "npm run build -w site",
     "screenshots": "npm run build && npm run games:export && node scripts/capture-screenshots.mjs"
   },
   "devDependencies": {

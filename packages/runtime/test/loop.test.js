@@ -62,4 +62,13 @@ describe('FixedLoop', () => {
     expect(h.ticks()).toBe(0)
     expect(h.callbacks.length).toBe(2)
   })
+
+  it('does not schedule another frame when the game stops during rendering', () => {
+    const h = harness()
+    h.loop.hooks.render = () => h.loop.stop()
+    h.loop.start()
+    h.callbacks[0](0)
+    expect(h.loop.isRunning).toBe(false)
+    expect(h.callbacks.length).toBe(1)
+  })
 })

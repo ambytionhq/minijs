@@ -7,7 +7,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm --prefix .. run build && npm --prefix .. run games:export && vite build && node ../scripts/assemble-site.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

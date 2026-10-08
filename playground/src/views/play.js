@@ -22,16 +22,16 @@ export async function mountPlay({ title, fs, main, remixLabel, onRemix, standalo
   view.classList.toggle('view-play-standalone', standalone)
   document.title = `${title} | minijs`
   view.innerHTML = `
-    <header class="play-bar">
-      ${standalone ? '<span class="play-made"><i class="ph ph-sparkle" aria-hidden="true"></i>Made with minijs</span>' : '<a class="btn btn-ghost" href="#/"><i class="ph ph-squares-four" aria-hidden="true"></i>Projects</a>'}
+    <main class="play-stage" tabindex="-1" aria-label="Game"><canvas tabindex="0" aria-label="Game screen"></canvas></main>
+    <footer class="play-controls">
+      ${standalone ? '<span class="play-made"><i class="ph ph-sparkle" aria-hidden="true"></i>Made with minijs</span>' : '<a class="btn btn-ghost" href="#/"><i class="ph ph-arrow-left" aria-hidden="true"></i>Your projects</a>'}
       <h1 class="play-title"></h1>
       <div class="play-tools">
         ${standalone ? '' : '<button class="btn btn-ghost" type="button" data-remix><i class="ph ph-code" aria-hidden="true"></i><span></span></button>'}
         <button class="icon-btn icon-btn-lg" type="button" data-full aria-label="Full screen" title="Full screen"><i class="ph ph-corners-out" aria-hidden="true"></i></button>
       </div>
-    </header>
-    <div class="play-stage"><canvas tabindex="0" aria-label="Game screen"></canvas></div>
-    <p class="play-hint"><i class="ph ph-game-controller" aria-hidden="true"></i>Keyboard, mouse, gamepad or touch.${standalone ? ' F11 for full screen.' : ''}</p>`
+      <p class="play-hint"><i class="ph ph-game-controller" aria-hidden="true"></i>Keyboard, mouse, gamepad or touch.</p>
+    </footer>`
   const titleEl = /** @type {HTMLElement} */ (view.querySelector('.play-title'))
   titleEl.textContent = title
   const remix = /** @type {HTMLButtonElement | null} */ (view.querySelector('[data-remix]'))

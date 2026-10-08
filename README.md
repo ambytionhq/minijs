@@ -55,7 +55,42 @@ Other commands:
 | `npm test` | Runs every test, including all the example games |
 | `npm run bench` | Speed check: 2,000 moving things per tick |
 | `npm run build` | Builds the playground into `playground/dist` as static files |
+| `npm run site:build` | Builds the complete website, Studio, and all three playable games into `site/dist` |
+| `npm run preview -w site` | Previews the complete website after a site build |
 | `node scripts/make-example-assets.mjs` | Redraws the hero pictures in `examples/assets` |
+
+Vercel builds are configured in `vercel.json`. The repository-root deployment
+runs `npm run site:build` and publishes `site/dist`. Projects whose Root Directory
+is `site` use `site/vercel.json`; enable access to files outside that directory
+so the build can include the sibling Studio, language, runtime, and example workspaces.
+The site workspace's `npm run build` also builds the complete website from a clean checkout.
+
+To deploy Studio independently, import this repository as a second Vercel project
+with Root Directory `playground` and access to files outside that directory enabled.
+`playground/vercel.json` installs the repository's dependencies, builds Studio,
+and publishes `playground/dist`. After deploying, add these rules to the main
+site's `vercel.json`, replacing `YOUR-STUDIO-PROJECT.vercel.app` with the second
+project's stable production hostname:
+
+```json
+{
+  "redirects": [
+    { "source": "/studio", "destination": "/studio/", "permanent": true }
+  ],
+  "rewrites": [
+    {
+      "source": "/studio/:path*",
+      "destination": "https://YOUR-STUDIO-PROJECT.vercel.app/:path*"
+    }
+  ]
+}
+```
+
+Merge these fields with the existing build settings. The rewrite forwards Studio
+pages, assets, manifest, and service worker while preserving `/studio/` in the
+browser. Its current relative Vite base supports both the direct project URL and
+the proxied path. Cloudflare DNS continues to point the domain at the main
+Vercel project; path routing happens in Vercel.
 
 ## Examples
 

@@ -30,17 +30,25 @@ cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
 
 ## Releases and updates
 
-Pushing a tag like `v0.2.0` runs `.github/workflows/release.yml`, which builds all three systems and publishes to **`ambytionhq/minijs-releases`**. That repository must be public: the app downloads updates from `https://github.com/ambytionhq/minijs-releases/releases/latest/download/latest.json`, and a private repository's files can't be downloaded without a login.
+Pushing a tag like `v0.2.0` runs `.github/workflows/release.yml`. The workflow builds all three systems in a draft release in the public **`ambytionhq/minijs`** repository. It checks that the updater manifest contains signed downloads for macOS Intel, macOS Apple silicon, Windows x64 and Linux x64 before publishing. Failed builds leave a draft, so installed apps never discover a partial release.
 
-One-time setup:
+The app downloads `https://github.com/ambytionhq/minijs/releases/latest/download/latest.json` without authentication. Website downloads point to the same repository. A separate releases repository or personal access token is no longer needed. The workflow uses its scoped `GITHUB_TOKEN` with `contents: write` permission.
 
-1. Create the public repository `ambytionhq/minijs-releases` (it can stay empty apart from a README).
-2. In this repository's settings, add the secrets:
-   - `RELEASES_TOKEN`: a fine-grained token with "Contents: read and write" on `minijs-releases`.
-   - `TAURI_SIGNING_PRIVATE_KEY`: the contents of the updater private key. It was generated at `~/.tauri/minijs-updater.key` with no password. Keep a backup somewhere safe: if it is lost, installed apps can't accept updates any more.
-3. Bump `version` in the root `package.json` (the app reads its version from there), commit, then tag and push.
+Signing setup:
 
-The matching public key is in `src-tauri/tauri.conf.json` under `plugins.updater.pubkey`.
+- `TAURI_SIGNING_PRIVATE_KEY`: the contents of the original updater private key, stored as a repository Actions secret. The matching public key stays in `src-tauri/tauri.conf.json`.
+- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`: required only if that key has a password. The existing key has no password.
+- Keep a secure backup of the original key. Changing it prevents existing installations from trusting later updates.
+
+To release:
+
+1. Bump `version` in the root `package.json`, update the lockfile with `npm install --package-lock-only`, and commit the changes. The desktop app reads its version from the root package.
+2. Tag that commit with the matching version, for example `git tag v0.2.0`, then push the commit and tag.
+3. Check the **Release desktop app** workflow. It publishes only after all builds and updater checks pass. Manual workflow runs use the root package version and refuse to overwrite an already published version.
+
+The app checks eight seconds after opening, every six hours, after reconnecting, and when returning to the app after five minutes. **Check for updates** is also available in the native menu and the projects-page footer. Installation waits for open saves and refuses to restart if saving failed. Download failures keep the update available to retry.
+
+Installations built with the former `minijs-releases` endpoint need one manual installation of this version to move to the public repository. The endpoint is embedded in the installed binary; making the source repository public cannot change it retroactively.
 
 ## Signing
 

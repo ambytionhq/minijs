@@ -1,6 +1,5 @@
-// Canvas2D renderer. Pixel art mode scales by an integer factor with
-// smoothing off and rounds positions; smooth mode scales fractionally with
-// devicePixelRatio capped at MAX_DEVICE_PIXEL_RATIO.
+// Pixel art draws at the game's native resolution, then the browser scales
+// the canvas with nearest-neighbor sampling. Smooth mode caps DPR at 2.
 
 /** @import { LoadedImage } from '../assets.js' */
 import { MAX_DEVICE_PIXEL_RATIO, PLACEHOLDER_COLOR, TEXT_FONT_FAMILY, TEXT_FONT_PX } from '../config.js'
@@ -33,17 +32,17 @@ export function computeScale(
   devicePixelRatio,
   pixelArt,
 ) {
-  const fit = Math.min(availableCssWidth / internalWidth, availableCssHeight / internalHeight)
+  const fit = Math.max(0, Math.min(availableCssWidth / internalWidth, availableCssHeight / internalHeight))
   if (pixelArt) {
-    const scale = Math.max(1, Math.floor(fit * devicePixelRatio))
-    const canvasWidth = internalWidth * scale
-    const canvasHeight = internalHeight * scale
+    // A larger backing store redraws the same pixels many times on Retina
+    // displays. Keep those pixels native, while fitting the entire game into
+    // any CSS box, including embeds smaller than the game's resolution.
     return {
-      canvasWidth,
-      canvasHeight,
-      cssWidth: canvasWidth / devicePixelRatio,
-      cssHeight: canvasHeight / devicePixelRatio,
-      scale,
+      canvasWidth: internalWidth,
+      canvasHeight: internalHeight,
+      cssWidth: internalWidth * fit,
+      cssHeight: internalHeight * fit,
+      scale: 1,
     }
   }
   const ratio = Math.min(devicePixelRatio, MAX_DEVICE_PIXEL_RATIO)
@@ -104,11 +103,12 @@ export class Canvas2DRenderer {
       devicePixelRatio,
       this.pixelArt,
     )
-    this.canvas.width = fit.canvasWidth
-    this.canvas.height = fit.canvasHeight
+    // Setting either dimension clears the canvas and resets its context.
+    if (this.canvas.width !== fit.canvasWidth) this.canvas.width = fit.canvasWidth
+    if (this.canvas.height !== fit.canvasHeight) this.canvas.height = fit.canvasHeight
     this.canvas.style.width = `${fit.cssWidth}px`
     this.canvas.style.height = `${fit.cssHeight}px`
-    if (this.pixelArt) this.canvas.style.imageRendering = 'pixelated'
+    this.canvas.style.imageRendering = this.pixelArt ? 'pixelated' : 'auto'
     this.scale = fit.scale
     return fit
   }

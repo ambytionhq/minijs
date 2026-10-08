@@ -54,11 +54,16 @@ export async function mount({ root, program, images, title }) {
     position: 'fixed',
     inset: '0',
     display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr)',
+    gridTemplateRows: 'minmax(0, 1fr)',
     placeItems: 'center',
     background: '#0c0c10',
     overflow: 'hidden',
   })
-  const frame = el('div', { position: 'relative', width: '100%', height: '100%', display: 'grid', placeItems: 'center' })
+  const frame = el('div', {
+    position: 'relative', width: '100%', height: '100%', minWidth: '0', minHeight: '0',
+    display: 'grid', placeItems: 'center', gridTemplateColumns: 'minmax(0, 1fr)', gridTemplateRows: 'minmax(0, 1fr)',
+  })
   const canvas = /** @type {HTMLCanvasElement} */ (el('canvas', { display: 'block', outline: 'none' }))
   canvas.tabIndex = 0
   canvas.setAttribute('aria-label', `${title}. Use the keyboard, mouse, a gamepad or touch to play.`)
@@ -94,6 +99,23 @@ export async function mount({ root, program, images, title }) {
   game.on('error', showError)
   game.stop()
 
+  // Stop spending frames when an embedded game scrolls offscreen. Restarting
+  // the loop resets its clock, so returning never fast-forwards the game.
+  let visible = true
+  const syncPlayback = () => {
+    if (game.destroyed) return
+    if (!visible || document.hidden) {
+      game.loop.stop()
+      game.input.releaseAll()
+    } else if (!game.simulation.stopped) game.loop.start()
+  }
+  const observer = new IntersectionObserver((entries) => {
+    visible = entries[0].isIntersecting
+    syncPlayback()
+  })
+  observer.observe(root)
+  document.addEventListener('visibilitychange', syncPlayback)
+
   // The whole screen is the button; a small label says what to do.
   const card = el('button', {
     position: 'absolute',
@@ -126,7 +148,8 @@ export async function mount({ root, program, images, title }) {
   const begin = async () => {
     card.remove()
     await game.reload(program)
-    canvas.focus()
+    syncPlayback()
+    canvas.focus({ preventScroll: true })
   }
   card.addEventListener('click', () => void begin(), { once: true })
   window.addEventListener(

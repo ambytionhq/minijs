@@ -1,13 +1,13 @@
 // minijs Studio: routes between the projects page, the workspace, the tutorial
 // and full-screen play, and keeps the app up to date.
 
-import '@fontsource/geist-sans/400.css'
-import '@fontsource/geist-sans/500.css'
-import '@fontsource/geist-sans/600.css'
-import '@fontsource/geist-sans/700.css'
-import '@fontsource/geist-mono/400.css'
-import '@fontsource/geist-mono/500.css'
-import '@phosphor-icons/web/regular'
+import '@fontsource/geist-sans/latin-400.css'
+import '@fontsource/geist-sans/latin-500.css'
+import '@fontsource/geist-sans/latin-600.css'
+import '@fontsource/geist-sans/latin-700.css'
+import '@fontsource/geist-mono/latin-400.css'
+import '@fontsource/geist-mono/latin-500.css'
+import './icons.css'
 import './styles.css'
 
 import { IS_DESKTOP } from './desktop/env.js'
@@ -23,9 +23,9 @@ import { openExportDialog, openShareDialog, savePack } from './share/dialogs.js'
 import { askText, confirmAction } from './ui/dialog.js'
 import { openHelp } from './ui/help.js'
 import { toast } from './ui/toast.js'
+import { appearanceControl, startAppearance } from './ui/appearance.js'
 import { mountHome, newGame, noAccess, openFolder, unmountHome } from './views/home.js'
 import { mountPlay, unmountPlay } from './views/play.js'
-import { changeOpenText, currentProject, mountWorkspace, openFile, unmountWorkspace } from './views/workspace.js'
 
 /** @import { Route } from './router.js' */
 /** @import { ProjectFs } from './files/project.js' */
@@ -34,12 +34,36 @@ import { changeOpenText, currentProject, mountWorkspace, openFile, unmountWorksp
 const message = (error) => (error instanceof Error ? error.message : String(error))
 
 let routing = Promise.resolve()
+/** @type {typeof import('./views/workspace.js') | null} */
+let workspaceModule = null
+/** @type {Promise<typeof import('./views/workspace.js')> | null} */
+let workspaceReady = null
+
+function getWorkspace() {
+  workspaceReady ??= import('./views/workspace.js').then((module) => {
+    workspaceModule = module
+    return module
+  }).catch((error) => {
+    workspaceReady = null
+    throw error
+  })
+  return workspaceReady
+}
+startAppearance()
+document.querySelector('.workspace-settings')?.append(appearanceControl())
+const skipLink = document.querySelector('.skip-link')
+skipLink?.addEventListener('click', (event) => {
+  event.preventDefault()
+  const target = document.querySelector('.view:not([hidden]) main')
+  target?.focus()
+  target?.scrollIntoView()
+})
 
 /** @param {Route} route */
 async function show(route) {
   if (route.view !== 'home') unmountHome()
   if (route.view !== 'play' && route.view !== 'demo') await unmountPlay()
-  if (route.view !== 'project' && route.view !== 'learn') await unmountWorkspace()
+  if (route.view !== 'project' && route.view !== 'learn') await workspaceModule?.unmountWorkspace()
 
   switch (route.view) {
     case 'home':
@@ -57,7 +81,7 @@ async function show(route) {
         go({ view: 'home' })
         return
       }
-      await mountWorkspace({ project, file: route.file })
+      await (await getWorkspace()).mountWorkspace({ project, file: route.file })
       return
     }
     case 'learn':
@@ -124,7 +148,7 @@ async function showLesson() {
   }
   const panel = createLessonPanel({
     lesson: FIRST_GAME,
-    onApply: (apply) => void changeOpenText(apply),
+    onApply: (apply) => void workspaceModule?.changeOpenText(apply),
     onFinish: async (action) => {
       if (action === 'showcase') go({ view: 'home' })
       if (action === 'again') {
@@ -136,7 +160,7 @@ async function showLesson() {
         if (!ok) return
         await project.writeText('game.mini', FIRST_GAME.starter)
         panel.restart()
-        await openFile('game.mini')
+        await workspaceModule?.openFile('game.mini')
       }
       if (action === 'keep') {
         const name = await askText({ title: 'Keep your game', label: 'Name', value: 'My platformer', action: 'Keep it' })
@@ -146,10 +170,11 @@ async function showLesson() {
       }
     },
   })
-  await mountWorkspace({ project, file: 'game.mini', lessonPanel: panel.element, watch: panel })
+  await (await getWorkspace()).mountWorkspace({ project, file: 'game.mini', lessonPanel: panel.element, watch: panel })
 }
 
 function route() {
+  if (installing) return
   routing = routing.then(() => show(parseRoute(location.hash))).catch((error) => {
     toast(`Something went wrong: ${message(error)}`, { tone: 'error' })
   })
@@ -159,7 +184,7 @@ function route() {
 
 /** @param {(p: { fs: ProjectFs; runPath: string; name: string }) => Promise<unknown>} fn */
 const withProject = (fn) => () => {
-  const p = currentProject()
+  const p = workspaceModule?.currentProject()
   if (!p) {
     toast('Open a game file first.')
     return
@@ -172,7 +197,7 @@ document.getElementById('help')?.addEventListener('click', () => void openHelp()
 
 // "Make my own copy" of an example.
 document.getElementById('view-workspace')?.addEventListener('copy-project', async () => {
-  const p = currentProject()
+  const p = workspaceModule?.currentProject()
   if (!p) return
   const example = EXAMPLES.get(p.fs.id)
   const name = await askText({
@@ -195,7 +220,9 @@ document.getElementById('view-workspace')?.addEventListener('copy-project', asyn
 const banner = /** @type {HTMLElement} */ (document.getElementById('update-banner'))
 const bannerText = /** @type {HTMLElement} */ (document.getElementById('update-text'))
 const updateNow = /** @type {HTMLButtonElement} */ (document.getElementById('update-now'))
+const updateLater = /** @type {HTMLButtonElement} */ (document.getElementById('update-later'))
 let dismissed = false
+let installing = false
 onUpdateState((s) => {
   banner.hidden = !(s === 'update-ready' || s === 'downloading') || dismissed
   updateNow.disabled = s === 'downloading'
@@ -205,21 +232,39 @@ onUpdateState((s) => {
       : 'A new version of minijs Studio is ready.'
     updateNow.textContent = IS_DESKTOP ? 'Install and restart' : 'Reload'
   }
+  if (s === 'error') bannerText.textContent = 'Could not check for updates. Try again when you are online.'
 })
 onUpdateProgress((done) => {
   bannerText.textContent = done === null ? 'Downloading the update' : `Downloading the update: ${Math.round(done * 100)}%`
 })
-updateNow.addEventListener('click', async () => {
+async function installAvailableUpdate() {
+  if (installing) return
+  installing = true
+  dismissed = false
+  updateNow.disabled = true
+  let prepared = false
+  const views = /** @type {HTMLElement[]} */ ([...document.querySelectorAll('.view')])
   // Save open work before the page reloads or the app restarts.
-  await unmountWorkspace()
   try {
+    await routing
+    for (const view of views) view.inert = true
+    updateLater.disabled = true
+    await workspaceModule?.prepareWorkspaceUpdate()
+    prepared = true
     await applyUpdate()
   } catch (error) {
     toast(`The update didn't install: ${message(error)}`, { tone: 'error', seconds: 8 })
-    route()
+  } finally {
+    installing = false
+    for (const view of views) view.inert = false
+    updateLater.disabled = false
+    updateNow.disabled = false
+    if (prepared) route()
   }
-})
-document.getElementById('update-later')?.addEventListener('click', () => {
+}
+updateNow.addEventListener('click', () => void installAvailableUpdate())
+document.addEventListener('install-update', () => void installAvailableUpdate())
+updateLater?.addEventListener('click', () => {
   dismissed = true
   banner.hidden = true
 })
@@ -276,8 +321,8 @@ async function boot() {
   if (IS_DESKTOP) {
     const desktop = await import('./desktop/bridge.js')
     const info = await desktop.startDesktop({
-      menu: (id) => void Promise.resolve(MENU[id]?.()).catch((e) => toast(message(e), { tone: 'error' })),
-      openFiles: (paths) => void openFiles(paths).catch((e) => toast(message(e), { tone: 'error' })),
+      menu: (id) => { if (!installing) void Promise.resolve(MENU[id]?.()).catch((e) => toast(message(e), { tone: 'error' })) },
+      openFiles: (paths) => { if (!installing) void openFiles(paths).catch((e) => toast(message(e), { tone: 'error' })) },
     })
     if (info.game) {
       await startPlayer(info).catch((e) => toast(message(e), { tone: 'error' }))

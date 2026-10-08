@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 
-// The landing page. `npm run site:build` also puts the Studio in dist/studio
-// and the exported games in dist/play (see scripts/assemble-site.mjs).
+// The site build script includes the Studio in dist/studio and the exported
+// games in dist/play. Running Vite alone only builds the landing page.
 export default defineConfig({
   base: '/',
   publicDir: 'public',

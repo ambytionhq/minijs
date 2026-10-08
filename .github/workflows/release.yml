@@ -1,12 +1,4 @@
-# Builds minijs Studio for macOS, Windows and Linux when a version tag is
-# pushed (for example v0.2.0), and publishes the installers plus the signed
-# update files to the public releases repository that the app checks.
-#
-# Needs two repository secrets:
-#   RELEASES_TOKEN                 a token that can create releases in ambytionhq/minijs-releases
-#   TAURI_SIGNING_PRIVATE_KEY      contents of the updater private key (see apps/desktop/README.md)
-# and, if the key has a password, TAURI_SIGNING_PRIVATE_KEY_PASSWORD.
-
+# A release becomes public only after all four updater targets have signed assets.
 name: Release desktop app
 
 on:
@@ -15,12 +7,59 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: desktop-release-${{ github.repository }}
+  cancel-in-progress: false
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      release_id: ${{ steps.release.outputs.id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate version and signing setup
+        id: version
+        env:
+          SIGNING_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        shell: bash
+        run: |
+          test -n "$SIGNING_KEY" || { echo 'Missing TAURI_SIGNING_PRIVATE_KEY repository secret.'; exit 1; }
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "$TAG" ]; then
+            echo "The tag must match package.json: $TAG"
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+      - name: Prepare draft release
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
+        run: |
+          if gh release view "$RELEASE_TAG" --json isDraft > release.json 2>/dev/null; then
+            node -e "if (!require('./release.json').isDraft) { console.error('This version is already published. Bump package.json before releasing.'); process.exit(1) }"
+          else
+            gh release create "$RELEASE_TAG" --draft --target "$GITHUB_SHA" --title "minijs Studio $RELEASE_TAG" --notes-file apps/desktop/release-notes.md
+          fi
+          RELEASE_ID=$(gh api "repos/$GITHUB_REPOSITORY/releases" --jq ".[] | select(.tag_name == \"$RELEASE_TAG\") | .id")
+          test -n "$RELEASE_ID"
+          echo "id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: prepare
     strategy:
       fail-fast: false
+      # tauri-action merges latest.json. Serialize its uploads to avoid lost platforms.
+      max-parallel: 1
       matrix:
         include:
           - platform: macos-latest
@@ -32,51 +71,63 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
-
       - name: Linux build tools
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
-
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop/src-tauri -> target
-
       - run: npm ci
       - run: npm test
-
-      - name: Build and publish
+      - name: Build signed installers and upload to the draft
         uses: tauri-apps/tauri-action@v0
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: apps/desktop
           tauriScript: npx tauri
-          owner: ambytionhq
-          repo: minijs-releases
-          tagName: ${{ github.ref_name }}
-          releaseName: minijs Studio ${{ github.ref_name }}
-          releaseBody: |
-            Download the installer for your computer below.
-
-            - **Mac:** the `.dmg`. The app is not signed by Apple yet, so the first time, right-click minijs Studio in Applications and choose Open.
-            - **Windows:** the `.exe` (or `.msi`). If Windows warns, choose More info, then Run anyway.
-            - **Linux:** the `.AppImage` (any distribution) or the `.deb` (Debian, Ubuntu).
-
-            Already have minijs Studio? It updates itself: look for the banner.
-          releaseDraft: false
+          releaseId: ${{ needs.prepare.outputs.release_id }}
+          tagName: ${{ needs.prepare.outputs.tag }}
+          releaseDraft: true
           prerelease: false
           includeUpdaterJson: true
+          updaterJsonPreferNsis: true
           args: ${{ matrix.args }} --config src-tauri/tauri.release.conf.json
+
+  publish:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify every updater target before publishing
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_ID: ${{ needs.prepare.outputs.release_id }}
+        run: |
+          gh release download "$RELEASE_TAG" --pattern latest.json --pattern '*.sig' --dir release-assets
+          gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" > release-assets/release.json
+          node scripts/verify-update-release.mjs release-assets
+      - name: Publish complete release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+        run: gh release edit "$RELEASE_TAG" --draft=false --latest
+      - name: Verify the anonymous public update endpoint
+        run: |
+          curl --fail --location --retry 5 --retry-all-errors --retry-delay 10 --output public-latest.json "https://github.com/${{ github.repository }}/releases/latest/download/latest.json"
+          node -e "const fs=require('node:fs'); const expected=JSON.parse(fs.readFileSync('release-assets/latest.json')); const actual=JSON.parse(fs.readFileSync('public-latest.json')); if (JSON.stringify(actual)!==JSON.stringify(expected)) throw new Error('The public updater manifest differs from the verified release.')"

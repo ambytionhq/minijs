@@ -141,3 +141,4 @@ handoffs/
 
 # minijs
 .vite/
+.vercel

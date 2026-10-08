@@ -282,6 +282,18 @@ async function main() {
       await page.shot(join(SITE_OUT, `${name}.webp`))
     }
 
+    // Real projects in the disposable screenshot profile make the projects-first
+    // home page representative of everyday use.
+    for (const [folder, name] of [['cloud-hopper', 'Cloud garden'], ['star-defender', 'Star keeper'], ['crypt-dash', 'Night walk']]) {
+      await page.go(`${origin}/studio/#/p/${encodeURIComponent(`example:${folder}`)}/game.mini`)
+      await sleep(2000)
+      await page.eval('document.querySelector("#project-actions button")?.click(), true')
+      await sleep(100)
+      await page.eval(`document.querySelector("dialog input").value = ${JSON.stringify(name)}, true`)
+      await page.eval('document.querySelector("dialog button[type=submit]")?.click(), true')
+      await sleep(800)
+    }
+
     // The Studio, dark and light.
     for (const dark of [true, false]) {
       const mode = dark ? 'dark' : 'light'

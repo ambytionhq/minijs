@@ -10,7 +10,7 @@
     <link rel="preload" href="/art/pixel-world.webp" as="image" imagesrcset="/art/pixel-world-640.webp 640w, /art/pixel-world.webp 1200w" imagesizes="(max-width: 767px) calc(100vw - 48px), 45vw" fetchpriority="high" />
     <script>
       try {
-        const theme = localStorage.getItem('minijs-site-theme')
+        const theme = localStorage.getItem('minijs-site-theme') ?? localStorage.getItem('minijs:appearance')
         if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme
       } catch {}
     </script>
@@ -159,8 +159,8 @@
           <div class="download-heading"><img src="/icon-1200.png" alt="" width="92" height="92" loading="lazy" /><p>Made in your browser.<br />At home on your desktop.</p></div>
           <h2 id="download-title">Make something<br /><span>only you could make.</span></h2>
           <p class="download-sub">Real folders. Offline projects. Games that become apps. Your Studio, on Mac, Windows, and Linux.</p>
-          <div class="cta-row"><a class="btn btn-primary" id="download-main" href="https://github.com/ambytionhq/minijs-releases/releases/latest"><i class="ph-light ph-download-simple" aria-hidden="true"></i><span>Download</span></a><a class="text-link" href="/studio/">Open Studio<i class="ph-light ph-arrow-up-right" aria-hidden="true"></i></a></div>
-          <p class="download-others" id="download-others">Also for <a href="https://github.com/ambytionhq/minijs-releases/releases/latest" data-os="mac">Mac</a>, <a href="https://github.com/ambytionhq/minijs-releases/releases/latest" data-os="windows">Windows</a> and <a href="https://github.com/ambytionhq/minijs-releases/releases/latest" data-os="linux">Linux</a>. Free, about 4&nbsp;MB, and it updates itself.</p>
+          <div class="cta-row"><a class="btn btn-primary" id="download-main" href="https://github.com/ambytionhq/minijs/releases/latest"><i class="ph-light ph-download-simple" aria-hidden="true"></i><span>Download</span></a><a class="text-link" href="/studio/">Open Studio<i class="ph-light ph-arrow-up-right" aria-hidden="true"></i></a></div>
+          <p class="download-others" id="download-others">Also for <a href="https://github.com/ambytionhq/minijs/releases/latest" data-os="mac">Mac</a>, <a href="https://github.com/ambytionhq/minijs/releases/latest" data-os="windows">Windows</a> and <a href="https://github.com/ambytionhq/minijs/releases/latest" data-os="linux">Linux</a>. Free, about 4&nbsp;MB, and it updates itself.</p>
         </div>
       </section>
 

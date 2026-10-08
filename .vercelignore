@@ -1,0 +1,8 @@
+**/node_modules/**
+**/dist/**
+**/target/**
+**/.env*
+.git/**
+.claude/**
+handoffs/**
+site/public/play/**

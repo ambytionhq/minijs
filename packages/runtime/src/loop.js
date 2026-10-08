@@ -90,6 +90,6 @@ export class FixedLoop {
   onFrame = (time) => {
     if (!this.running) return
     this.frame(time)
-    this.handle = this.scheduler.request(this.onFrame)
+    if (this.running) this.handle = this.scheduler.request(this.onFrame)
   }
 }
