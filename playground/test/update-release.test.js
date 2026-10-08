@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { verifyUpdateRelease } from '../../scripts/verify-update-release.mjs'
+import { createUpdateManifest } from '../../scripts/create-update-manifest.mjs'
 
 function releaseFixture() {
   const names = {
-    'darwin-aarch64': 'minijs.app.tar.gz',
-    'darwin-x86_64': 'minijs.app.tar.gz',
+    'darwin-aarch64': 'minijs_universal.app.tar.gz',
+    'darwin-x86_64': 'minijs_universal.app.tar.gz',
     'windows-x86_64': 'minijs-setup.exe',
     'linux-x86_64': 'minijs.AppImage',
   }
@@ -28,6 +29,27 @@ const verify = ({ manifest, release, signatures }, version = '0.2.0') => verifyU
 describe('release publication gate', () => {
   it('accepts signed assets for every supported target', () => {
     expect(() => verify(releaseFixture())).not.toThrow()
+  })
+  it('replaces temporary GitHub draft links with permanent release links', () => {
+    const fixture = releaseFixture()
+    for (const asset of fixture.release.assets) {
+      if (asset.browser_download_url) asset.browser_download_url = asset.browser_download_url.replace('/download/v0.2.0/', '/download/untagged-draft/')
+    }
+    expect(() => verify(fixture)).not.toThrow()
+    const manifest = createUpdateManifest(fixture.release, fixture.signatures, '0.2.0')
+    expect(manifest.platforms['windows-x86_64'].url).toContain('/download/v0.2.0/')
+    expect(JSON.stringify(manifest)).not.toContain('untagged-')
+  })
+  it('combines signed platform uploads into one manifest and rejects missing or ambiguous installers', () => {
+    const { release, signatures } = releaseFixture()
+    const manifest = createUpdateManifest(release, signatures, '0.2.0')
+    expect(manifest.platforms['darwin-aarch64']).toEqual(manifest.platforms['darwin-x86_64'])
+    expect(manifest.platforms['windows-x86_64-nsis']).toEqual(manifest.platforms['windows-x86_64'])
+    const missing = { ...release, assets: release.assets.filter((asset) => !asset.name.endsWith('.exe')) }
+    expect(() => createUpdateManifest(missing, signatures, '0.2.0')).toThrow('exactly one installer')
+    const ambiguous = { ...release, assets: [...release.assets, { ...release.assets.find((asset) => asset.name.endsWith('.exe')), name: 'another.exe' }] }
+    expect(() => createUpdateManifest(ambiguous, signatures, '0.2.0')).toThrow('exactly one installer')
+    expect(() => createUpdateManifest(release, {}, '0.2.0')).toThrow('Missing valid signed installer')
   })
   it('refuses a release with a missing platform', () => {
     const fixture = releaseFixture()

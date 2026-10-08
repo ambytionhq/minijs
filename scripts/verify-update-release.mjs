@@ -9,6 +9,11 @@ const TARGETS = {
   'linux-x86_64': '.AppImage',
 }
 
+/** GitHub's draft URLs change when the release is published. */
+export function updateAssetUrl(asset, version) {
+  return (asset.browser_download_url ?? '').replace(/\/download\/untagged-[^/]+\//, `/download/${encodeURIComponent(`v${version}`)}/`)
+}
+
 /** Reject incomplete releases before the app can discover them. */
 export function verifyUpdateRelease(manifest, release, signatures, version) {
   if (manifest.version !== version || release.tag_name !== `v${version}`) {
@@ -17,7 +22,7 @@ export function verifyUpdateRelease(manifest, release, signatures, version) {
   for (const [target, extension] of Object.entries(TARGETS)) {
     const platform = manifest.platforms?.[target]
     if (!platform?.url || !platform.signature) throw new Error(`Missing signed updater target: ${target}`)
-    const asset = release.assets.find((item) => item.browser_download_url === platform.url)
+    const asset = release.assets.find((item) => updateAssetUrl(item, version) === platform.url)
     if (!asset || !asset.name.endsWith(extension) || asset.size <= 0) {
       throw new Error(`The ${target} update does not point to its uploaded installer.`)
     }
