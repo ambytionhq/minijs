@@ -133,7 +133,7 @@ function labelDownloads() {
   const others = document.getElementById('download-others')
   const rest = Object.entries(systems).filter(([key]) => key !== system)
   const link = (label) => `<a href="https://github.com/ambytionhq/minijs/releases/latest">${label}</a>`
-  others.innerHTML = `Also for ${link(rest[0][1])} and ${link(rest[1][1])}. Free, about 4&nbsp;MB, and it updates itself.`
+  others.innerHTML = `Also for ${link(rest[0][1])} and ${link(rest[1][1])}. Free, with updates built in.`
 }
 
 function startHeroPlayer() {
