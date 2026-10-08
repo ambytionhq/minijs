@@ -1,0 +1,89 @@
+name: Package desktop platforms
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing draft release tag to build
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-platform-packages-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.release.outputs.id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate the draft and signing setup
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SIGNING_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          test -n "$SIGNING_KEY" || { echo 'Missing signing key.'; exit 1; }
+          VERSION=$(node -p "require('./package.json').version")
+          test "$RELEASE_TAG" = "v$VERSION"
+          gh release view "$RELEASE_TAG" --json isDraft > release.json
+          node -e "if (!require('./release.json').isDraft) throw new Error('Only draft releases can receive replacement packages.')"
+          RELEASE_API=$(gh release view "$RELEASE_TAG" --json apiUrl --jq '.apiUrl')
+          RELEASE_ID=${RELEASE_API##*/}
+          [[ "$RELEASE_ID" =~ ^[0-9]+$ ]]
+          echo "id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
+
+  package:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [windows-latest, ubuntu-22.04]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - name: Linux build tools
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri -> target
+      - run: npm ci
+      - run: npm test
+      - name: Upload signed packages to the existing draft
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+          tauriScript: npx tauri
+          releaseId: ${{ needs.prepare.outputs.release_id }}
+          tagName: ${{ inputs.tag }}
+          releaseDraft: true
+          prerelease: false
+          # Independent platform uploads must not race while replacing latest.json.
+          includeUpdaterJson: false
+          args: --config src-tauri/tauri.release.conf.json
