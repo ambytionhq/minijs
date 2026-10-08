@@ -50,8 +50,16 @@ jobs:
           else
             gh release create "$RELEASE_TAG" --draft --target "$GITHUB_SHA" --title "minijs Studio $RELEASE_TAG" --notes-file apps/desktop/release-notes.md
           fi
-          RELEASE_ID=$(gh api "repos/$GITHUB_REPOSITORY/releases" --jq ".[] | select(.tag_name == \"$RELEASE_TAG\") | .id")
-          test -n "$RELEASE_ID"
+          # The release list can briefly omit a draft that was just created.
+          # Resolve this exact tag instead of relying on that cached list.
+          RELEASE_ID=''
+          for attempt in {1..10}; do
+            RELEASE_API=$(gh release view "$RELEASE_TAG" --json apiUrl --jq '.apiUrl' 2>/dev/null || true)
+            RELEASE_ID=${RELEASE_API##*/}
+            if [[ "$RELEASE_ID" =~ ^[0-9]+$ ]]; then break; fi
+            sleep 2
+          done
+          [[ "$RELEASE_ID" =~ ^[0-9]+$ ]] || { echo 'Could not resolve the draft release ID.'; exit 1; }
           echo "id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
 
   build:
