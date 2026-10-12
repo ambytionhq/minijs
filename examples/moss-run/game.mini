@@ -1,0 +1,291 @@
+# Moss Run
+# A short walk through an old forest. Collect all 12 coins and reach the lantern.
+# Move: arrows, A and D, or a gamepad. Jump: up, W, space, or gamepad A.
+# R or the gamepad Start button starts over. Phones get on-screen buttons.
+
+game
+  size 320 by 180
+  pixel art
+  background #bfc5bb
+  gravity 0.35
+  touch buttons
+  camera stays inside 0, 0 to 1152, 180
+
+control go-left
+  left key
+  a key
+  gamepad left
+
+control go-right
+  right key
+  d key
+  gamepad right
+
+control jump
+  up key
+  w key
+  space key
+  gamepad a
+
+control start-over
+  r key
+  gamepad start
+
+coins starts at 0
+time starts at 0
+playing starts at 1
+beetle-speed starts at 0.6
+
+# Things are drawn in the order they are listed: far away first.
+thing sun
+  looks like "sun.png"
+  starts at 248, 22
+
+thing cloud
+  looks like "cloud.png"
+  starts at 20, 18
+  starts at 150, 10
+  starts at 222, 40
+  starts at 400, 20
+  starts at 560, 30
+  starts at 720, 14
+  starts at 900, 36
+  starts at 1060, 22
+
+thing far-pines
+  looks like "far-pines.png"
+  starts at 0, 104
+  starts at 64, 104
+  starts at 128, 104
+  starts at 192, 104
+  starts at 256, 104
+  starts at 320, 104
+  starts at 384, 104
+  starts at 448, 104
+  starts at 512, 104
+  starts at 576, 104
+  starts at 640, 104
+  starts at 704, 104
+  starts at 768, 104
+  starts at 832, 104
+  starts at 896, 104
+  starts at 960, 104
+  starts at 1024, 104
+  starts at 1088, 104
+  starts at 1152, 104
+
+thing ruins
+  looks like "ruins.png"
+  starts at 112, 88
+  starts at 620, 88
+
+thing tree
+  looks like "tree.png"
+  starts at -14, 40
+  starts at 276, 40
+  starts at 470, 40
+  starts at 800, 40
+  starts at 1010, 40
+
+thing grass
+  looks like "grass.png"
+  solid
+  fixed
+
+thing soil
+  looks like "soil.png"
+  solid
+  fixed
+
+thing ledge
+  looks like "ledge.png"
+  solid
+  fixed
+
+thing stone
+  looks like "stone.png"
+  solid
+  fixed
+
+thing vines
+  looks like "vines.png"
+
+thing fern
+  looks like "fern.png"
+
+thing coin
+  looks like "coin-1.png"
+  animation spin "coin-1.png", "coin-2.png" at 4 fps
+
+thing beetle
+  looks like "beetle-1.png"
+  animation crawl "beetle-1.png", "beetle-2.png" at 6 fps
+
+thing lantern
+  looks like "lantern-1.png"
+  animation flicker "lantern-1.png", "lantern-2.png" at 3 fps
+
+thing hero
+  looks like "hero-idle.png"
+  animation walk "hero-walk-1.png", "hero-idle.png", "hero-walk-2.png", "hero-idle.png" at 10 fps
+  starts at 150, 90
+  solid
+  falls
+  camera follows
+
+thing title
+  looks like "title.png"
+  starts at 116, 26
+
+# The level. Each letter places one thing, 16 pixels apart.
+map
+  at 0, 0
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "..............*..........................................*.............."
+  ".............pp......................*..................ppp............."
+  "................*.....*......**.....ppp......*.......*.................."
+  "...............ppp....r.....pppp............ppp.....ppp................."
+  "........pppp.........rr...........*......r....................r.....L..."
+  "....................rrr.................rr...................rr.*.*....."
+  "########################...#################...#########################"
+  "dddddddddddddddddddddddd...ddddddddddddddddd...ddddddddddddddddddddddddd"
+  "dddddddddddddddddddddddd...ddddddddddddddddd...ddddddddddddddddddddddddd"
+  "#" is grass
+  "d" is soil
+  "p" is ledge
+  "r" is stone
+  "*" is coin
+  "L" is lantern
+
+# Vines hang just under the ledges.
+map
+  at 0, 10
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  ".............v..........................................v.v............."
+  "....................................v.v................................."
+  "...............v.v..........v.v.............v.v.....v.v................."
+  "........v.v............................................................."
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "v" is vines
+
+# Ferns are 12 pixels tall, so they sit 12 pixels higher to stand on the grass.
+map
+  at 0, -12
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "..f..f.......f.....f.......f.......f......f......f.....f.......f......f."
+  "........................................................................"
+  "........................................................................"
+  "f" is fern
+
+# Beetles are 10 pixels tall and crawl along the ground.
+map
+  at 1, 6
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  ".................................B................B....................."
+  "........................................................................"
+  "........................................................................"
+  "........................................................................"
+  "B" is beetle
+
+# Moving
+
+when go-left is held and playing is 1
+  move hero left 2
+when go-right is held and playing is 1
+  move hero right 2
+
+when go-left is held and hero is on the ground
+  play walk on hero
+when go-right is held and hero is on the ground
+  play walk on hero
+when go-left is released
+  stop animation on hero
+when go-right is released
+  stop animation on hero
+
+when jump is pressed and hero is on the ground and playing is 1
+  push hero up 6
+  change hero to look like "hero-jump.png"
+
+when hero is on the ground
+  change hero to look like "hero-idle.png"
+
+# Keep the wanderer inside the forest.
+when hero x is below 0
+  set hero x to 0
+when hero x is above 1140
+  set hero x to 1140
+
+# The title goes away when you start playing.
+
+when any key is pressed
+  remove title
+when jump is pressed
+  remove title
+when mouse is clicked
+  remove title
+
+# The forest moves
+
+always
+  play spin on coin
+  play crawl on beetle
+  play flicker on lantern
+  move beetle right beetle-speed
+
+when every 2 seconds
+  set beetle-speed to 0 - beetle-speed
+
+when every 1 second and playing is 1
+  add 1 to time
+
+# Coins and the lantern
+
+when hero touches coin
+  remove the coin
+  add 1 to coins
+
+when hero touches lantern and playing is 1
+  set playing to 0
+  show text "You made it through. {coins} of 12 coins in {time} seconds." in #2f3a2a
+
+# Ouch: beetles and the pits send you back to the start.
+
+when hero touches beetle and playing is 1
+  set hero x to 150
+  set hero y to 90
+  stop hero
+
+when hero y is above 200 and playing is 1
+  set hero x to 150
+  set hero y to 90
+  stop hero
+
+when start-over is pressed
+  restart game
+
+always
+  show text "Coins {coins}/12" at 6, 12 in #2f3a2a

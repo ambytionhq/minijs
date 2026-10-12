@@ -1,4 +1,4 @@
-// Draws every picture for the three showcase games into examples/<game>/assets/.
+// Draws every picture for the showcase games into examples/<game>/assets/.
 // Characters are hand-drawn as text grids; tiles are drawn by code with a seeded
 // random generator, so running this again gives the same pictures.
 // Run: node scripts/make-showcase-art.mjs
@@ -472,7 +472,247 @@ function cryptDash() {
   }).save(join(dir, 'title.png'))
 }
 
+// ---------------------------------------------------------------------------
+// Moss Run
+
+function mossRun() {
+  const dir = join(ROOT, 'moss-run/assets')
+  const ink = '#1c2118'
+
+  // A hooded wanderer in moss green, facing right.
+  const hero = {
+    k: ink,
+    g: '#56763f',
+    h: '#3f5a2e',
+    l: '#7a9a5a',
+    s: '#e6cfa8',
+    e: ink,
+    c: '#47643a',
+    d: '#33492a',
+    b: '#6b5636',
+    p: '#3b3a34',
+    o: '#2a2620',
+  }
+  const top = [
+    '....kkkkk...',
+    '...kllgggk..',
+    '..klggggghk.',
+    '.klgggggghhk',
+    '.kggkkkkkghk',
+    '.kgkssesskhk',
+    '.kgkssssskk.',
+    '.khgkkkkkhk.',
+    '..kcccccck..',
+    '.kccccccdck.',
+    'kscbbbbbbcsk',
+    '.kccccccddk.',
+    '.kddddddddk.',
+  ]
+  const legs = {
+    idle: ['..kpk..kpk..', '..kpk..kpk..', '.kook.kook..'],
+    walk1: ['..kpk..kpk..', '.kpk....kpk.', 'kook....kook'],
+    walk2: ['...kpkkpk...', '...kpkkpk...', '..kookook...'],
+    jump: ['..kpk..kpk..', '.kook..kook.', '............'],
+  }
+  spriteBitmap(grid('moss-hero-idle', [...top, ...legs.idle]), hero).save(join(dir, 'hero-idle.png'))
+  spriteBitmap(grid('moss-hero-walk-1', [...top, ...legs.walk1]), hero).save(join(dir, 'hero-walk-1.png'))
+  spriteBitmap(grid('moss-hero-walk-2', [...top, ...legs.walk2]), hero).save(join(dir, 'hero-walk-2.png'))
+  spriteBitmap(grid('moss-hero-jump', [...top, ...legs.jump]), hero).save(join(dir, 'hero-jump.png'))
+
+  // Mossy grass over dark forest soil.
+  {
+    const r = rng(41)
+    const b = new Bitmap(16, 16)
+    b.fill(0, 0, 16, 16, rgba('#3a3530'))
+    for (let i = 0; i < 12; i++) b.fill(Math.floor(r() * 15), 6 + Math.floor(r() * 9), 2, 1, rgba(r() < 0.5 ? '#2c2824' : '#4a443d'))
+    b.fill(0, 0, 16, 4, rgba('#6f8f4c'))
+    for (let x = 0; x < 16; x++) {
+      b.fill(x, 4, 1, 1 + Math.floor(r() * 3), rgba('#4f6e38'))
+      if (r() < 0.4) b.set(x, 0, rgba('#8fae62'))
+    }
+    b.save(join(dir, 'grass.png'))
+  }
+  {
+    const r = rng(42)
+    const b = new Bitmap(16, 16)
+    b.fill(0, 0, 16, 16, rgba('#3a3530'))
+    for (let i = 0; i < 14; i++) b.fill(Math.floor(r() * 15), Math.floor(r() * 16), 2, 1, rgba(r() < 0.6 ? '#2c2824' : '#4a443d'))
+    b.save(join(dir, 'soil.png'))
+  }
+  // Floating platform: old stone with a moss cap, 16 by 10.
+  {
+    const r = rng(43)
+    const b = new Bitmap(16, 10)
+    b.fill(0, 3, 16, 7, rgba('#4b4f48'))
+    b.fill(0, 9, 16, 1, rgba('#33362f'))
+    for (let i = 0; i < 6; i++) b.set(Math.floor(r() * 16), 4 + Math.floor(r() * 5), rgba(r() < 0.5 ? '#5d6259' : '#3d403a'))
+    b.set(7, 5, rgba('#33362f')); b.set(7, 6, rgba('#33362f')); b.set(7, 7, rgba('#33362f'))
+    b.fill(0, 0, 16, 3, rgba('#6f8f4c'))
+    for (let x = 0; x < 16; x++) {
+      if (r() < 0.5) b.set(x, 3, rgba('#4f6e38'))
+      if (r() < 0.35) b.set(x, 0, rgba('#8fae62'))
+    }
+    b.save(join(dir, 'ledge.png'))
+  }
+  // Vines that hang under a ledge (decoration, not solid).
+  {
+    const r = rng(44)
+    const b = new Bitmap(16, 14)
+    for (const x of [2, 7, 12]) {
+      const length = 5 + Math.floor(r() * 9)
+      for (let y = 0; y < length; y++) b.set(x + (y % 4 === 3 ? 1 : 0), y, rgba(y % 3 === 0 ? '#57774a' : '#3e5f35'))
+    }
+    b.save(join(dir, 'vines.png'))
+  }
+  // Fallen ruin stones to climb (solid).
+  {
+    const r = rng(45)
+    const b = new Bitmap(16, 16)
+    b.fill(0, 0, 16, 16, rgba('#55594f'))
+    b.fill(0, 7, 16, 1, rgba('#3d403a'))
+    b.fill(8, 0, 1, 7, rgba('#3d403a'))
+    b.fill(4, 8, 1, 8, rgba('#3d403a'))
+    b.fill(12, 8, 1, 8, rgba('#3d403a'))
+    for (let i = 0; i < 8; i++) b.set(Math.floor(r() * 16), Math.floor(r() * 16), rgba('#666b60'))
+    b.fill(0, 0, 16, 1, rgba('#6f8f4c'))
+    for (let x = 0; x < 16; x++) if (r() < 0.4) b.set(x, 1, rgba('#4f6e38'))
+    b.save(join(dir, 'stone.png'))
+  }
+  // Ferns on the forest floor, 16 by 12.
+  {
+    const b = new Bitmap(16, 12)
+    const leaf = rgba('#4f6e38')
+    const light = rgba('#6f8f4c')
+    for (const [x0, lean] of [[3, -1], [8, 0], [12, 1]]) {
+      for (let y = 0; y < 12; y++) {
+        const x = Math.round(x0 + lean * (11 - y) * 0.35)
+        b.set(x, y, y < 4 ? light : leaf)
+        if (y % 2 === 0 && y > 1 && y < 10) { b.set(x - 1, y + 1, leaf); b.set(x + 1, y + 1, light) }
+      }
+    }
+    b.save(join(dir, 'fern.png'))
+  }
+  // Coin, two frames: face-on and turning.
+  for (const [frame, half] of [[1, 4], [2, 2]]) {
+    const b = new Bitmap(10, 10)
+    for (let y = 0; y < 10; y++) {
+      for (let x = 0; x < 10; x++) {
+        const dx = (x + 0.5 - 5) / (half + 0.5)
+        const dy = (y + 0.5 - 5) / 4.5
+        if (dx * dx + dy * dy <= 1) b.set(x, y, rgba(dx < -0.3 ? '#fff2b0' : dx > 0.4 ? '#b48f2e' : '#e2c25a'))
+      }
+    }
+    b.outline('#3a3022')
+    b.save(join(dir, `coin-${frame}.png`))
+  }
+  // Beetle, two frames of little legs.
+  {
+    const pal = { k: ink, s: '#463a48', l: '#6a5a6e', e: '#e6cfa8' }
+    const body = ['....kkkkk.....', '..kklllsskk...', '.klllssssssk..', 'klssssssssskk.', 'ksssssssssskek', 'kssssssssssskk', '.kkkkkkkkkkkk.']
+    spriteBitmap(grid('beetle-1', [...body, '..k..k..k..k..', '.k..k..k..k...', '..............']), pal).save(join(dir, 'beetle-1.png'))
+    spriteBitmap(grid('beetle-2', [...body, '..k..k..k..k..', '...k..k..k..k.', '..............']), pal).save(join(dir, 'beetle-2.png'))
+  }
+  // Goal: a stone lantern whose light flickers.
+  for (const [frame, glow] of [[1, '#f0d68a'], [2, '#e2c25a']]) {
+    const b = new Bitmap(16, 32)
+    b.fill(3, 4, 10, 2, rgba('#6b7066'))
+    b.fill(1, 2, 14, 2, rgba('#55594f'))
+    b.fill(4, 6, 8, 9, rgba('#55594f'))
+    b.fill(6, 8, 4, 5, rgba(glow))
+    b.fill(6, 15, 4, 13, rgba('#4b4f48'))
+    b.fill(3, 28, 10, 4, rgba('#55594f'))
+    b.fill(1, 0, 14, 2, rgba('#6f8f4c'))
+    b.outline(ink)
+    b.save(join(dir, `lantern-${frame}.png`))
+  }
+
+  // Scenery (not solid). Pale and low in contrast so it reads as far away.
+  {
+    const b = new Bitmap(20, 20)
+    disc(b, 10, 10, 9, '#ecebdc')
+    b.save(join(dir, 'sun.png'))
+  }
+  {
+    const b = new Bitmap(44, 14)
+    for (const [x, y, rr] of [[10, 9, 5], [20, 6, 7], [31, 8, 6], [37, 10, 4]]) disc(b, x, y, rr, '#dfe3db')
+    b.fill(4, 11, 38, 3, rgba('#dfe3db'))
+    b.save(join(dir, 'cloud.png'))
+  }
+  // A strip of far pines, tiles left to right.
+  {
+    const r = rng(46)
+    const b = new Bitmap(64, 40)
+    for (let n = 0; n < 7; n++) {
+      const cx = 4 + n * 9 + Math.floor(r() * 4)
+      const h = 18 + Math.floor(r() * 18)
+      for (let y = 0; y < h; y++) {
+        const half = Math.floor((y / h) * 6) + 1
+        b.fill(cx - half, 40 - h + y, half * 2, 1, rgba('#a9b0a4'))
+      }
+    }
+    b.fill(0, 34, 64, 6, rgba('#a9b0a4'))
+    b.save(join(dir, 'far-pines.png'))
+  }
+  // Ruined arches far behind the level: solid stone with two arched openings.
+  {
+    const b = new Bitmap(96, 56)
+    const stone = rgba('#9ba294')
+    const cap = rgba('#aab1a4')
+    b.fill(2, 10, 54, 46, stone)
+    b.fill(54, 22, 36, 34, stone)
+    b.fill(38, 2, 10, 8, stone)
+    b.fill(2, 10, 54, 2, cap)
+    b.fill(54, 22, 36, 2, cap)
+    const clear = (x, y) => b.data.fill(0, (y * 96 + x) * 4, (y * 96 + x) * 4 + 4)
+    for (const [cx, top, half] of [[22, 22, 11], [72, 32, 9]]) {
+      for (let y = top; y < 56; y++) for (let x = cx - half; x < cx + half; x++) {
+        const dy = y + 0.5 - (top + half)
+        if (dy > 0 || (x + 0.5 - cx) ** 2 + dy * dy <= half * half) clear(x, y)
+      }
+    }
+    // a broken corner and a missing block, so it reads as a ruin
+    for (let y = 22; y < 30; y++) for (let x = 84; x < 90; x++) if (x - 84 > y - 22) clear(x, y)
+    for (let y = 10; y < 14; y++) for (let x = 2; x < 8; x++) clear(x, y)
+    b.save(join(dir, 'ruins.png'))
+  }
+  // A big forest tree: trunk, roots, and a layered canopy with hanging moss.
+  {
+    const r = rng(47)
+    const b = new Bitmap(56, 104)
+    b.fill(24, 44, 9, 60, rgba('#4a3a2c'))
+    b.fill(24, 44, 3, 60, rgba('#5b4836'))
+    b.fill(31, 44, 2, 60, rgba('#352a20'))
+    b.fill(18, 98, 22, 6, rgba('#4a3a2c'))
+    b.fill(20, 96, 4, 2, rgba('#4a3a2c'))
+    b.fill(33, 96, 5, 2, rgba('#4a3a2c'))
+    b.fill(14, 56, 12, 3, rgba('#4a3a2c'))
+    b.fill(32, 64, 12, 3, rgba('#4a3a2c'))
+    const blobs = [[28, 26, 18], [14, 36, 12], [42, 36, 12], [20, 16, 11], [37, 15, 11], [28, 42, 11], [8, 58, 7], [48, 64, 7]]
+    for (const [x, y, rr] of blobs) disc(b, x, y, rr, '#2f4a2a')
+    for (const [x, y, rr] of blobs) disc(b, x - 2, y - 2, rr * 0.78, '#3e5f35')
+    for (const [x, y, rr] of blobs) disc(b, x - 4, y - 4, rr * 0.45, '#57774a')
+    for (let i = 0; i < 60; i++) {
+      const x = Math.floor(r() * 56)
+      const y = Math.floor(r() * 70)
+      if (b.get(x, y)[3] > 0) b.set(x, y, rgba('#6f8f5c')) // light flecks only on leaves
+    }
+    for (const x of [9, 17, 38, 46]) {
+      const length = 6 + Math.floor(r() * 10)
+      for (let y = 0; y < length; y++) b.set(x, 44 + y, rgba('#3e5f35'))
+    }
+    b.save(join(dir, 'tree.png'))
+  }
+
+  titleCard('MOSS RUN', 'PRESS ANY KEY', {
+    fill: '#e2c25a',
+    shade: '#47643a',
+    outline: ink,
+    sub: '#2f3a2a',
+  }).save(join(dir, 'title.png'))
+}
+
 cloudHopper()
 starDefender()
 cryptDash()
-console.log('wrote showcase art into examples/cloud-hopper, examples/star-defender, examples/crypt-dash')
+mossRun()
+console.log('wrote showcase art into examples/cloud-hopper, examples/star-defender, examples/crypt-dash, examples/moss-run')
