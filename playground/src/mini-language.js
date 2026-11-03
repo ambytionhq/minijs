@@ -8,7 +8,9 @@ const KEYWORDS = new Set(
     'pixel art background gravity key is pressed held released mouse clicked on touches leaves screen ' +
     'every after second seconds and or not above below more less greater bigger smaller than ground ' +
     'move push stop set to add subtract from make remove change look play show text in restart random count of ' +
-    'box circle left right up down'
+    'box circle left right up down ' +
+    'tilemap tile hidden sound music particles burst start hide switch states state enter leave go volume pitch everywhere ' +
+    'touching enters wave fade hold attack wobble steps muffle crunch echo amount rate life speed direction spread drag colors color shape glow area'
   ).split(' '),
 )
 

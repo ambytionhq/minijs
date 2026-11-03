@@ -29,6 +29,17 @@ const BROKEN = [
   'when every 0 seconds\n  stop game',
   'thing a\n  looks like "a.png"\n  camera follows\nthing b\n  looks like "a.png"\n  camera follows',
   'when game starts',
+  'always\n  play sound ding',
+  'always\n  play music theme',
+  'always\n  burst sparkle at 1, 1',
+  'always\n  switch to tilemap level',
+  'sound ding like coyn',
+  'sound ding like coin\nsound ding like coin',
+  'thing a\n  looks like red box 1 by 1\nstates a\n  state s\n    go to t after 1 second',
+  'states game\n  state a\nstates game\n  state a',
+  'states game\n  state a\n  state a',
+  'always\n  set game state to menu',
+  'states game',
 ]
 
 describe('error wording', () => {
@@ -52,6 +63,16 @@ describe('error wording', () => {
   it('covers every language error code', () => {
     const codes = new Set(BROKEN.flatMap((src) => compile(src).errors.map((e) => e.code)))
     for (const code of [
+      'unknown-sound',
+      'unknown-music',
+      'unknown-particles',
+      'unknown-tilemap',
+      'unknown-preset',
+      'unknown-state',
+      'duplicate-name',
+      'duplicate-machine',
+      'duplicate-state',
+      'no-machine',
       'indent-mixed',
       'indent-uneven',
       'indent-unexpected',

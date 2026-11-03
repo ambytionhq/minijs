@@ -4,6 +4,7 @@
 import { formatNumber } from '../text.js'
 /** @import { ActionFn, NumFn } from './context.js' */
 import { eachTarget } from './context.js'
+import { EMIT_WHERE } from '../particles.js'
 import { lowerExpr } from './expr.js'
 
 /**
@@ -134,10 +135,127 @@ export function lowerAction(action, catalog, text) {
       return lowerLog(action.parts, catalog)
     case 'showText':
       return lowerShowText(action.parts, action.at, action.color, catalog, text)
+    case 'playSound':
+      return lowerPlaySound(action, catalog)
+    case 'playMusic': {
+      const name = action.name
+      return (c) => c.audio.playMusic(name)
+    }
+    case 'stopMusic':
+      return (c) => c.audio.stopMusic()
+    case 'setVolume': {
+      const value = lowerExpr(action.value, catalog)
+      const channel = action.channel
+      return (c) => c.audio.setVolume(channel, Math.max(0, Math.min(100, value(c))) / 100)
+    }
+    case 'burst': {
+      const effect = catalog.particleIds.get(action.name) ?? 0
+      if (!catalog.particleIds.has(action.name)) return () => {}
+      if (action.thing !== null) {
+        return eachTarget(catalog.typeId(action.thing), (c, id) => {
+          c.particles.burst(effect, c.world.x[id] + c.world.w[id] / 2, c.world.y[id] + c.world.h[id] / 2)
+        })
+      }
+      const x = lowerExpr(/** @type {import('@minijs/lang').Expr} */ (action.x), catalog)
+      const y = lowerExpr(/** @type {import('@minijs/lang').Expr} */ (action.y), catalog)
+      return (c) => c.particles.burst(effect, x(c), y(c))
+    }
+    case 'startParticles': {
+      const effect = catalog.particleIds.get(action.name) ?? 0
+      if (!catalog.particleIds.has(action.name)) return () => {}
+      if (action.where === 'thing') {
+        return eachTarget(catalog.typeId(/** @type {string} */ (action.thing)), (c, id) => {
+          c.particles.start(effect, EMIT_WHERE.thing, id, 0, 0)
+        })
+      }
+      if (action.where === 'screen') return (c) => c.particles.start(effect, EMIT_WHERE.screen, -1, 0, 0)
+      const x = lowerExpr(/** @type {import('@minijs/lang').Expr} */ (action.x), catalog)
+      const y = lowerExpr(/** @type {import('@minijs/lang').Expr} */ (action.y), catalog)
+      return (c) => c.particles.start(effect, EMIT_WHERE.point, -1, x(c), y(c))
+    }
+    case 'stopParticles': {
+      const effect = catalog.particleIds.get(action.name) ?? 0
+      if (!catalog.particleIds.has(action.name)) return () => {}
+      if (action.thing === null) return (c) => c.particles.stop(effect, -1)
+      return eachTarget(catalog.typeId(action.thing), (c, id) => c.particles.stop(effect, id))
+    }
+    case 'setState': {
+      const state = catalog.stateId(action.thing, action.state)
+      const m = catalog.machineIndex(action.thing)
+      if (action.thing === null) {
+        return (c) => {
+          const machine = c.machines.machines[m]
+          if (machine.gameState !== state) machine.go(c, -1, state)
+        }
+      }
+      return eachTarget(catalog.typeId(action.thing), (c, id) => {
+        if (c.world.state[id] !== state) c.machines.machines[m].go(c, id, state)
+      })
+    }
+    case 'setTile': {
+      if (action.tile !== null) catalog.tileNameId(action.tile, action.loc)
+      const name = action.tile
+      if (action.x === null || action.y === null) {
+        // `the tile`: the one this rule touched.
+        return (c) => {
+          if (c.hitMap < 0) return
+          const map = c.tiles.maps[c.hitMap]
+          const id = name === null ? -1 : (map.idByName.get(name) ?? -2)
+          if (id !== -2) c.tiles.setCell(c.hitMap, c.hitLayer, c.hitCol, c.hitRow, id)
+        }
+      }
+      const x = lowerExpr(action.x, catalog)
+      const y = lowerExpr(action.y, catalog)
+      return (c) => c.tiles.setAt(x(c), y(c), name)
+    }
+    case 'showTilemap': {
+      const name = action.name
+      const show = action.show
+      return (c) => {
+        const index = c.tiles.mapIndex(name)
+        if (index >= 0) c.tiles.setVisible(index, show)
+      }
+    }
+    case 'switchTilemap': {
+      const name = action.name
+      return (c) => c.control.switchTilemap(name)
+    }
     case 'stopGame':
       return (c) => c.control.stop()
     case 'restartGame':
       return (c) => c.control.restart()
+  }
+}
+
+/**
+ * @param {Extract<Action, { kind: 'playSound' }>} action
+ * @param {Catalog} catalog
+ * @returns {ActionFn}
+ */
+function lowerPlaySound(action, catalog) {
+  const name = action.name
+  const volume = action.volume ? lowerExpr(action.volume, catalog) : null
+  const pitch = action.pitch ? lowerExpr(action.pitch, catalog) : null
+  const from = action.from === null ? -1 : catalog.typeId(action.from)
+  return (c) => {
+    const v = volume === null ? 1 : Math.max(0, volume(c)) / 100
+    const p = pitch === null ? 1 : Math.max(1, pitch(c)) / 100
+    if (from < 0) {
+      c.audio.playSound(name, v, p, 0)
+      return
+    }
+    // Far-off things sound quieter, and come from their side of the screen.
+    const id = c.resolve(from)
+    if (id < 0) {
+      c.audio.playSound(name, v, p, 0)
+      return
+    }
+    const dx = c.world.x[id] + c.world.w[id] / 2 - (c.camera.x + c.screenWidth / 2)
+    const dy = c.world.y[id] + c.world.h[id] / 2 - (c.camera.y + c.screenHeight / 2)
+    const reach = Math.max(c.screenWidth, c.screenHeight)
+    const distance = Math.min(1, Math.hypot(dx, dy) / (reach * 1.25))
+    const pan = Math.max(-1, Math.min(1, dx / (c.screenWidth / 2)))
+    c.audio.playSound(name, v * (1 - distance), p, pan * 0.8)
   }
 }
 

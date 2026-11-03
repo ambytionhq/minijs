@@ -9,9 +9,35 @@ import { PLACEHOLDER_SIZE } from './config.js'
 
 /** Loads pictures from data: URLs keyed by the name the game uses. */
 export class DataUrlAssetLoader {
-  /** @param {Record<string, string>} images picture name in the game -> data URL */
-  constructor(images) {
+  /**
+   * @param {Record<string, string>} images picture name in the game -> data URL
+   * @param {Record<string, string>} [files] other files: text as it is, recordings as data URLs
+   */
+  constructor(images, files = {}) {
     this.images = images
+    this.files = files
+  }
+
+  /**
+   * @param {string} src
+   * @returns {Promise<string | null>}
+   */
+  async loadText(src) {
+    return this.files[src] ?? null
+  }
+
+  /**
+   * @param {string} src
+   * @returns {Promise<ArrayBuffer | null>}
+   */
+  async loadBytes(src) {
+    const url = this.files[src]
+    if (!url) return null
+    try {
+      return await (await fetch(url)).arrayBuffer()
+    } catch {
+      return null
+    }
   }
 
   /**
@@ -44,12 +70,57 @@ function el(tag, style, text) {
 }
 
 /**
+ * A small button to turn the game's sound off and on. The M key does the same.
+ * @param {import('./game.js').Game} game
+ */
+function soundToggle(game) {
+  const button = /** @type {HTMLButtonElement} */ (
+    el('button', {
+      position: 'absolute',
+      top: '10px',
+      right: '10px',
+      padding: '6px 12px',
+      borderRadius: '999px',
+      border: '1px solid rgba(255, 255, 255, 0.2)',
+      background: 'rgba(12, 12, 16, 0.72)',
+      color: '#f4f4f5',
+      font: '600 12px/1.2 system-ui, sans-serif',
+      cursor: 'pointer',
+    })
+  )
+  let muted = false
+  const flip = () => {
+    muted = !muted
+    game.setMuted(muted)
+    draw()
+  }
+  const draw = () => {
+    button.textContent = muted ? 'Sound off' : 'Sound on'
+    button.setAttribute('aria-pressed', String(muted))
+  }
+  draw()
+  button.type = 'button'
+  button.addEventListener('click', () => {
+    flip()
+    game.canvas.focus({ preventScroll: true })
+  })
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'm' || e.key === 'M') {
+      // A game may use M itself, so this only runs for games that don't.
+      const usesM = game.simulation.program.rules.some((r) => r.trigger.kind === 'key' && r.trigger.key === 'm')
+      if (!usesM) flip()
+    }
+  })
+  return button
+}
+
+/**
  * Fill `root` with the game: a canvas that fits the window, a "click to play"
  * card (browsers only send keys after a click), and a readable message if
  * something goes wrong.
- * @param {{ root: HTMLElement; program: Program; images: Record<string, string>; title: string }} options
+ * @param {{ root: HTMLElement; program: Program; images: Record<string, string>; files?: Record<string, string>; title: string }} options
  */
-export async function mount({ root, program, images, title }) {
+export async function mount({ root, program, images, files = {}, title }) {
   Object.assign(root.style, {
     position: 'fixed',
     inset: '0',
@@ -92,7 +163,7 @@ export async function mount({ root, program, images, title }) {
   }
 
   const game = await start(program, canvas, {
-    assets: new DataUrlAssetLoader(images),
+    assets: new DataUrlAssetLoader(images, files),
     keyTarget: window,
     touchButtons: 'auto',
   })
@@ -107,7 +178,11 @@ export async function mount({ root, program, images, title }) {
     if (!visible || document.hidden) {
       game.loop.stop()
       game.input.releaseAll()
-    } else if (!game.simulation.stopped) game.loop.start()
+      game.audio?.suspend()
+    } else if (!game.simulation.stopped) {
+      game.loop.start()
+      game.audio?.resume()
+    }
   }
   const observer = new IntersectionObserver((entries) => {
     visible = entries[0].isIntersecting
@@ -150,6 +225,7 @@ export async function mount({ root, program, images, title }) {
     await game.reload(program)
     syncPlayback()
     canvas.focus({ preventScroll: true })
+    if ((program.sounds ?? []).length > 0 || (program.music ?? []).length > 0) frame.append(soundToggle(game))
   }
   card.addEventListener('click', () => void begin(), { once: true })
   window.addEventListener(

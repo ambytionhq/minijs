@@ -7,6 +7,10 @@
 /** @import { ControlState } from '../controls.js' */
 /** @import { TextLayer } from '../text.js' */
 /** @import { World } from '../world.js' */
+/** @import { TileWorld } from '../tiles/tile-world.js' */
+/** @import { ParticleSystem } from '../particles.js' */
+/** @import { MachineSet } from '../machines.js' */
+/** @import { AudioOutput } from '../audio/output.js' */
 
 /**
  * @typedef {object} Camera
@@ -22,6 +26,7 @@
  * @property {() => void} restart
  * @property {(error: MiniError) => void} error
  * @property {(text: string) => void} log
+ * @property {(name: string) => void} switchTilemap
  */
 
 /** @typedef {(c: RuleContext) => number} NumFn */
@@ -63,8 +68,21 @@ export class RuleContext {
    * @type {Int32Array}
    */
   current
+  /** @type {TileWorld} */
+  tiles
+  /** @type {ParticleSystem} */
+  particles
+  /** @type {MachineSet} */
+  machines
+  /** @type {AudioOutput} */
+  audio
+  /** The tile a `touches ... tile` rule is looking at. Map -1 means none. */
+  hitMap = -1
+  hitLayer = 0
+  hitCol = 0
+  hitRow = 0
 
-  /** @param {{ world: World; catalog: Catalog; vars: Float64Array; input: Input; controls: ControlState; camera: Camera; text: TextLayer; screenWidth: number; screenHeight: number; random: () => number; control: Control }} options */
+  /** @param {{ world: World; catalog: Catalog; vars: Float64Array; input: Input; controls: ControlState; camera: Camera; text: TextLayer; screenWidth: number; screenHeight: number; random: () => number; control: Control; tiles: TileWorld; particles: ParticleSystem; machines: MachineSet; audio: AudioOutput }} options */
   constructor(options) {
     this.world = options.world
     this.catalog = options.catalog
@@ -77,6 +95,10 @@ export class RuleContext {
     this.screenHeight = options.screenHeight
     this.random = options.random
     this.control = options.control
+    this.tiles = options.tiles
+    this.particles = options.particles
+    this.machines = options.machines
+    this.audio = options.audio
     this.bound = new Int32Array(options.catalog.typeCount).fill(-1)
     this.current = new Int32Array(options.catalog.typeCount).fill(-1)
   }

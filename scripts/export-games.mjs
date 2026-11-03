@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path'
 import { build } from 'vite'
 import { compile, formatError } from '@minijs/lang'
 import { MemoryFs } from '../playground/src/files/memory-fs.js'
-import { collectImages, exportHtml } from '../playground/src/share/export-html.js'
+import { collectFiles, collectImages, exportHtml } from '../playground/src/share/export-html.js'
 
 const ROOT = join(import.meta.dirname, '..')
 const OUT = process.argv[2] ? resolve(process.argv[2]) : join(ROOT, 'site/public/play')
@@ -46,8 +46,9 @@ for (const [folder, title] of GAMES) {
   for (const name of readdirSync(join(dir, 'assets'))) {
     files[`assets/${name}`] = new Blob([readFileSync(join(dir, 'assets', name))], { type: 'image/png' })
   }
-  const images = await collectImages(new MemoryFs(folder, files), 'game.mini', program)
-  const html = exportHtml({ title, program, images, playerSource: player })
+  const fs = new MemoryFs(folder, files)
+  const images = await collectImages(fs, 'game.mini', program)
+  const html = exportHtml({ title, program, images, files: await collectFiles(fs, 'game.mini', program), playerSource: player })
   writeFileSync(join(OUT, `${folder}.html`), html)
   console.log(`wrote ${join(OUT, `${folder}.html`)} (${(html.length / 1024).toFixed(0)} KB)`)
 }

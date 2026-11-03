@@ -4,13 +4,18 @@
 import { compile } from '@minijs/lang'
 import { start } from '@minijs/runtime'
 import { IS_DESKTOP } from '../desktop/env.js'
-import { imageCandidates, ProjectAssetLoader } from '../files/project-assets.js'
+import { ProjectAssetLoader, usableSrc } from '../files/project-assets.js'
 import { basename, dirname, fileKind, isInside, join, nameProblem } from '../files/paths.js'
 import { freeName } from '../files/project.js'
 import { startPerf } from '../perf.js'
 import { firstFile, rememberOpenFile } from '../projects/registry.js'
 import { replaceRoute } from '../router.js'
+import { saveFile } from '../share/save-file.js'
+import { loadSetting, saveSetting } from '../storage.js'
 import { NEW_FILE } from '../templates.js'
+import { fileThumb } from '../tools/file-thumbs.js'
+import { VISUAL_KINDS, newFileText, openTool, visualKind } from '../tools/index.js'
+import { insertDeclaration, readProgram } from '../tools/machine-edit.js'
 import { createConsole } from '../ui/console.js'
 import { confirmAction } from '../ui/dialog.js'
 import { createFileTree } from '../ui/file-tree.js'
@@ -21,6 +26,7 @@ import { toast } from '../ui/toast.js'
 /** @import { Entry, ProjectFs } from '../files/project.js' */
 /** @import { ExamplesFs } from '../files/examples-fs.js' */
 /** @import { Editor } from '../editor.js' */
+/** @import { Tool, ToolContext, VisualKind } from '../tools/index.js' */
 
 /**
  * Something that wants to hear about every compile (the tutorial).
@@ -53,6 +59,14 @@ const lessonPane = $('lesson-pane')
 const editorBox = $('editor')
 const editorLoading = $('editor-loading')
 const preview = $('preview')
+const toolHost = $('tool-host')
+const statesHost = $('states-host')
+const viewSwitch = $('view-switch')
+const viewTextButton = /** @type {HTMLButtonElement} */ ($('view-text'))
+const viewStatesButton = /** @type {HTMLButtonElement} */ ($('view-states'))
+const workspaceGrid = /** @type {HTMLElement} */ (view.querySelector('.workspace'))
+const muteButton = /** @type {HTMLButtonElement} */ ($('mute'))
+const previewAudio = /** @type {HTMLAudioElement} */ ($('preview-audio'))
 const previewImage = /** @type {HTMLImageElement} */ ($('preview-image'))
 const previewInfo = $('preview-info')
 const previewUse = $('preview-use')
@@ -89,6 +103,17 @@ let previewUrl = null
 /** @type {CompileWatcher | null} */
 let watcher = null
 let mounted = false
+
+/** @type {Tool | null} */
+let openedTool = null
+/** @type {ReturnType<typeof import('../tools/states-view.js').createStatesView> | null} */
+let statesView = null
+let showingStates = false
+let toolToken = 0
+let toolReloadTimer = 0
+let muted = loadSetting('muted') === '1'
+/** @type {Map<string, Promise<string | null>>} */
+const thumbs = new Map()
 
 /** @type {Editor | null} */
 let editor = null
@@ -158,6 +183,16 @@ const tree = createFileTree($('file-tree'), {
   },
   onUpload: (files, dir) => upload(files, dir),
   onProblem: showFilesProblem,
+  thumbFor: (path) => {
+    if (!fs) return Promise.resolve(null)
+    const key = `${fs.id}/${path}`
+    let thumb = thumbs.get(key)
+    if (!thumb) {
+      thumb = fileThumb(path, fs)
+      thumbs.set(key, thumb)
+    }
+    return thumb
+  },
 })
 
 // ---------------------------------------------------------------------------
@@ -201,6 +236,7 @@ export async function mountWorkspace({ project, file = null, lessonPanel = null,
 export async function unmountWorkspace() {
   if (!mounted) return
   await flushSave()
+  closeVisual()
   window.clearTimeout(compileTimer)
   game?.destroy()
   game = null
@@ -269,6 +305,7 @@ function setSaveStatus(text, state = 'ok') {
 function updateHeaders() {
   fileName.textContent = openPath ?? 'No file open'
   runName.textContent = 'Your game'
+  viewSwitch.hidden = !(openPath && fileKind(openPath) === 'mini')
 }
 
 /** @param {unknown} error */
@@ -334,7 +371,7 @@ function renderTree() {
     for (const e of entries) if (e.kind === 'file' && examples.isEdited(e.path)) edited.add(e.path)
   }
   tree.render({ entries, readOnly: fs.readOnly, openPath, runPath, edited })
-  for (const id of ['new-file', 'new-folder', 'upload']) {
+  for (const id of ['new-file', 'new-visual', 'new-folder', 'upload']) {
     const b = /** @type {HTMLButtonElement} */ ($(id))
     b.disabled = fs.readOnly
   }
@@ -342,8 +379,182 @@ function renderTree() {
 
 /** @param {boolean} on show the editor (true) or the picture preview (false) */
 function showEditor(on) {
-  editorBox.hidden = !on
+  editorBox.hidden = !on || showingStates
+  statesHost.hidden = !on || !showingStates
   preview.hidden = on
+  toolHost.hidden = true
+  workspaceGrid.classList.toggle('tool-open', on && showingStates)
+}
+
+/** Close the picture editors. Anything waiting to be saved has already been saved. */
+function closeVisual() {
+  toolToken++
+  openedTool?.destroy()
+  openedTool = null
+  toolHost.replaceChildren()
+  toolHost.hidden = true
+  statesView?.destroy()
+  statesView = null
+  showingStates = false
+  statesHost.hidden = true
+  editorBox.hidden = false
+  setViewButtons()
+  workspaceGrid.classList.remove('tool-open')
+}
+
+function setViewButtons() {
+  viewTextButton.setAttribute('aria-checked', String(!showingStates))
+  viewStatesButton.setAttribute('aria-checked', String(showingStates))
+  viewTextButton.tabIndex = showingStates ? -1 : 0
+  viewStatesButton.tabIndex = showingStates ? 0 : -1
+}
+
+/** @param {boolean} on */
+async function showStates(on) {
+  if (on === showingStates || !openPath) return
+  const e = await getEditor()
+  showingStates = on
+  setViewButtons()
+  if (on) {
+    const { createStatesView } = await import('../tools/states-view.js')
+    const path = openPath
+    statesView?.destroy()
+    statesHost.hidden = false
+    editorBox.hidden = true
+    workspaceGrid.classList.add('tool-open')
+    statesView = createStatesView(statesHost, {
+      getText: () => e.getText(),
+      setText: (text) => e.replaceAll(text),
+      game: () => game,
+      key: `${fs?.id ?? ''}/${path}`,
+      toast: (message) => toast(message),
+    })
+  } else {
+    statesView?.destroy()
+    statesView = null
+  }
+  showEditor(true)
+}
+
+viewTextButton.addEventListener('click', () => void showStates(false))
+viewStatesButton.addEventListener('click', () => void showStates(true))
+viewSwitch.addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+  e.preventDefault()
+  const next = !showingStates
+  void showStates(next).then(() => (next ? viewStatesButton : viewTextButton).focus())
+})
+
+/**
+ * What the picture editors can ask for.
+ * @param {string} path
+ * @returns {ToolContext}
+ */
+function toolContext(path) {
+  const project = /** @type {ProjectFs} */ (fs)
+  return {
+    path,
+    fs: project,
+    readOnly: project.readOnly && project.type !== 'examples',
+    save: (text) => saveVisual(path, text),
+    addToGame: async (line) => {
+      if (!runPath || !fs) {
+        toast('Open or make a game file first.')
+        return
+      }
+      const before = await fs.readText(runPath)
+      const next = insertDeclaration(before, line)
+      if (next !== before) await fs.writeText(runPath, next)
+      void update()
+      toast(`Added to ${basename(runPath)}: ${line}`)
+    },
+    gameHasLine: async (line) => {
+      if (!runPath || !fs) return false
+      const text = await fs.readText(runPath).catch(() => '')
+      return text.split('\n').some((l) => l.trim() === line)
+    },
+    runPath: () => runPath,
+    gameThingNames: async () => {
+      if (!runPath || !fs) return []
+      const text = await fs.readText(runPath).catch(() => '')
+      return readProgram(text).things.map((t) => t.name)
+    },
+    filesOfKind: async (extension) => entries.filter((e) => e.kind === 'file' && e.path.endsWith(`.${extension}`)).map((e) => e.path),
+    openFile: (next) => void openFile(next),
+    usableName: (target) => (runPath ? usableSrc(runPath, target) : target),
+    toast: (message) => toast(message),
+    saveFile: async (blob, name) => {
+      await saveFile(blob, name)
+    },
+    game: () => game,
+  }
+}
+
+/**
+ * Save an editor's file soon, and restart the game if it uses that file.
+ * @param {string} path
+ * @param {string} text
+ */
+function saveVisual(path, text) {
+  const target = fs
+  if (!target) return
+  pendingSave = async () => {
+    setSaveStatus('Saving', 'busy')
+    try {
+      await target.writeText(path, text)
+      setSaveStatus('Saved')
+      thumbs.delete(`${target.id}/${path}`)
+      renderTree()
+    } catch (error) {
+      setSaveStatus(`Not saved: ${message(error)}`, 'error')
+    }
+  }
+  window.clearTimeout(saveTimer)
+  saveTimer = window.setTimeout(() => void flushSave(), SAVE_DELAY_MS)
+  setSaveStatus('Editing', 'busy')
+  window.clearTimeout(toolReloadTimer)
+  toolReloadTimer = window.setTimeout(() => {
+    void flushSave().then(async () => {
+      if (!runPath || !fs) return
+      const source = await fs.readText(runPath).catch(() => '')
+      // Tile sets are only named inside tile maps, so any game with a map may use one.
+      const used = source.includes(basename(path)) || (path.endsWith('.tileset') && /^tilemap\b/m.test(source))
+      if (used) await update()
+    })
+  }, 650)
+}
+
+/**
+ * @param {string} path
+ * @param {VisualKind} kind
+ */
+async function showTool(path, kind) {
+  if (!fs) return
+  const token = ++toolToken
+  // The game keeps running beside the editor, so the file has a game to go with.
+  if (runPath === null) {
+    const first = await firstFile(fs)
+    const game = entries.find((e) => e.kind === 'file' && fileKind(e.path) === 'mini')?.path ?? first
+    if (game && fileKind(game) === 'mini') {
+      runPath = game
+      void update()
+    }
+  }
+  const text = await fs.readText(path)
+  if (token !== toolToken) return
+  openedTool?.destroy()
+  editorBox.hidden = true
+  preview.hidden = true
+  statesHost.hidden = true
+  toolHost.hidden = false
+  workspaceGrid.classList.add('tool-open')
+  toolHost.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted tool-loading', textContent: 'Opening...' }))
+  const tool = await openTool(kind, toolHost, text, toolContext(path))
+  if (token !== toolToken) {
+    tool.destroy()
+    return
+  }
+  openedTool = tool
 }
 
 async function openFirst() {
@@ -352,6 +563,7 @@ async function openFirst() {
     await openFile(first)
     return
   }
+  closeVisual()
   openPath = null
   editor?.load('', true)
   showEditor(true)
@@ -369,9 +581,15 @@ export async function openFile(path) {
   await flushSave()
   const e = await getEditor()
   const kind = fileKind(path)
+  const visual = visualKind(path)
+  closeVisual()
   tree.select(path)
   try {
-    if (kind === 'mini' || kind === 'text') {
+    if (visual) {
+      openPath = path
+      setSaveStatus('')
+      await showTool(path, visual)
+    } else if (kind === 'mini' || kind === 'text') {
       const text = await fs.readText(path)
       openPath = path
       e.load(text, kind === 'mini')
@@ -386,7 +604,7 @@ export async function openFile(path) {
       }
     } else {
       openPath = path
-      await showPreview(path, kind === 'image')
+      await showPreview(path, kind)
       setSaveStatus('')
     }
     rememberOpenFile(fs, path)
@@ -410,17 +628,34 @@ function imageLoaded(img) {
 
 /**
  * @param {string} path
- * @param {boolean} isImage
+ * @param {import('../files/paths.js').FileKind} kind
  */
-async function showPreview(path, isImage) {
+async function showPreview(path, kind) {
   if (!fs) return
   showEditor(false)
   if (previewUrl) URL.revokeObjectURL(previewUrl)
   previewUrl = null
+  const isImage = kind === 'image'
   previewImage.hidden = !isImage
+  previewAudio.hidden = kind !== 'audio'
+  previewAudio.pause()
+  previewAudio.removeAttribute('src')
   previewUse.replaceChildren()
   const blob = await fs.readBlob(path)
   const size = blob.size < 1024 ? `${blob.size} bytes` : `${(blob.size / 1024).toFixed(1)} KB`
+  if (kind === 'audio') {
+    previewUrl = URL.createObjectURL(blob)
+    previewAudio.src = previewUrl
+    previewInfo.textContent = `${basename(path)}, ${size}`
+    const name = assetCodeName(path)
+    const src = runPath ? usableSrc(runPath, path) : basename(path)
+    const code = document.createElement('code')
+    code.textContent = `sound ${name} "${src}"`
+    const musicCode = document.createElement('code')
+    musicCode.textContent = `music ${name} "${src}"`
+    previewUse.append('Use it in a game with: ', code, ' or, to loop it: ', musicCode)
+    return
+  }
   if (!isImage) {
     previewInfo.textContent = `${basename(path)}, ${size}. The Studio can't show this kind of file.`
     return
@@ -432,12 +667,19 @@ async function showPreview(path, isImage) {
   previewInfo.textContent = `${previewImage.naturalWidth} by ${previewImage.naturalHeight} pixels, ${size}`
   // The shortest name the running game would find this picture by.
   const from = runPath ?? ''
-  const runDir = dirname(from)
-  const relative = runDir !== '' && isInside(path, runDir) ? path.slice(runDir.length + 1) : path
-  const usable = [basename(path), relative, path].find((src) => imageCandidates(from, src).includes(path)) ?? path
+  const usable = usableSrc(from, path)
   const code = document.createElement('code')
   code.textContent = `looks like "${usable}"`
   previewUse.append('Use it in a game with: ', code)
+}
+
+/**
+ * A name a game can use, from a file's name.
+ * @param {string} path
+ */
+function assetCodeName(path) {
+  const clean = basename(path).replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^[^a-z]+/, '')
+  return clean === '' ? 'my-sound' : clean
 }
 
 /**
@@ -453,12 +695,16 @@ async function moveEntry(from, to) {
   await fs.rename(from, to)
   /** @param {string | null} p */
   const moved = (p) => (p !== null && isInside(p, from) ? to + p.slice(from.length) : p)
+  const reopen = openPath !== null && visualKind(openPath) !== null && moved(openPath) !== openPath
   openPath = moved(openPath)
   runPath = moved(runPath)
   if (openPath) rememberOpenFile(fs, openPath)
   tree.select(to)
+  thumbs.clear()
   await refreshTree()
   updateHeaders()
+  // An open editor holds the old name, so open it again under the new one.
+  if (reopen && openPath) await openFile(openPath)
 }
 
 /**
@@ -491,8 +737,8 @@ async function upload(files, dir) {
   }
   await refreshTree()
   if (added === 1 && files.length === 1) await openFile(join(dir, files[0].name))
-  // New pictures may be ones the running game was missing.
-  if (added > 0 && files.some((f) => fileKind(f.name) === 'image')) void update()
+  // New pictures and sounds may be ones the running game was missing.
+  if (added > 0 && files.some((f) => fileKind(f.name) === 'image' || fileKind(f.name) === 'audio')) void update()
 }
 
 $('new-file').addEventListener('click', async () => {
@@ -506,6 +752,88 @@ $('new-file').addEventListener('click', async () => {
   } catch (error) {
     showFilesProblem(message(error))
   }
+})
+
+/**
+ * @param {VisualKind} kind
+ */
+async function newVisual(kind) {
+  if (!fs) return
+  const dir = tree.targetDir()
+  /** @type {{ tileset?: string }} */
+  const options = {}
+  if (kind === 'tilemap') {
+    // A tile map needs tiles. Make a set the first time, so painting can start right away.
+    let tileset = entries.find((e) => e.kind === 'file' && e.path.endsWith('.tileset'))?.path
+    if (!tileset) {
+      tileset = await freeName(fs, dir, VISUAL_KINDS.tileset.base, '.tileset')
+      await fs.writeText(tileset, newFileText('tileset'))
+    }
+    options.tileset = runPath ? usableSrc(runPath, tileset) : basename(tileset)
+  }
+  const info = VISUAL_KINDS[kind]
+  const path = await freeName(fs, dir, info.base, `.${kind}`)
+  await fs.writeText(path, newFileText(kind, options))
+  await refreshTree()
+  await openFile(path)
+  tree.startRename(path)
+}
+
+const newVisualButton = /** @type {HTMLButtonElement} */ ($('new-visual'))
+newVisualButton.addEventListener('click', () => {
+  document.querySelector('.menu')?.remove()
+  const menu = document.createElement('div')
+  menu.className = 'menu visual-menu'
+  menu.setAttribute('role', 'menu')
+  menu.setAttribute('aria-label', 'Make something new')
+  const close = () => {
+    menu.remove()
+    document.removeEventListener('pointerdown', outside, true)
+    newVisualButton.setAttribute('aria-expanded', 'false')
+  }
+  const outside = (/** @type {Event} */ e) => {
+    if (!menu.contains(/** @type {Node} */ (e.target))) close()
+  }
+  for (const [kind, info] of Object.entries(VISUAL_KINDS)) {
+    const item = document.createElement('button')
+    item.type = 'button'
+    item.className = 'menu-item'
+    item.setAttribute('role', 'menuitem')
+    const glyph = document.createElement('i')
+    glyph.className = `ph ph-${info.icon}`
+    glyph.setAttribute('aria-hidden', 'true')
+    const words = document.createElement('span')
+    words.className = 'visual-menu-words'
+    const title = document.createElement('strong')
+    title.textContent = info.title
+    const blurb = document.createElement('small')
+    blurb.textContent = info.blurb
+    words.append(title, blurb)
+    item.append(glyph, words)
+    item.addEventListener('click', () => {
+      close()
+      newVisual(/** @type {VisualKind} */ (kind)).catch((error) => showFilesProblem(message(error)))
+    })
+    menu.append(item)
+  }
+  menu.addEventListener('keydown', (e) => {
+    const items = /** @type {HTMLElement[]} */ ([...menu.querySelectorAll('.menu-item')])
+    const at = items.indexOf(/** @type {HTMLElement} */ (document.activeElement))
+    if (e.key === 'Escape') {
+      close()
+      newVisualButton.focus()
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      items[(at + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus()
+    }
+  })
+  const rect = newVisualButton.getBoundingClientRect()
+  menu.style.top = `${rect.bottom + window.scrollY + 6}px`
+  menu.style.left = `${Math.max(12, rect.left + window.scrollX)}px`
+  document.body.append(menu)
+  newVisualButton.setAttribute('aria-expanded', 'true')
+  document.addEventListener('pointerdown', outside, true)
+  requestAnimationFrame(() => /** @type {HTMLElement} */ (menu.firstElementChild).focus())
 })
 
 $('new-folder').addEventListener('click', async () => {
@@ -579,6 +907,22 @@ function onEdit(text) {
   }
 }
 
+function drawMute() {
+  const label = muted ? 'Turn sound on' : 'Turn sound off'
+  muteButton.title = label
+  muteButton.setAttribute('aria-label', label)
+  muteButton.setAttribute('aria-pressed', String(muted))
+  const glyph = /** @type {HTMLElement} */ (muteButton.querySelector('i'))
+  glyph.className = `ph ${muted ? 'ph-speaker-slash' : 'ph-speaker-high'}`
+}
+muteButton.addEventListener('click', () => {
+  muted = !muted
+  saveSetting('muted', muted ? '1' : '0')
+  game?.setMuted(muted)
+  drawMute()
+})
+drawMute()
+
 window.addEventListener('pagehide', () => {
   void flushSave()
 })
@@ -608,6 +952,7 @@ export async function update() {
   showProblems()
   watcher?.onCompile({ program, errors, text })
   if (program) await run(program, path)
+  if (path === openPath) statesView?.refresh()
 }
 
 /**
@@ -624,6 +969,7 @@ async function run(program, path) {
       assets,
       keyTarget: canvas,
       touchButtons: consolePanel.touchButtons ? 'always' : 'auto',
+      muted,
     }).then((started) => {
       game = started
       game.on('error', (error) => {

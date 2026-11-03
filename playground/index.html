@@ -43,6 +43,9 @@
               <button id="new-file" class="icon-btn" type="button" title="New game file" aria-label="New game file">
                 <i class="ph ph-file-plus" aria-hidden="true"></i>
               </button>
+              <button id="new-visual" class="icon-btn" type="button" title="New tile map, tile set, effect, sound or music" aria-label="New tile map, tile set, effect, sound or music" aria-haspopup="menu">
+                <i class="ph ph-plus" aria-hidden="true"></i>
+              </button>
               <button id="new-folder" class="icon-btn" type="button" title="New folder" aria-label="New folder">
                 <i class="ph ph-folder-plus" aria-hidden="true"></i>
               </button>
@@ -69,11 +72,17 @@
         <section class="pane editor-pane" aria-label="Open file">
           <div class="pane-head">
             <div class="file-heading"><i class="ph ph-file-code" aria-hidden="true"></i><h2 id="file-name">No file open</h2></div>
+            <div id="view-switch" class="tool-choice view-switch" role="radiogroup" aria-label="How to see this file" hidden>
+              <button id="view-text" type="button" role="radio" aria-checked="true" title="See and edit the words"><i class="ph ph-file-code" aria-hidden="true"></i><span>Text</span></button>
+              <button id="view-states" type="button" role="radio" aria-checked="false" tabindex="-1" title="See states as boxes and arrows"><i class="ph ph-tree-structure" aria-hidden="true"></i><span>States</span></button>
+            </div>
             <span id="save-status" class="save-status" role="status"></span>
           </div>
           <div id="editor" class="editor"><pre id="editor-loading" class="editor-loading"></pre></div>
+          <div id="tool-host" class="tool-host" hidden></div>
+          <div id="states-host" class="tool-host" hidden></div>
           <div id="preview" class="preview" hidden>
-            <div class="preview-stage"><img id="preview-image" alt="" /></div>
+            <div class="preview-stage"><img id="preview-image" alt="" /><audio id="preview-audio" controls hidden></audio></div>
             <p id="preview-info" class="muted small"></p>
             <p id="preview-use" class="preview-use"></p>
           </div>
@@ -87,6 +96,7 @@
                 <button id="run" class="btn btn-primary" type="button"><i class="ph ph-play" aria-hidden="true"></i>Play</button>
                 <button id="stop" class="icon-btn icon-btn-lg" type="button" title="Stop" aria-label="Stop game"><i class="ph ph-stop" aria-hidden="true"></i></button>
                 <button id="restart" class="icon-btn icon-btn-lg" type="button" title="Restart" aria-label="Restart game"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i></button>
+                <button id="mute" class="icon-btn icon-btn-lg" type="button" title="Turn sound off" aria-label="Turn sound off" aria-pressed="false"><i class="ph ph-speaker-high" aria-hidden="true"></i></button>
               </div>
               <span id="perf" class="perf" aria-hidden="true" hidden></span>
             </div>

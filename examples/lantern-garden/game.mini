@@ -1,0 +1,136 @@
+# Lantern Garden
+# A small game that uses every new tool together. Pick up the 10 coins and reach the far side.
+# Move: arrows or A and D. Jump: up, W or space. Press space to start.
+#
+# Open these files to see them as pictures:
+#   garden.tilemap    the level, painted with tiles
+#   garden.tileset    the tiles, with their pixels and edges
+#   pop.particles     the sparkle when you grab a coin
+#   hop.sound         the jump sound
+#   garden.music      the tune
+# Press "States" above this text to see the game and the beetles as boxes and arrows.
+
+game
+  size 320 by 192
+  pixel art
+  background #bcdcf2
+  gravity 0.35
+  touch buttons
+
+# Files made in Studio.
+tilemap garden "garden.tilemap"
+particles pop "pop.particles"
+sound hop "hop.sound"
+music tune "garden.music"
+
+# Ready-made ones. No file needed.
+sound ding like coin
+sound ouch like hurt
+sound cheer like win
+particles splash like bubbles
+particles dust like dust
+particles party like confetti
+
+control go-left
+  left key
+  a key
+  gamepad left
+
+control go-right
+  right key
+  d key
+  gamepad right
+
+control jump
+  up key
+  w key
+  space key
+  gamepad a
+
+coins starts at 0
+
+thing hero
+  looks like orange box 10 by 14
+  starts at 24, 120
+  solid
+  falls
+  camera follows
+
+thing beetle
+  looks like #3a4152 box 14 by 9
+  solid
+  falls
+
+thing lantern
+  looks like gold box 10 by 16
+  starts at 930, 144
+
+# The game is always in one of these.
+states game
+  state menu
+    on enter
+      show text "Press space to start" at 96, 40 in #1f2430
+    go to playing when jump is pressed
+  state playing
+    on enter
+      play music tune
+    when go-left is held
+      move hero left 2
+    when go-right is held
+      move hero right 2
+    when jump is pressed and hero is on ground
+      push hero up 7
+      play sound hop
+      burst dust on hero
+    go to won when hero touches lantern
+  state won
+    on enter
+      stop music
+      play sound cheer
+      burst party on the lantern
+      show text "You lit the garden!" at 104, 40 in #1f2430
+
+# Every beetle walks, stops to look around, and walks back. Each has its own mood.
+states beetle
+  state walk-left
+    always
+      move beetle left 0.5
+    go to look after 2 seconds
+  state look
+    go to walk-right after 0.6 seconds
+  state walk-right
+    always
+      move beetle right 0.5
+    go to rest after 2 seconds
+  state rest
+    go to walk-left after 0.6 seconds
+
+# Coins and spikes are tiles painted on the map.
+when hero touches coin tile
+  remove the tile
+  add 1 to coins
+  play sound ding pitch 90 + coins * 5
+  burst pop at tile x + 8, tile y + 8
+
+when hero touches spikes tile
+  play sound ouch
+  set hero x to 24
+  set hero y to 120
+
+when hero touches beetle
+  play sound ouch
+  set hero x to 24
+  set hero y to 120
+
+when hero touches water tile
+  burst splash on hero
+  play sound ouch
+  set hero x to 24
+  set hero y to 120
+
+when hero y is above 200
+  set hero x to 24
+  set hero y to 120
+
+always
+  show text "Coins {coins} of 10" at 6, 6 in #1f2430

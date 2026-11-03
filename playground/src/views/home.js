@@ -369,6 +369,15 @@ export async function mountHome() {
   if (basics) {
     small.append(sectionHead('Little games to learn from', 'Borrow a rule, try an idea, or start from one of these.'))
     const list = el('div', 'basics-grid')
+    const garden = EXAMPLES.get('example:lantern-garden')
+    if (garden) {
+      const a = /** @type {HTMLAnchorElement} */ (el('a', 'basics-item'))
+      a.href = `#/p/${encodeURIComponent(garden.fs.id)}/${encodeURIComponent(garden.info.main)}`
+      const t = el('div')
+      t.append(el('span', 'basics-name', garden.info.name), el('span', 'muted small', 'Tile maps, particles, sound, music and states'))
+      a.append(icon('ph-map-trifold'), t, icon('ph-arrow-up-right'))
+      list.append(a)
+    }
     for (const [path] of basics.fs.texts) {
       const a = /** @type {HTMLAnchorElement} */ (el('a', 'basics-item'))
       a.href = `#/p/${encodeURIComponent(basics.fs.id)}/${encodeURIComponent(path)}`

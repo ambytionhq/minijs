@@ -3,7 +3,7 @@
 // never throws: it yields a placeholder and an `image-missing` error.
 
 /** @import { Loc, Look, MiniError, Program } from '@minijs/lang' */
-import { miniError } from '@minijs/lang'
+import { allRules, miniError } from '@minijs/lang'
 import { PLACEHOLDER_SIZE } from './config.js'
 
 /**
@@ -18,6 +18,8 @@ import { PLACEHOLDER_SIZE } from './config.js'
 /**
  * @typedef {object} AssetLoader
  * @property {(src: string) => Promise<LoadedImage>} load
+ * @property {(src: string) => Promise<string | null>} [loadText] A tile map, sound or similar text file. Null when missing.
+ * @property {(src: string) => Promise<ArrayBuffer | null>} [loadBytes] A recorded sound. Null when missing.
  */
 
 /**
@@ -50,6 +52,32 @@ export class BrowserAssetLoader {
       image.src = this.base + src
     })
   }
+
+  /**
+   * @param {string} src
+   * @returns {Promise<string | null>}
+   */
+  async loadText(src) {
+    try {
+      const response = await fetch(this.base + src)
+      return response.ok ? await response.text() : null
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * @param {string} src
+   * @returns {Promise<ArrayBuffer | null>}
+   */
+  async loadBytes(src) {
+    try {
+      const response = await fetch(this.base + src)
+      return response.ok ? await response.arrayBuffer() : null
+    } catch {
+      return null
+    }
+  }
 }
 
 /**
@@ -60,9 +88,31 @@ export class StaticAssetLoader {
   /** @type {ReadonlyMap<string, { width: number; height: number }>} */
   sizes
 
-  /** @param {Record<string, { width: number; height: number }>} [sizes={}] */
-  constructor(sizes = {}) {
+  /**
+   * @param {Record<string, { width: number; height: number }>} [sizes={}]
+   * @param {Record<string, string | ArrayBuffer>} [files={}] Other files by name.
+   */
+  constructor(sizes = {}, files = {}) {
     this.sizes = new Map(Object.entries(sizes))
+    this.files = new Map(Object.entries(files))
+  }
+
+  /**
+   * @param {string} src
+   * @returns {Promise<string | null>}
+   */
+  async loadText(src) {
+    const file = this.files.get(src)
+    return typeof file === 'string' ? file : null
+  }
+
+  /**
+   * @param {string} src
+   * @returns {Promise<ArrayBuffer | null>}
+   */
+  async loadBytes(src) {
+    const file = this.files.get(src)
+    return file instanceof ArrayBuffer ? file : null
   }
 
   /**
@@ -99,7 +149,7 @@ export function collectImageSources(program) {
       }
     }
   }
-  for (const rule of program.rules) {
+  for (const rule of allRules(program)) {
     for (const action of rule.actions) {
       if (action.kind === 'changeLook') addLook(action.look, out)
     }

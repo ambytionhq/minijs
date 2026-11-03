@@ -1,5 +1,6 @@
 /** @import { Expr, InstanceProp } from '@minijs/lang' */
 import { miniError } from '@minijs/lang'
+import { TICKS_PER_SECOND } from '../config.js'
 import { stickIndex } from '../input.js'
 /** @import { Catalog } from '../catalog.js' */
 /** @import { NumFn } from './context.js' */
@@ -20,7 +21,17 @@ export function lowerExpr(expr, catalog) {
       return (c) => c.vars[slot]
     }
     case 'prop':
+      if (expr.thing === 'tile' && !catalog.typeIds.has('tile')) return lowerHitTile(expr.prop)
       return lowerProp(catalog.typeId(expr.thing), expr.prop)
+    case 'stateTime': {
+      const m = catalog.machineIndex(expr.thing)
+      if (expr.thing === null) return (c) => c.machines.machines[m].gameTicks / TICKS_PER_SECOND
+      const t = catalog.typeId(expr.thing)
+      return (c) => {
+        const id = c.resolve(t)
+        return id < 0 ? 0 : c.world.stateTicks[id] / TICKS_PER_SECOND
+      }
+    }
     case 'count': {
       const t = catalog.typeId(expr.thing)
       return (c) => c.world.counts[t]
@@ -80,6 +91,25 @@ export function lowerExpr(expr, catalog) {
       }
     }
   }
+}
+
+/**
+ * `tile x` and `tile y`: the top-left corner of the tile this rule touched. 0 outside such a rule.
+ * @param {InstanceProp} prop
+ * @returns {NumFn}
+ */
+function lowerHitTile(prop) {
+  return prop === 'x'
+    ? (c) => {
+        if (c.hitMap < 0) return 0
+        const map = c.tiles.maps[c.hitMap]
+        return map.x + c.hitCol * map.tileW
+      }
+    : (c) => {
+        if (c.hitMap < 0) return 0
+        const map = c.tiles.maps[c.hitMap]
+        return map.y + c.hitRow * map.tileH
+      }
 }
 
 /**

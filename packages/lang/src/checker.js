@@ -108,6 +108,86 @@ export function check(program) {
     }
   }
 
+  /**
+   * Names of one kind of declared asset. Each name appears once and clashes with nothing else.
+   * @param {Array<{ name: string; loc: Loc }>} decls
+   * @param {string} word how to say it, like "sound"
+   * @returns {Set<string>}
+   */
+  function declared(decls, word) {
+    /** @type {Set<string>} */
+    const names = new Set()
+    for (const d of decls) {
+      if (names.has(d.name)) {
+        errors.push(miniError('duplicate-name', d.loc, `There are two of the ${word} "${d.name}".`, `Give each ${word} its own name.`))
+      }
+      names.add(d.name)
+    }
+    return names
+  }
+  const tilemaps = declared(program.tilemaps ?? [], 'tilemap')
+  const sounds = declared(program.sounds ?? [], 'sound')
+  const musics = declared(program.music ?? [], 'music')
+  const effects = declared(program.particles ?? [], 'particle effect')
+
+  /** @type {Map<string | null, Set<string>>} machine owner (null is the game) -> its states */
+  const machines = new Map()
+  for (const m of program.machines ?? []) {
+    const label = m.thing ?? 'game'
+    if (machines.has(m.thing)) {
+      errors.push(miniError('duplicate-machine', m.loc, `"${label}" has more than one "states" block.`, 'Put all of its states in one block.'))
+      continue
+    }
+    /** @type {Set<string>} */
+    const names = new Set()
+    for (const s of m.states) {
+      if (names.has(s.name)) {
+        errors.push(miniError('duplicate-state', s.loc, `There are two states called "${s.name}" in "${label}".`, 'Give each state its own name.'))
+      }
+      names.add(s.name)
+    }
+    machines.set(m.thing, names)
+  }
+
+  /**
+   * @param {string | null} owner
+   * @param {string} state
+   * @param {Loc} loc
+   */
+  function checkState(owner, state, loc) {
+    const label = owner ?? 'game'
+    const names = machines.get(owner)
+    if (!names) {
+      errors.push(
+        miniError('no-machine', loc, `"${label}" doesn't have any states yet.`, `Add a block like: states ${label}`),
+      )
+      return
+    }
+    if (!names.has(state)) {
+      errors.push(
+        miniError(
+          'unknown-state',
+          loc,
+          `"${label}" has no state called "${state}".`,
+          didYouMean(state, names) ?? `Its states are: ${[...names].join(', ')}.`,
+        ),
+      )
+    }
+  }
+
+  /**
+   * @param {string} name
+   * @param {Set<string>} names
+   * @param {'unknown-sound' | 'unknown-music' | 'unknown-particles' | 'unknown-tilemap'} code
+   * @param {string} word
+   * @param {string} example
+   * @param {Loc} loc
+   */
+  function asset(name, names, code, word, example, loc) {
+    if (names.has(name)) return
+    errors.push(miniError(code, loc, `I don't know the ${word} "${name}".`, didYouMean(name, names) ?? `Add a line like: ${example}`))
+  }
+
   let camera = false
   for (const t of program.things) {
     if (!t.cameraFollows) continue
@@ -135,6 +215,10 @@ export function check(program) {
       errors.push(miniError('unknown-thing', loc, `"${name}" is a number, not a thing.`))
     } else if (controls.has(name)) {
       errors.push(miniError('unknown-thing', loc, `"${name}" is a control, not a thing.`))
+    } else if (effects.has(name)) {
+      errors.push(
+        miniError('unknown-thing', loc, `"${name}" is a particle effect, not a thing.`, `To stop it, write: stop ${name} on player, or: stop ${name} everywhere`),
+      )
     } else {
       errors.push(
         miniError(
@@ -208,8 +292,18 @@ export function check(program) {
       case 'var':
         return variable(e.name, e.loc)
       case 'prop':
+        // `tile x` and `tile y` mean the tile a rule just touched, unless a thing is called tile.
+        if (e.thing === 'tile' && !things.has('tile') && (e.prop === 'x' || e.prop === 'y')) return
+        thing(e.thing, e.loc)
+        return
       case 'count':
         thing(e.thing, e.loc)
+        return
+      case 'stateTime':
+        if (e.thing !== null) thing(e.thing, e.loc)
+        if (!machines.has(e.thing)) {
+          errors.push(miniError('no-machine', e.loc, `"${e.thing ?? 'game'}" doesn't have any states yet.`, `Add a block like: states ${e.thing ?? 'game'}`))
+        }
         return
       case 'random':
         walkExpr(e.min)
@@ -236,6 +330,18 @@ export function check(program) {
         return
       case 'controlHeld':
         control(cond.name, cond.loc)
+        return
+      case 'inState':
+        if (cond.thing !== null && !thing(cond.thing, cond.loc)) return
+        checkState(cond.thing, cond.state, cond.loc)
+        return
+      case 'onTile':
+      case 'touchingTile':
+        thing(cond.thing, cond.loc)
+        return
+      case 'tileAt':
+        walkExpr(cond.x)
+        walkExpr(cond.y)
         return
       case 'and':
       case 'or':
@@ -264,6 +370,12 @@ export function check(program) {
         break
       case 'leavesScreen':
         thing(t.thing, t.loc)
+        break
+      case 'touchTile':
+        thing(t.thing, t.loc)
+        break
+      case 'stateChange':
+        if (t.thing === null || thing(t.thing, t.loc)) checkState(t.thing, t.state, t.loc)
         break
       case 'control':
         control(t.name, t.loc)
@@ -315,6 +427,45 @@ export function check(program) {
         }
         return
       }
+      case 'playSound':
+        asset(a.name, sounds, 'unknown-sound', 'sound', `sound ${a.name} like coin`, a.loc)
+        if (a.volume) walkExpr(a.volume)
+        if (a.pitch) walkExpr(a.pitch)
+        if (a.from !== null) thing(a.from, a.loc)
+        return
+      case 'playMusic':
+        asset(a.name, musics, 'unknown-music', 'music', `music ${a.name} "${a.name}.music"`, a.loc)
+        return
+      case 'stopMusic':
+        // An older game may have a thing called music: "stop music" still stops that thing.
+        if (things.has('music')) {
+          Object.assign(a, { kind: 'halt', thing: 'music' })
+        }
+        return
+      case 'setVolume':
+        return walkExpr(a.value)
+      case 'burst':
+      case 'startParticles':
+        asset(a.name, effects, 'unknown-particles', 'particle effect', `particles ${a.name} like sparkle`, a.loc)
+        if (a.thing !== null) thing(a.thing, a.loc)
+        if (a.x) walkExpr(a.x)
+        if (a.y) walkExpr(a.y)
+        return
+      case 'stopParticles':
+        asset(a.name, effects, 'unknown-particles', 'particle effect', `particles ${a.name} like sparkle`, a.loc)
+        if (a.thing !== null) thing(a.thing, a.loc)
+        return
+      case 'setState':
+        if (a.thing === null || thing(a.thing, a.loc)) checkState(a.thing, a.state, a.loc)
+        return
+      case 'setTile':
+        if (a.x) walkExpr(a.x)
+        if (a.y) walkExpr(a.y)
+        return
+      case 'showTilemap':
+      case 'switchTilemap':
+        asset(a.name, tilemaps, 'unknown-tilemap', 'tilemap', `tilemap ${a.name} "${a.name}.tilemap"`, a.loc)
+        return
       case 'log':
         for (const part of a.parts) if (part.kind === 'expr') walkExpr(part.expr)
         return
@@ -335,6 +486,26 @@ export function check(program) {
   for (const rule of program.rules) {
     walkTrigger(rule.trigger)
     for (const action of rule.actions) walkAction(action)
+  }
+
+  for (const m of program.machines ?? []) {
+    if (m.thing !== null) thing(m.thing, m.loc)
+    /** @param {string} to @param {Loc} loc */
+    const target = (to, loc) => {
+      const names = machines.get(m.thing)
+      if (names && !names.has(to)) checkState(m.thing, to, loc)
+    }
+    for (const s of m.states) {
+      for (const a of [...s.enter, ...s.leave, ...s.always]) walkAction(a)
+      for (const r of s.rules) {
+        walkTrigger(r.trigger)
+        for (const a of r.actions) walkAction(a)
+      }
+      for (const t of s.transitions) {
+        target(t.to, t.loc)
+        walkTrigger(t.trigger)
+      }
+    }
   }
   return errors
 }

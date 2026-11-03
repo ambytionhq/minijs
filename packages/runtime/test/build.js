@@ -7,7 +7,7 @@ import { DEFAULT_GAME_SETTINGS } from '@minijs/lang'
 export const L = { line: 1, col: 1 }
 
 /**
- * @param {{ game?: Partial<GameSettings>; vars?: VarDecl[]; things?: ThingDecl[]; controls?: ControlDecl[]; maps?: MapDecl[]; rules?: Rule[] }} parts
+ * @param {{ game?: Partial<GameSettings>; vars?: VarDecl[]; things?: ThingDecl[]; controls?: ControlDecl[]; maps?: MapDecl[]; rules?: Rule[]; tilemaps?: any[]; sounds?: any[]; music?: any[]; particles?: any[]; machines?: any[] }} parts
  * @returns {Program}
  */
 export function program(parts) {
@@ -18,6 +18,11 @@ export function program(parts) {
     controls: parts.controls ?? [],
     maps: parts.maps ?? [],
     rules: parts.rules ?? [],
+    tilemaps: parts.tilemaps ?? [],
+    sounds: parts.sounds ?? [],
+    music: parts.music ?? [],
+    particles: parts.particles ?? [],
+    machines: parts.machines ?? [],
   }
 }
 

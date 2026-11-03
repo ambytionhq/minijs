@@ -8,6 +8,7 @@
 import { EPSILON, MAX_SUBSTEPS } from './config.js'
 /** @import { SpatialHash } from './spatial-hash.js' */
 /** @import { World } from './world.js' */
+/** @import { TileWorld } from './tiles/tile-world.js' */
 
 /**
  * Strict overlap: true only when boxes penetrate deeper than EPSILON on both axes.
@@ -46,6 +47,8 @@ export class Physics {
   catalog
   /** @type {SpatialHash} */
   hash
+  /** @type {TileWorld | null} */
+  tiles = null
 
   /**
    * @param {Catalog} catalog
@@ -116,7 +119,7 @@ export class Physics {
         } else {
           const dx = world.vx[id] + world.mx[id]
           const dy = world.vy[id] + world.my[id]
-          if (type.solid && solidCount > 1) {
+          if (type.solid && (solidCount > 1 || (this.tiles !== null && this.tiles.active))) {
             if (dx !== 0) this.moveX(world, id, dx)
             if (dy !== 0) this.moveY(world, id, dy)
           } else {
@@ -167,6 +170,11 @@ export class Physics {
         blocked = true
         x = part > 0 ? Math.min(x, ox - w) : Math.max(x, ox + ow)
       }
+      const tiles = this.tiles
+      if (tiles !== null && tiles.active) {
+        x = tiles.resolveX(x, y, w, h, part)
+        if (tiles.blocked) blocked = true
+      }
       if (blocked) {
         // Never snap backwards past the start: an instance spawned inside a wall stays put.
         world.x[id] = part > 0 ? Math.max(x, start) : Math.min(x, start)
@@ -202,6 +210,11 @@ export class Physics {
         if (!overlapsStrict(x, y, w, h, world.x[other], oy, world.w[other], oh)) continue
         blocked = true
         y = part > 0 ? Math.min(y, oy - h) : Math.max(y, oy + oh)
+      }
+      const tiles = this.tiles
+      if (tiles !== null && tiles.active) {
+        y = tiles.resolveY(x, y, w, h, part, start)
+        if (tiles.blocked) blocked = true
       }
       if (blocked) {
         world.y[id] = part > 0 ? Math.max(y, start) : Math.min(y, start)

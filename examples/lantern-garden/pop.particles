@@ -1,0 +1,34 @@
+{
+ "minijs": "particles",
+ "version": 1,
+ "amount": 18,
+ "rate": 16,
+ "life": [
+  0.3,
+  0.7
+ ],
+ "speed": [
+  15,
+  55
+ ],
+ "direction": 90,
+ "spread": 360,
+ "gravity": 0,
+ "drag": 0,
+ "size": [
+  3,
+  0
+ ],
+ "colors": [
+  "#fff2a8",
+  "#fdd34d",
+  "#f79a2e"
+ ],
+ "shape": "circle",
+ "fade": true,
+ "glow": true,
+ "area": [
+  0,
+  0
+ ]
+}

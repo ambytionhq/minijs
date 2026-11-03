@@ -40,6 +40,55 @@ export const REFERENCE = [
     ],
   },
   {
+    title: 'Tile maps',
+    rows: [
+      ['tilemap level "level.tilemap"', 'A level painted in Studio. Make one with the + button above your files'],
+      ['  hidden', 'Under the tilemap line: starts switched off, for later levels'],
+      ['switch to tilemap level-2', 'Show only this map, with the things placed on it'],
+      ['when player touches coin tile', 'Also: touches any tile. "the tile" means the one touched'],
+      ['remove the tile', 'Also: set the tile to grass, set tile at 32, 48 to grass, remove tile at 32, 48'],
+      ['player is on grass tile', 'Standing on it. Also: player is touching lava tile, tile at 32, 48 is lava'],
+      ['tile x / tile y', 'Where the touched tile is'],
+    ],
+  },
+  {
+    title: 'Particles',
+    rows: [
+      ['particles boom like explosion', 'A ready-made effect. Also sparkle, smoke, fire, dust, hit, confetti, magic, bubbles, trail, rain, snow'],
+      ['particles boom "boom.particles"', 'One made in Studio with sliders and a live picture'],
+      ['  amount 40, colors red, gold', 'Lines under it change it: amount, rate, life, speed, direction, spread, gravity, drag, size, colors, shape, fade, glow, area'],
+      ['burst boom on the coin', 'One pop. Also: burst boom at 40, 100'],
+      ['start smoke on the chimney', 'Keeps going. Also: start smoke at 40, 100, start snow on the screen'],
+      ['stop smoke on the chimney', 'Also: stop smoke everywhere'],
+    ],
+  },
+  {
+    title: 'Sound and music',
+    rows: [
+      ['sound ding like coin', 'A ready-made sound. Also jump, land, hit, hurt, explosion, laser, powerup, blip, click, win, lose'],
+      ['sound ding "ding.sound"', 'One made in Studio, or a recording: "ding.mp3", .wav, .ogg, .m4a'],
+      ['music theme "theme.music"', 'A looping tune made in Studio, or a recording'],
+      ['play sound ding', 'Add volume 50, pitch 120 or from the enemy, in any order'],
+      ['play music theme', 'Loops until: stop music'],
+      ['set music volume to 50', 'Also: set sound volume to 50. From 0 to 100'],
+    ],
+  },
+  {
+    title: 'States',
+    rows: [
+      ['states enemy', 'Each enemy has its own state. Use states game for one state for the whole game'],
+      ['  state chase', 'One state, under the states line. The first one is where it starts'],
+      ['    on enter', 'Lines under this run once when it comes into the state. Also: on leave'],
+      ['    always', 'Lines under this run every moment during the state'],
+      ['    when jump is pressed', 'A rule that only counts during this state'],
+      ['    go to rest after 3 seconds', 'Also: go to rest when enemy touches wall'],
+      ['enemy is in chase', 'A condition. Also: game is in playing'],
+      ['set enemy state to chase', 'From any rule. Also: set game state to over'],
+      ['when enemy enters chase', 'Also: when enemy leaves chase, when game enters over'],
+      ['enemy state time', 'Seconds in its current state. Also: game state time'],
+    ],
+  },
+  {
     title: 'When',
     rows: [
       ['when game starts', 'Once, at the start'],

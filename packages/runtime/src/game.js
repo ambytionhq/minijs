@@ -3,6 +3,7 @@
 /** @import { MiniError, Program } from '@minijs/lang' */
 /** @import { AssetLoader } from './assets.js' */
 import { BrowserAssetLoader } from './assets.js'
+import { WebAudioOutput } from './audio/output.js'
 import { BrowserInput } from './input.js'
 /** @import { FrameScheduler } from './loop.js' */
 import { FixedLoop, browserScheduler } from './loop.js'
@@ -22,6 +23,8 @@ import { createTouchButtons, hasTouchScreen } from './touch.js'
  *   'auto' (default) shows them on touch screens, 'always' everywhere, 'never' hides them.
  * @property {EventTarget} [keyTarget] Where to listen for keys. Default `window`. Pass the canvas (with a
  *   tabindex) when the page has other text inputs, so typing elsewhere does not drive the game.
+ * @property {boolean} [sound] Play the game's sounds and music. Default true.
+ * @property {boolean} [muted] Start with sound turned down.
  */
 
 /** @typedef {'error' | 'stop' | 'log'} GameEvent */
@@ -54,6 +57,10 @@ export class Game {
   /** @type {ResizeObserver | null} */
   resizeObserver = null
   destroyed = false
+  /** @type {WebAudioOutput | null} */
+  audio = null
+  /** @type {(() => void) | null} */
+  removeVisibility = null
 
   /**
    * @param {HTMLCanvasElement} canvas
@@ -62,6 +69,17 @@ export class Game {
   constructor(canvas, options) {
     this.canvas = canvas
     this.options = options
+    if (options.sound !== false && typeof window !== 'undefined') {
+      this.audio = new WebAudioOutput({ muted: options.muted ?? false })
+      if (typeof document !== 'undefined') {
+        const sync = () => {
+          if (document.hidden) this.audio?.suspend()
+          else this.audio?.resume()
+        }
+        document.addEventListener('visibilitychange', sync)
+        this.removeVisibility = () => document.removeEventListener('visibilitychange', sync)
+      }
+    }
     this.loop = new FixedLoop(
       {
         tick: () => this.simulation.tick(),
@@ -113,6 +131,12 @@ export class Game {
     return this.allErrors
   }
 
+  /** @param {boolean} muted */
+  setMuted(muted) {
+    this.options.muted = muted
+    this.audio?.setMuted(muted)
+  }
+
   /**
    * Swap in a new program and start from its beginning.
    * @param {Program} program
@@ -130,6 +154,7 @@ export class Game {
   /** Freeze the simulation and keep its last frame without redrawing it. */
   stop() {
     this.simulation.stop()
+    this.audio?.stopAll()
     this.loop.stop()
     drawWorld(this.renderer, this.simulation, 1)
   }
@@ -140,6 +165,8 @@ export class Game {
     this.destroyed = true
     this.loop.stop()
     this.input.detach()
+    this.audio?.destroy()
+    this.removeVisibility?.()
     this.removeTouchButtons?.()
     this.removeTouchButtons = null
     this.resizeObserver?.disconnect()
@@ -168,8 +195,10 @@ export class Game {
       input: this.input,
       assets: this.options.assets ?? new BrowserAssetLoader(this.options.assetsBase ?? ''),
       random: this.options.random,
+      audio: this.audio ?? undefined,
       onError: (error) => this.emitError(error),
       onStop: () => {
+        this.audio?.stopAll()
         for (const fn of this.stopListeners) fn()
       },
       onLog: (text, tick) => {

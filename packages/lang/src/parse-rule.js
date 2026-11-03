@@ -22,8 +22,12 @@ export const ACTION_WORDS = [
   'change',
   'play',
   'show',
+  'hide',
   'log',
   'restart',
+  'burst',
+  'start',
+  'switch',
 ]
 
 const DIRECTIONS = new Set(['left', 'right', 'up', 'down'])
@@ -57,6 +61,13 @@ export function parseTrigger(c) {
     c.expectWord('is')
     return { kind: 'pad', pad, button, state: parseState(c), guard: parseGuard(c), loc }
   }
+  if (c.isWord('game') && (c.isWord('enters', 1) || c.isWord('leaves', 1))) {
+    c.next()
+    const change = /** @type {'enters' | 'leaves'} */ (c.next().text)
+    c.acceptWord('the')
+    const state = c.expectName('the name of a state').text
+    return { kind: 'stateChange', thing: null, state, change, guard: parseGuard(c), loc }
+  }
   if (c.isWord('every') || c.isWord('after')) {
     const kind = /** @type {'every' | 'after'} */ (c.next().text)
     const seconds = c.expectPositive('a number of seconds')
@@ -81,14 +92,42 @@ export function parseTrigger(c) {
     const a = c.expectName(THING).text
     c.expectWord('touches')
     c.acceptWord('the')
+    if (c.isWord('a') || c.isWord('an')) {
+      if (c.isWord('tile', 1) || c.isWord('tile', 2)) c.next()
+    }
+    if (c.isWord('any') && c.isWord('tile', 1)) {
+      c.pos += 2
+      return { kind: 'touchTile', thing: a, tile: null, guard: parseGuard(c), loc }
+    }
+    if (c.isWord('tile')) {
+      c.next()
+      return { kind: 'touchTile', thing: a, tile: null, guard: parseGuard(c), loc }
+    }
+    if (c.isWord('tile', 1)) {
+      const tile = c.expectName('the name of a tile').text
+      c.next()
+      return { kind: 'touchTile', thing: a, tile, guard: parseGuard(c), loc }
+    }
     const b = c.expectName(THING).text
     return { kind: 'touch', a, b, guard: parseGuard(c), loc }
+  }
+  if (c.peek(o).kind === 'word' && c.isWord('enters', o + 1)) {
+    c.acceptWord('the')
+    const thing = c.expectName(THING).text
+    c.next()
+    c.acceptWord('the')
+    const state = c.expectName('the name of a state').text
+    return { kind: 'stateChange', thing, state, change: 'enters', guard: parseGuard(c), loc }
   }
   if (c.peek(o).kind === 'word' && c.isWord('leaves', o + 1)) {
     c.acceptWord('the')
     const thing = c.expectName(THING).text
     c.expectWord('leaves')
     c.acceptWord('the')
+    if (!c.isWord('screen')) {
+      const state = c.expectName('"screen" or the name of a state').text
+      return { kind: 'stateChange', thing, state, change: 'leaves', guard: parseGuard(c), loc }
+    }
     c.expectWord('screen')
     return { kind: 'leavesScreen', thing, guard: parseGuard(c), loc }
   }
@@ -183,7 +222,56 @@ export function parseAction(c) {
         c.pos += 2
         return { kind: 'stopAnimation', thing: thingName(c), loc }
       }
+      if (c.isWord('music') && c.atEndAfter(1)) {
+        c.next()
+        return { kind: 'stopMusic', loc }
+      }
+      if (c.isWord('everywhere', 1)) {
+        const name = c.expectName('the name of a particle effect').text
+        c.next()
+        return { kind: 'stopParticles', name, thing: null, loc }
+      }
+      if (c.isWord('on', 1)) {
+        const name = c.expectName('the name of a particle effect').text
+        c.next()
+        return { kind: 'stopParticles', name, thing: thingName(c), loc }
+      }
       return { kind: 'halt', thing: thingName(c), loc }
+    }
+    case 'burst': {
+      c.next()
+      const name = c.expectName('the name of a particle effect').text
+      if (c.acceptWord('on')) return { kind: 'burst', name, thing: thingName(c), x: null, y: null, loc }
+      c.expectWord('at', 'Write it like: burst sparkle at 40, 100, or: burst sparkle on the coin')
+      const x = parseExpr(c)
+      expectComma(c)
+      return { kind: 'burst', name, thing: null, x, y: parseExpr(c), loc }
+    }
+    case 'start': {
+      c.next()
+      const name = c.expectName('the name of a particle effect').text
+      if (c.acceptWord('on')) {
+        if (c.isWord('the') && c.isWord('screen', 1)) {
+          c.pos += 2
+          return { kind: 'startParticles', name, where: 'screen', thing: null, x: null, y: null, loc }
+        }
+        return { kind: 'startParticles', name, where: 'thing', thing: thingName(c), x: null, y: null, loc }
+      }
+      c.expectWord('at', 'Write it like: start smoke on the chimney, or: start snow on the screen')
+      const x = parseExpr(c)
+      expectComma(c)
+      return { kind: 'startParticles', name, where: 'point', thing: null, x, y: parseExpr(c), loc }
+    }
+    case 'hide': {
+      c.next()
+      c.expectWord('tilemap', 'Write it like: hide tilemap level-2')
+      return { kind: 'showTilemap', name: c.expectName('the name of a tilemap').text, show: false, loc }
+    }
+    case 'switch': {
+      c.next()
+      c.expectWord('to', 'Write it like: switch to tilemap level-2')
+      c.expectWord('tilemap', 'Write it like: switch to tilemap level-2')
+      return { kind: 'switchTilemap', name: c.expectName('the name of a tilemap').text, loc }
     }
     case 'restart': {
       c.next()
@@ -192,7 +280,35 @@ export function parseAction(c) {
     }
     case 'set': {
       c.next()
+      if ((c.isWord('sound') || c.isWord('music')) && c.isWord('volume', 1)) {
+        const channel = /** @type {'sound' | 'music'} */ (c.next().text)
+        c.next()
+        c.expectWord('to')
+        return { kind: 'setVolume', channel, value: parseExpr(c), loc }
+      }
+      if (c.isWord('game') && c.isWord('state', 1)) {
+        c.pos += 2
+        c.expectWord('to')
+        return { kind: 'setState', thing: null, state: c.expectName('the name of a state').text, loc }
+      }
+      if (c.isWord('tile') && c.isWord('at', 1)) {
+        c.pos += 2
+        const x = parseExpr(c)
+        expectComma(c)
+        const y = parseExpr(c)
+        c.expectWord('to', 'Write it like: set tile at 32, 48 to grass')
+        return { kind: 'setTile', tile: c.expectName('the name of a tile').text, x, y, loc }
+      }
+      if (c.isWord('the') && c.isWord('tile', 1) && c.isWord('to', 2)) {
+        c.pos += 3
+        return { kind: 'setTile', tile: c.expectName('the name of a tile').text, x: null, y: null, loc }
+      }
       const o = c.isWord('the') ? 1 : 0
+      if (c.peek(o).kind === 'word' && c.isWord('state', o + 1) && c.isWord('to', o + 2)) {
+        const thing = thingName(c)
+        c.pos += 2
+        return { kind: 'setState', thing, state: c.expectName('the name of a state').text, loc }
+      }
       const propWord = c.peek(o + 1)
       if (c.peek(o).kind === 'word' && propWord.kind === 'word' && PROP_WORDS.has(propWord.text)) {
         const thing = thingName(c)
@@ -232,6 +348,16 @@ export function parseAction(c) {
     }
     case 'remove': {
       c.next()
+      if (c.isWord('the') && c.isWord('tile', 1) && c.atEndAfter(2)) {
+        c.pos += 2
+        return { kind: 'setTile', tile: null, x: null, y: null, loc }
+      }
+      if (c.isWord('tile') && c.isWord('at', 1)) {
+        c.pos += 2
+        const x = parseExpr(c)
+        expectComma(c)
+        return { kind: 'setTile', tile: null, x, y: parseExpr(c), loc }
+      }
       return { kind: 'remove', thing: thingName(c), loc }
     }
     case 'change': {
@@ -244,6 +370,27 @@ export function parseAction(c) {
     }
     case 'play': {
       c.next()
+      if (c.isWord('sound') && !c.isWord('on', 1)) {
+        c.next()
+        const name = c.expectName('the name of a sound').text
+        /** @type {Expr | null} */
+        let volume = null
+        /** @type {Expr | null} */
+        let pitch = null
+        /** @type {string | null} */
+        let from = null
+        while (!c.atLineEnd()) {
+          if (c.acceptWord('volume')) volume = parseExpr(c)
+          else if (c.acceptWord('pitch')) pitch = parseExpr(c)
+          else if (c.acceptWord('from')) from = thingName(c)
+          else throw expected(c.peek(), '"volume", "pitch" or "from"', 'Write it like: play sound coin volume 50 pitch 120 from the enemy')
+        }
+        return { kind: 'playSound', name, volume, pitch, from, loc }
+      }
+      if (c.isWord('music') && !c.isWord('on', 1)) {
+        c.next()
+        return { kind: 'playMusic', name: c.expectName('the name of some music').text, loc }
+      }
       const animation = c.expectName('the name of an animation').text
       c.expectWord('on')
       return { kind: 'playAnimation', thing: thingName(c), animation, loc }
@@ -254,6 +401,7 @@ export function parseAction(c) {
     }
     case 'show': {
       c.next()
+      if (c.acceptWord('tilemap')) return { kind: 'showTilemap', name: c.expectName('the name of a tilemap').text, show: true, loc }
       c.expectWord('text')
       const parts = parseText(c.expectString('some text in quotes, like "Hello"'))
       /** @type {{ x: Expr; y: Expr } | null} */
@@ -272,7 +420,7 @@ export function parseAction(c) {
     loc,
     `I don't know how to "${first.text}".`,
     didYouMean(first.text, ACTION_WORDS) ??
-      'Actions start with: move, push, stop, set, add, subtract, make, remove, change, play, show, log, restart.',
+      'Actions start with: move, push, stop, set, add, subtract, make, remove, change, play, show, hide, log, restart, burst, start, switch.',
   )
 }
 

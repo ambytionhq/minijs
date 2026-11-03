@@ -1,11 +1,11 @@
 // Share codes: a whole game squeezed into text, so it fits in a link or can be
 // pasted into the Studio with no internet. A pack holds the game file and only
-// the pictures it uses.
+// the pictures, tile maps, sounds and effects it uses.
 //
 // Link forms: <studio>#/play/<code> (opens straight into the game)
 //             <studio>#/open/<code> (offers to save it as a project)
 
-import { collectImageSources } from '@minijs/runtime'
+import { collectGameFiles, collectImageSources } from '@minijs/runtime'
 import { compile } from '@minijs/lang'
 import { imageCandidates } from '../files/project-assets.js'
 import { basename, fileKind } from '../files/paths.js'
@@ -46,6 +46,20 @@ export async function packProject(fs, main, name) {
         files[path] = await blobToDataUrl(await fs.readBlob(path))
         break
       }
+    }
+    /** @param {string} src */
+    const locate = async (src) => {
+      for (const path of imageCandidates(main, src)) if (await fs.exists(path)) return path
+      return null
+    }
+    const needed = await collectGameFiles(program, async (src) => {
+      const path = await locate(src)
+      return path === null ? null : fs.readText(path)
+    })
+    for (const { src, binary } of needed) {
+      const path = await locate(src)
+      if (path === null) continue
+      files[path] = binary ? await blobToDataUrl(await fs.readBlob(path)) : await fs.readText(path)
     }
   }
   return { v: VERSION, name, main, files }
@@ -104,7 +118,8 @@ export function packFiles(pack) {
   /** @type {Record<string, string | Blob>} */
   const out = {}
   for (const [path, value] of Object.entries(pack.files)) {
-    out[path] = fileKind(path) === 'image' && value.startsWith('data:') ? dataUrlToBlob(value) : value
+    const kind = fileKind(path)
+    out[path] = (kind === 'image' || kind === 'audio') && value.startsWith('data:') ? dataUrlToBlob(value) : value
   }
   return out
 }

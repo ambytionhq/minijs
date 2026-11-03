@@ -171,6 +171,60 @@ export class Canvas2DRenderer {
   }
 
   /**
+   * @param {CanvasImageSource | null} source
+   * @param {number} sx
+   * @param {number} sy
+   * @param {number} sw
+   * @param {number} sh
+   * @param {number} dx
+   * @param {number} dy
+   * @param {number} dw
+   * @param {number} dh
+   */
+  sprite(source, sx, sy, sw, sh, dx, dy, dw, dh) {
+    if (source !== null) this.ctx.drawImage(source, sx, sy, sw, sh, dx, dy, dw, dh)
+  }
+
+  /**
+   * @param {number} x
+   * @param {number} y
+   * @param {number} size
+   * @param {string} color
+   * @param {number} opacity
+   * @param {number} shape
+   * @param {boolean} glow
+   * @param {number} tailX
+   * @param {number} tailY
+   */
+  particle(x, y, size, color, opacity, shape, glow, tailX, tailY) {
+    const ctx = this.ctx
+    ctx.globalAlpha = opacity
+    if (glow) ctx.globalCompositeOperation = 'lighter'
+    if (shape === 2) {
+      ctx.strokeStyle = color
+      ctx.lineWidth = Math.max(1, size * 0.6)
+      ctx.beginPath()
+      ctx.moveTo(x, y)
+      ctx.lineTo(x - tailX, y - tailY)
+      ctx.stroke()
+    } else {
+      ctx.fillStyle = color
+      if (shape === 1 && size >= 2.5) {
+        ctx.beginPath()
+        ctx.arc(x, y, size / 2, 0, Math.PI * 2)
+        ctx.fill()
+      } else if (this.pixelArt) {
+        const s = Math.max(1, Math.round(size))
+        ctx.fillRect(Math.round(x - s / 2), Math.round(y - s / 2), s, s)
+      } else {
+        ctx.fillRect(x - size / 2, y - size / 2, size, size)
+      }
+    }
+    if (glow) ctx.globalCompositeOperation = 'source-over'
+    ctx.globalAlpha = 1
+  }
+
+  /**
    * @param {string} text
    * @param {number} x
    * @param {number} y

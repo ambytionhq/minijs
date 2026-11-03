@@ -24,6 +24,11 @@
  * @property {ControlDecl[]} controls
  * @property {MapDecl[]} maps
  * @property {Rule[]} rules
+ * @property {TilemapDecl[]} tilemaps
+ * @property {SoundDecl[]} sounds
+ * @property {MusicDecl[]} music
+ * @property {ParticlesDecl[]} particles
+ * @property {MachineDecl[]} machines
  */
 
 /**
@@ -135,6 +140,92 @@ export const DEFAULT_GAME_SETTINGS = {
  * @property {Loc} loc
  */
 
+/**
+ * A level painted in Studio and saved as a `.tilemap` file.
+ * @typedef {object} TilemapDecl
+ * @property {string} name
+ * @property {string} src
+ * @property {number} x
+ * @property {number} y
+ * @property {boolean} hidden Starts switched off; `switch to tilemap` or `show tilemap` turns it on.
+ * @property {Loc} loc
+ */
+
+/**
+ * A sound: a preset with changes (`like`), or a file (.sound, .wav, .mp3, .ogg, .m4a).
+ * @typedef {object} SoundDecl
+ * @property {string} name
+ * @property {string | null} src
+ * @property {string | null} preset
+ * @property {Partial<import('./presets.js').SoundSettings>} settings
+ * @property {Loc} loc
+ */
+
+/**
+ * Looping background music from a file (.music, .wav, .mp3, .ogg, .m4a).
+ * @typedef {object} MusicDecl
+ * @property {string} name
+ * @property {string} src
+ * @property {number} volume 0 to 100
+ * @property {Loc} loc
+ */
+
+/**
+ * A particle effect: a preset with changes (`like`), or a `.particles` file.
+ * @typedef {object} ParticlesDecl
+ * @property {string} name
+ * @property {string | null} src
+ * @property {string | null} preset
+ * @property {Partial<import('./presets.js').ParticleSettings>} settings
+ * @property {Loc} loc
+ */
+
+/**
+ * `go to <state> when ...` or `go to <state> after N seconds`. `after` counts from entering the state.
+ * @typedef {object} TransitionDecl
+ * @property {string} to
+ * @property {Trigger} trigger
+ * @property {Loc} loc
+ */
+
+/**
+ * @typedef {object} StateDecl
+ * @property {string} name
+ * @property {Action[]} enter
+ * @property {Action[]} leave
+ * @property {Action[]} always
+ * @property {Rule[]} rules Rules that only count during this state.
+ * @property {TransitionDecl[]} transitions
+ * @property {Loc} loc
+ */
+
+/**
+ * A state machine. `thing` is null for `states game`: one state for the whole game.
+ * Otherwise every copy of the thing has its own current state.
+ * @typedef {object} MachineDecl
+ * @property {string | null} thing
+ * @property {StateDecl[]} states The first one is where it starts.
+ * @property {Loc} loc
+ */
+
+/**
+ * Every trigger and action list in a program, inside state machines too.
+ * @param {Program} program
+ * @returns {Array<{ trigger: Trigger | null; actions: Action[] }>}
+ */
+export function allRules(program) {
+  /** @type {Array<{ trigger: Trigger | null; actions: Action[] }>} */
+  const out = program.rules.map((r) => ({ trigger: r.trigger, actions: r.actions }))
+  for (const machine of program.machines ?? []) {
+    for (const state of machine.states) {
+      out.push({ trigger: null, actions: state.enter }, { trigger: null, actions: state.leave }, { trigger: null, actions: state.always })
+      for (const r of state.rules) out.push({ trigger: r.trigger, actions: r.actions })
+      for (const t of state.transitions) out.push({ trigger: t.trigger, actions: [] })
+    }
+  }
+  return out
+}
+
 /** @typedef {'left' | 'right' | 'up' | 'down'} Direction */
 
 /** @typedef {'x' | 'y' | 'vx' | 'vy' | 'width' | 'height'} InstanceProp */
@@ -156,6 +247,7 @@ export const DEFAULT_GAME_SETTINGS = {
  *   | { kind: 'random'; min: Expr; max: Expr; loc: Loc }
  *   | { kind: 'binary'; op: BinaryOp; left: Expr; right: Expr; loc: Loc }
  *   | { kind: 'stick'; pad: number; side: 'left' | 'right'; axis: 'x' | 'y'; loc: Loc }
+ *   | { kind: 'stateTime'; thing: string | null; loc: Loc }
  * )} Expr
  */
 
@@ -170,6 +262,10 @@ export const DEFAULT_GAME_SETTINGS = {
  *   | { kind: 'mouseOver'; thing: string; loc: Loc }
  *   | { kind: 'padHeld'; pad: number; button: PadButton; loc: Loc }
  *   | { kind: 'controlHeld'; name: string; loc: Loc }
+ *   | { kind: 'inState'; thing: string | null; state: string; loc: Loc }
+ *   | { kind: 'onTile'; thing: string; tile: string; loc: Loc }
+ *   | { kind: 'touchingTile'; thing: string; tile: string | null; loc: Loc }
+ *   | { kind: 'tileAt'; tile: string; x: Expr; y: Expr; loc: Loc }
  *   | { kind: 'and'; left: Condition; right: Condition; loc: Loc }
  *   | { kind: 'or'; left: Condition; right: Condition; loc: Loc }
  *   | { kind: 'not'; operand: Condition; loc: Loc }
@@ -187,6 +283,8 @@ export const DEFAULT_GAME_SETTINGS = {
  *   | { kind: 'pad'; pad: number; button: PadButton; state: KeyState; guard: Condition | null; loc: Loc }
  *   | { kind: 'control'; name: string; state: KeyState; guard: Condition | null; loc: Loc }
  *   | { kind: 'touch'; a: string; b: string; guard: Condition | null; loc: Loc }
+ *   | { kind: 'touchTile'; thing: string; tile: string | null; guard: Condition | null; loc: Loc }
+ *   | { kind: 'stateChange'; thing: string | null; state: string; change: 'enters' | 'leaves'; guard: Condition | null; loc: Loc }
  *   | { kind: 'leavesScreen'; thing: string; guard: Condition | null; loc: Loc }
  *   | { kind: 'every'; seconds: number; guard: Condition | null; loc: Loc }
  *   | { kind: 'after'; seconds: number; guard: Condition | null; loc: Loc }
@@ -225,6 +323,17 @@ export const DEFAULT_GAME_SETTINGS = {
  *   | { kind: 'log'; parts: TextPart[]; loc: Loc }
  *   | { kind: 'stopGame'; loc: Loc }
  *   | { kind: 'restartGame'; loc: Loc }
+ *   | { kind: 'playSound'; name: string; volume: Expr | null; pitch: Expr | null; from: string | null; loc: Loc }
+ *   | { kind: 'playMusic'; name: string; loc: Loc }
+ *   | { kind: 'stopMusic'; loc: Loc }
+ *   | { kind: 'setVolume'; channel: 'sound' | 'music'; value: Expr; loc: Loc }
+ *   | { kind: 'burst'; name: string; thing: string | null; x: Expr | null; y: Expr | null; loc: Loc }
+ *   | { kind: 'startParticles'; name: string; where: 'thing' | 'point' | 'screen'; thing: string | null; x: Expr | null; y: Expr | null; loc: Loc }
+ *   | { kind: 'stopParticles'; name: string; thing: string | null; loc: Loc }
+ *   | { kind: 'setState'; thing: string | null; state: string; loc: Loc }
+ *   | { kind: 'setTile'; tile: string | null; x: Expr | null; y: Expr | null; loc: Loc }
+ *   | { kind: 'showTilemap'; name: string; show: boolean; loc: Loc }
+ *   | { kind: 'switchTilemap'; name: string; loc: Loc }
  * )} Action
  */
 

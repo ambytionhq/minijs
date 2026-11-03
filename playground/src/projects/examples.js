@@ -4,7 +4,7 @@
 import { ExamplesFs } from '../files/examples-fs.js'
 
 const texts = /** @type {Record<string, string>} */ (
-  import.meta.glob('../../../examples/**/*.mini', { query: '?raw', import: 'default', eager: true })
+  import.meta.glob('../../../examples/**/*.{mini,tileset,tilemap,particles,sound,music}', { query: '?raw', import: 'default', eager: true })
 )
 const assetUrls = /** @type {Record<string, string>} */ (
   import.meta.glob('../../../examples/**/assets/*', { query: '?url', import: 'default', eager: true })
@@ -16,7 +16,7 @@ const assetUrls = /** @type {Record<string, string>} */ (
  * @property {string} name
  * @property {string} blurb one line for the card
  * @property {string} main the .mini file to open first
- * @property {'showcase' | 'basics'} kind
+ * @property {'showcase' | 'basics' | 'systems'} kind
  */
 
 /** @type {ExampleInfo[]} */
@@ -41,6 +41,13 @@ export const EXAMPLE_INFO = [
     blurb: 'Sneak past the ghosts, find 8 gems and the key, then take the stairs out.',
     main: 'game.mini',
     kind: 'showcase',
+  },
+  {
+    folder: 'lantern-garden',
+    name: 'Lantern Garden',
+    blurb: 'Every new tool in one small game: painted tile maps, sparkles, sounds, music and enemies with moods.',
+    main: 'game.mini',
+    kind: 'systems',
   },
   {
     folder: 'basics',

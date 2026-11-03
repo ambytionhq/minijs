@@ -266,6 +266,10 @@ Where to go from here:
 | [How do I...?](recipes.md) | Copy-and-paste answers: lives, enemies, timers, levels from letters, restart buttons |
 | [Language guide](language.md) | Every word minijs understands, explained with examples |
 | [Using Studio](studio.md) | Files, pictures, the tabs under the game, sharing, exporting, the desktop app |
+| [Tile maps](tilemaps.md) | Paint your levels with real tile art |
+| [Particles](particles.md) | Sparkles, smoke, fire, explosions |
+| [Sound and music](sound.md) | Sound effects and tunes, with no recordings needed |
+| [States](state-machines.md) | Enemies with moods, a menu and a game over screen |
 | [Fixing problems](problems.md) | What each message means and how to fix it |
 
 In Studio, the **Help** button also opens a searchable list of everything minijs understands.

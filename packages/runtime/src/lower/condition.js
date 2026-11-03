@@ -41,6 +41,40 @@ export function lowerCondition(condition, catalog) {
       const i = catalog.controlId(condition.name)
       return (c) => c.controls.held[i] === 1
     }
+    case 'inState': {
+      const state = catalog.stateId(condition.thing, condition.state)
+      if (condition.thing === null) {
+        const m = catalog.machineIndex(null)
+        return (c) => c.machines.machines[m].gameState === state
+      }
+      const t = catalog.typeId(condition.thing)
+      return (c) => {
+        const id = c.resolve(t)
+        return id >= 0 && c.world.state[id] === state
+      }
+    }
+    case 'onTile': {
+      const t = catalog.typeId(condition.thing)
+      const nameId = catalog.tileNameId(condition.tile, condition.loc)
+      return (c) => {
+        const id = c.resolve(t)
+        return id >= 0 && c.tiles.isStandingOn(c.world.x[id], c.world.y[id], c.world.w[id], c.world.h[id], nameId)
+      }
+    }
+    case 'touchingTile': {
+      const t = catalog.typeId(condition.thing)
+      const nameId = condition.tile === null ? -1 : catalog.tileNameId(condition.tile, condition.loc)
+      return (c) => {
+        const id = c.resolve(t)
+        return id >= 0 && c.tiles.isTouching(c.world.x[id], c.world.y[id], c.world.w[id], c.world.h[id], nameId)
+      }
+    }
+    case 'tileAt': {
+      const x = lowerExpr(condition.x, catalog)
+      const y = lowerExpr(condition.y, catalog)
+      const nameId = catalog.tileNameId(condition.tile, condition.loc)
+      return (c) => c.tiles.nameIdAt(x(c), y(c)) === nameId
+    }
     case 'and': {
       const left = lowerCondition(condition.left, catalog)
       const right = lowerCondition(condition.right, catalog)

@@ -1,0 +1,192 @@
+{
+ "minijs": "tileset",
+ "version": 1,
+ "tileWidth": 16,
+ "tileHeight": 16,
+ "palette": [
+  "#1f2430",
+  "#3a4152",
+  "#5e6a7d",
+  "#8d99a8",
+  "#c4cdd5",
+  "#f2f4f3",
+  "#2f5233",
+  "#3f7a3f",
+  "#5fa83e",
+  "#8fd14f",
+  "#c9e265",
+  "#3d2c23",
+  "#5b3f2e",
+  "#7d5a3c",
+  "#a67c52",
+  "#d1a974",
+  "#ecd9a8",
+  "#1b3a6b",
+  "#2a64ad",
+  "#3f95d6",
+  "#7cc7ef",
+  "#c6eaf8",
+  "#6e1f1f",
+  "#b03022",
+  "#e4572e",
+  "#f79a2e",
+  "#fdd34d",
+  "#fff2a8",
+  "#5a3a7a",
+  "#8d5fb5",
+  "#e38bb4"
+ ],
+ "tiles": [
+  {
+   "key": "g",
+   "name": "grass",
+   "kind": "terrain",
+   "solid": "solid",
+   "fps": 6,
+   "frames": [
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadddddcddddddcda9999989999998999899899899999989889999999998888989dddddddddddddd89899988999899999889899989989999888899999899999899dddddddddddddd99999989989999989989999999899898889999889998989989ddddcddddddddd9bdddcdddddddddccdddddcddddddddddddddddddddddddccddddcdddddddddcdcddddddddcddddcddcdccddddddddddddcdddddcdcdddddcddcdddddcdccddcdcddcdddddddddddddcddddddcddcddccddddddddddddcdccdddddddddddddcddcdddddddddddcdddddddddccdddddcddddddddddddddddccdddcddddcdddddddcdddddddddddddddcdddddddddddddcdddcddcddddcddddcddccddddddddddddbddddddddddddddddcddddcdddddddccddcdddcddcdddddcddccddddddcdddddcddcddddddddddddddddddddcdddccddddddddcccddddddcdddddddddddddccccddddddcdccdddddccdddddddddddddddddddddddddddddbcddddddddddddddccdddddddcddddddddcdcdddddcddddcdcdcddddddddccddcddddddcdddddddddbcdddcddddcdddddddccdcdddddddddddddddddcdcdddddcdddddddddddddddccdddddddddddcdddddddcdddcdccddddcddddddddcdddddcdddddccdcdcdddddcddddcccddddcddddddddddcddddddccdddddcdddddcdddbcdcddcdddddddddbccddcdddcdddddcdcdcdcdddddcdcddcdddddddddddddddc................cdddddddddddddddcdddddddddddcddccdcdddddcddddcdc................cddcccdddddddddddddddddcddddddddddddcddcccdcdccc................cdddddddddddddddddddddddccdccdcdddddcddddcdcdddc................cdddddcdddcdddddccddddddcddddddddddcddddddddddcc................bdddddddddddddddddddcdcdddddddddddddddddddcccdcc................cdddcdddddddddddddcdddddddddddcddddddddddddddddc................cdddcddddddddcdddddcddddddddddddddddddddddddddcc................cddcddddddddddddcdcddddcdddddcddddcdddcdcddddddc................ccdccdddddcdddddddcddddddddddcdcddddddddddddcddc................ccdddcddddcdddddddccddcddddcddddcdddddddcdddcdcc................bddddddcdddddddcdddddddddddddddddddddddddddddddc................cddddddddddddddcdcdddcddddddcddddddddddddddddddb................cdcddccdccdcdddddcddddddddddddddddcdddddddddddcc................cddddcddddddddddddcddddddddddddddccdddddcddddddc................cccdcddddcdddddcdddddddcdddddddddddddddddddddddc................cdcdddcddddcddddddddddddddddddddddddddcdddccdddc................cddddddddddddcdddddddddccddddddccdddccddcddddddc................cdddcdddddddddddddcdddddddddddddddddddddcddddddc................cddddddddddddddddddddddcdddddddddcddcddddddddddc................cdddddddddddddddddddddddddddddddddddddcddddccddc................cdddddddddccddddddcdcdddddddcddddcdddddddddddddc................cddddcddddddddddddcdddddddcdddddddcdddcddddddcdc................cdddddcdccddccdddddddddddddddddddddcdddddcdccddc................cdddddddddddcddccdcddddcdddddddddddddddddddddddc................cddcdddddddddddddcdcdccdddddddcccddddccddcdcdddb................cdddddddcdddcddddcdddcdddddddddddddcddddcddddcdc................bcddddddcdcdccdddddddddddcdddddddddddcddddddcddc................cdddddcdcdddddddcddddddddcdcddcddccddccddddddcdb................cddddcdddcdddcdddddcddddddddddcdcddcdcddcddddddc................cddddddcdddcddddcdcddddcdcdddddddddddddddddcdddb................cccccccbccccbccccccccccccccbcbcbccbcbccbcccccccc................"
+   ]
+  },
+  {
+   "key": "d",
+   "name": "dirt",
+   "kind": "terrain",
+   "solid": "solid",
+   "fps": 6,
+   "frames": [
+    "ccbcbcccbccccccbcccccccbbccbcbcbcbcccccbcccccccbccddddcddddddcccccccccccccccccccccccccbccccccbcccbcbcccbccccccccccddddddddddddbcccddddddcccdccddddcddcdddddddddcddddcdddddddddccddddddddddddddddbcddcddddcddddddddddddddddddddddcddddddccdddcdccdddddcddddddddddbcddcdddddddddccdddddcddddddddddddddddddddddddccddddcdddddddddcdccdddddddcddddcddcdccddddddddddddcdddddcdcddddccddcdddddcdccddcdccdcdddddddddddddcddddddcddcddccddddddddddddcdccdddddddddddddcddccddddddddddcdddddddddccdddddcddddddddddddddddccdddcddddcdddddddcbddddddddddddddcdddddddddddddcdddcddcddddcdddccddccddddddddddddbbdddddddddddddddcddddcdddddddccddcdddcddcddddccddccddddddcdddddccdcddddddddddddddddddddcdddccddddddddcccdddddccdddddddddddddcccccdddddcdccdddddccddddddddddddddddddddddddddddcbcddddddddddddddcccddddddcddddddddcdcdddddcddddcdcdcddddddddccdccddddddcdddddddddbcdddcddddcdddddddccdcdddddddddddddddddcdcddddccdddddddddddddddccbddddddddddcdddddddcdddcdccddddcddddddddcddddccbcdddccdcdcdddccccdddcccddddcddddddddddcddddddccdddddcdddddcddcbcccddcddddddddcbccddcdddcdddddcdcdcdcdddddcdcddcddddddddddddddcc................ccddddddddddddddcdddddddddddcddccdcdddddcddddccc................ccdcccdddddddddddddddddcddddddddddddcddcccdcdcbc................cbddddddddddddddddddddddccdccdcdddddcddddcdcddcc................ccddddcdddcdddddccddddddcddddddddddcddddddddddcc................bcddddddddddddddddddcdcdddddddddddddddddddcccdcc................ccddcdddddddddddddcdddddddddddcdddddddddddddddcc................ccddcddddddddcdddddcddddddddddddddddddddddddddcc................cbdcddddddddddddcdcddddcdddddcddddcdddcdcdddddcc................ccdccdddddcdddddddcddddddddddcdcddddddddddddcdbc................ccdddcddddcdddddddccddcddddcddddcdddddddcdddcdcc................bcdddddcdddddddcddddddddddddddddddddddddddddddcc................ccdddddddddddddcdcdddcddddddcdddddddddddddddddcb................cccddccdccdcdddddcddddddddddddddddcdddddddddddcc................ccdddcddddddddddddcddddddddddddddccdddddcdddddcc................cccdcddddcdddddcdddddddcddddddddddddddddddddddcc................cbcdddcddddcddddddddddddddddddddddddddcdddccddcc................ccdddddddddddcdddddddddccddddddccdddccddcdddddbc................ccddcdddddddddddddcdddddddddddddddddddddcdddddcc................ccdddddddddddddddddddddcdddddddddcddcdddddddddcc................cbddddddddddddddddddddddddddddddddddddcddddccdcc................ccddddddddccddddddcdcdddddddcddddcddddddddddddcc................ccdddcddddddddddddcdddddddcdddddddcdddcddddddcbc................ccddddcdccddccdddddddddddddddddddddcdddddcdccdcc................ccddddddddddcddccdcddddcddddddddddddddddddddddcc................ccdcdddddddddddddcdcdccdddddddcccddddccddcdcddcb................ccddddddcdddcddddcdddcdddddddddddddcddddcddddccc................bcddddddcdcdccdddddddddddcdddddddddddcddddddcdcc................ccddddcdcdddddddcddddddddcdcddcddccddccddddddccb................ccdddcdddcdddcdddddcddddddddddcdcddcdcddcdddddcc................ccbcbccbccbcccccccccbcbbccccccccccccbcccccbbbccb................cccccccbccccbccccccccccccccbcbcbccbcbccbcccccccc................"
+   ]
+  },
+  {
+   "key": "s",
+   "name": "stone",
+   "kind": "terrain",
+   "solid": "solid",
+   "fps": 6,
+   "frames": [
+    "3333333333333333333333333333333333333333333333333222222122122223333333333333333333333333333333333333333333333333322222222221212312222222212222222222221212212222222222212212222122222122222212221222222222222222222222222222222222221222222222212222122222221222112222222222222222222222222221222222222222222221211222221222122212222222222221222222222222222221222212222222222122222212222222211222222222222112222222222222222122222221222222212222222222222222122222222222222222222212212222222222222122221221222122222222221212222212122222222222222122122222122212222221222122222122222222221222222222122222222221222222221221222221222212212222222222212221122222222222222222222222222212211221222222222221121222222222122212222222222222222222222222222222122222212222221122222212122212221212222222212222122212221222222212222222212222212212222222221122122122222221222122222222222222222222222221122221212222222212222212222122222222222221222122112222222222222222222122212222222222221222212222222222222222222222222222222222222222111222222221222221122222212222222222222222222222222222222122222221................112222222222222222222222122122222222121222222221................122222222222222221222222122222222222212122222221................122212212222221222212222122222222222222222222221................122222222222221112222222222222222222222122122221................122222222222122222222222222222222222222222122221................122112122221222222122222221222222122222221222221................122222222122222222122222222122222122211222222211................122222122222221222222222222222222222222222222221................122222221222222222222222222222122222112221222221................121212222222222222221222212221222222222222222221................122222221222222222222221221222212222222222222221................122112122222122222211222222222221222222221222121................122222222222222122222222222222222221222212221221................122221112222222221221222222222221222222222222221................112222222222221221212222222222222122222222222121................122222212222122222222222222221222222222212222221................122222122222122221222212222222122222222222222221................122222212222222222222222222222222222121221221221................122222222221222222212222222222222222222222222221................122222222222221222221122222222222212222122222221................121222222122122222222122222222222222222222222221................122222222222222222222222222212222222222112222221................122221222222222212221222222222122222222122222221................122211222222222222122222222222222222121222222221................112222212222222222222212122221212222222222222121................122222221222111222212222222222222222222222122221................122211122222222222222222222222222222122222222221................122222222222122222222122222222222222222212222221................121222222222222222221122222222222222222212222221................112222222222222222222222222222222222212222222221................111111111111111111111111111111111111111111111111................"
+   ]
+  },
+  {
+   "key": "a",
+   "name": "sand",
+   "kind": "terrain",
+   "solid": "solid",
+   "fps": 6,
+   "frames": [
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffggggfgggggfggffggggfggffggfggfggggfggggfggggggggggggggfggfgggfggggggggggffggfgfgggggggggffggfgggggggggggggggfgfgfgggggggfggfgfgfgggggfgggggfggfggfggggffggggggfggggggggggggggggggggggggggggfgfggggggggggggggggfgfgggggggfggffggggggffgggggggggfggggggggggggggfgggffgggfggfggggffggggggggggfggggfggggggggfgggggggfgfgggggggfggfggggggfgfgggggfgffggggggggfgggggffgggggggfgfgggfggggggfggggggggfgggggggggfggggggfgfggggggggfggffgggggggggfgggfgfgggggfggfggggggfgggggggggggggfgffgggggggggfgfggggggfgfggggfggggggfgggggggfgggfgfgggfggggggggggggfggggggggggggfggggffgggggggggfggggggfggfgggggggffgggggggggggggggfggggffgggfgggggggggfggggggggfggggggfggfggggffgfgggggggggggggfggfggggggggggggggggggggggffggggggggggggggfgggggggfgggggfggggggggggfggggggggggggggggggggggfggggggggggggggggfggggggffggggfggggggggggfgggggggggggggggggggffggggffffggggggfggfgggggggfggggggggggggggfgfggfgfggfggggfgggggggggfgggggggfgggggggggggggggfgggggfgggggffgfgfgggggfgggggggggggggfgggggggfggggfgggggggggggggffgggggfffggggggffggggggggggggggggggggggggggggggggfgffggffgggfgff................fgggggggfggggggggggggfggfggfgggggfgggggggggggggf................fgggggggfgggfffgggggggggggggggfgggggggggggfggggf................fgggggggggggggggfgfggggggggggfggfggfgggggggfgggf................fgggggggfgggggggggfgggggggggggggggggggfggggggggf................fggggfgggfgggggfggggggggggggggggggggfgfggggggggf................fgfgfggggfgggggggggggggggfgggggggggggggggggggggf................ffggggggggggggggggggggggffggggggggggggggggfggggf................fggggggggggggfgggfgggfggggggggfggfffgggggggfgggf................fffgfgggggggfggggfgggggggggfgggggggfgggggggggggf................fggggggfggggggggggfggggggggggfgfgggffggfgggggfgf................fgfgggfgfgfgfgggfggggggfgggggggffggggggggggggggf................fgggfggggggggggggggffgggggggggggggffgggggggggggf................fgfgggggggfgggfggfgggfgggggggfggfgggggggggggggff................fgggfggggggfgffggggggggggggffggggffggggggggggfgf................fgfggffgggggfffggggggggggggggggggggfgggggfgggggf................ffgffgggfgfggfggggfgggggfggggfgggggggggggfgggggf................fgggggggggggggggggfggggggggggggggffggggggggggggf................fgggggfgggfgggggggggggggggggfgggggggggfgggfggggf................fgggggggfgggggggggggfffgggggggggfggggggggggfgggf................fgggggfgggggggggfggggggggfggggfgggggggffggfggfgf................fgggggfggfgggggggggfggggggfgggggggggggggfgggggff................fgggggfgggggggfgggggfggggggggfgggfggfggfggggfggf................fgggggggggggggfggggggggggggggggggggfggfgfggggggf................fgggggffggfgggfggggfgggggggfgfgggggggggggggggggf................fgggggfggggfggfggfgggggggggfggfgggggggggggggfggf................fggggggggggffgggfgggggfggggggggfggggfggggggggggf................ffggggfggfgggggggfggggggggggggggfggfggfggggggggf................fggggfgggffggggfggggfggggffggggggfggggggggggfggf................fffgggggggggggggggggggfggggggggggggggggffggfgggf................fgggggfgggfggggggggfgffggggggggggggfgggggggggfgf................ffffffffffffffffffffffffffffffffffffffffffffffff................"
+   ]
+  },
+  {
+   "key": "w",
+   "name": "water",
+   "kind": "terrain",
+   "solid": "none",
+   "fps": 4,
+   "frames": [
+    "llllllllllllllllllllllllllllllllllllllllllllllllljjkkkjjjjiiiiillllllllllllllllllllllllllllllllllllllllllllllllllkkkjjjjiiiijjjlhkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkhkkjjjjiiiijjjjkkhjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkhjjjjiiiijjjjkkkkhiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjhjiiiijjjjkkkkjjjhiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjhiiijjjjkkkkjjjjihjjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiihijjjjkkkkjjjjiiihjjkkkjjjjiiiijjjjjkkkjjjjiiiijjjjjkkkjjjjiiiijhjjjkkkjjjjiiiijjhkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjhkkkkjjjjiiiijjjjhkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkhkkjjjjiiiijjjjkkhjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkhjjjjiiiijjjjkkkkhiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjhjiiiijjjjkkkkjjjhiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjhiiijjjjkkkkjjjjihjjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiihijjjjkkkkjjjjiiihjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijhjjkkkkjjjjiiiijjhkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjhhkkkjjjjiiiijjjhhkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkh................hjjjiiiijjjjkkkjjjjjiiiijjjjkkkjjjjjiiiijjjjkkkh................hiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjh................hiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjh................hjjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiih................hjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijh................hkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjh................hkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkh................hjjiiiiijjjjkkkjjjjiiiiijjjjkkkjjjjiiiiijjjjkkkh................hiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjh................hiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjh................hjjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiih................hjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijh................hkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjh................hkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkh................hjjiiiijjjjjkkkjjjjiiiijjjjjkkkjjjjiiiijjjjjkkkh................hiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjh................hiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjh................hjjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiih................hjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijh................hkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjh................hkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkh................hjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkh................hiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjh................hiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjh................hjjjjkkkjjjjjiiiijjjjkkkjjjjjiiiijjjjkkkjjjjjiih................hjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijh................hkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjh................hkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkh................hjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkh................hiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjh................hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh................",
+    "lllllllllllllllllllllllllllllllllllllllllllllllllkjjjjiiiiijjjjlllllllllllllllllllllllllllllllllllllllllllllllllljjjiiiijjjjkkklhjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjhjjiiiijjjjkkkkjjhiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjhiiiijjjjkkkkjjjjhjjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiihijjjjkkkkjjjjiiihjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiihjjjkkkkjjjjiiiijhkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjhjkkkkjjjjiiiijjjhkjjjjiiiijjjjjkkkjjjjiiiijjjjjkkkjjjjiiiijjjjjhkkjjjjiiiijjjjjkhjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkhjjjjiiiijjjjkkkkhjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjhjjiiiijjjjkkkkjjhiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjhiiiijjjjkkkkjjjjhjjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiihijjjjkkkkjjjjiiihjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiihjjjkkkkjjjjiiiijhkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjhjkkkkjjjjiiiijjjhkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkhkkjjjjiiiijjjjkkhjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkhhjjjiiiijjjjkkkhhjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjh................hiiijjjjkkkjjjjjiiiijjjjkkkjjjjjiiiijjjjkkkjjjjh................hjjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiih................hjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiih................hkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjh................hkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkh................hjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkh................hjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjh................hiiijjjjkkkjjjjiiiiijjjjkkkjjjjiiiiijjjjkkkjjjjh................hjjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiih................hjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiih................hkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjh................hkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkh................hjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkh................hjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjh................hiijjjjjkkkjjjjiiiijjjjjkkkjjjjiiiijjjjjkkkjjjjh................hjjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiih................hjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiih................hkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjh................hkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkh................hjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkh................hjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjh................hiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjh................hjjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiih................hjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiih................hkkkjjjjjiiiijjjjkkkjjjjjiiiijjjjkkkjjjjjiiiijjh................hkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkh................hjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkh................hjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjh................hiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjh................hjjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiih................hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh................",
+    "llllllllllllllllllllllllllllllllllllllllllllllllljiiiiijjjjkkkjlllllllllllllllllllllllllllllllllllllllllllllllllliiijjjjkkkkjjjlhijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjihiijjjjkkkkjjjjiihjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiihjjjjkkkkjjjjiiiihkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjhjkkkkjjjjiiiijjjhkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjhkkkjjjjiiiijjjjkhjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkhkjjjjiiiijjjjkkkhjiiiijjjjjkkkjjjjiiiijjjjjkkkjjjjiiiijjjjjkkkjhjjiiiijjjjjkkkjjhiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjhiiiijjjjkkkkjjjjhijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjihiijjjjkkkkjjjjiihjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiihjjjjkkkkjjjjiiiihkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjhjkkkkjjjjiiiijjjhkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjhkkkjjjjiiiijjjjkhjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkhkjjjjiiiijjjjkkkhjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjhjjiiiijjjjkkkkjjhiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjhhiiijjjjkkkkjjjhhijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjih................hjjjkkkjjjjjiiiijjjjkkkjjjjjiiiijjjjkkkjjjjjiiih................hkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjh................hkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjh................hjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkh................hjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjh................hiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjh................hijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjih................hjjjkkkjjjjiiiiijjjjkkkjjjjiiiiijjjjkkkjjjjiiiih................hkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjh................hkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjh................hjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkh................hjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjh................hiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjh................hijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjih................hjjjkkkjjjjiiiijjjjjkkkjjjjiiiijjjjjkkkjjjjiiiih................hkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjh................hkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjh................hjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkh................hjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjh................hiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjh................hijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjih................hjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiih................hkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjh................hkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjh................hjjjjiiiijjjjkkkjjjjjiiiijjjjkkkjjjjjiiiijjjjkkh................hjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjh................hiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjh................hijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjih................hjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiih................hkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjh................hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh................",
+    "llllllllllllllllllllllllllllllllllllllllllllllllliijjjjkkkjjjjilllllllllllllllllllllllllllllllllllllllllllllllllljjjkkkkjjjjiiilhjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijhjjkkkkjjjjiiiijjhkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjhkkkkjjjjiiiijjjjhjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkhkjjjjiiiijjjjkkkhjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkhjjjiiiijjjjkkkkjhiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjhjiiiijjjjkkkkjjjhijjjjjkkkjjjjiiiijjjjjkkkjjjjiiiijjjjjkkkjjjjihiijjjjjkkkjjjjiihjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiihjjjjkkkkjjjjiiiihjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijhjjkkkkjjjjiiiijjhkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjhkkkkjjjjiiiijjjjhjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkhkjjjjiiiijjjjkkkhjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkhjjjiiiijjjjkkkkjhiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjhjiiiijjjjkkkkjjjhijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjihiijjjjkkkkjjjjiihjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiihhjjjkkkkjjjjiiihhjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijh................hkkjjjjjiiiijjjjkkkjjjjjiiiijjjjkkkjjjjjiiiijjjh................hjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkh................hjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkh................hiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjh................hijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjih................hjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiih................hjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijh................hkkjjjjiiiiijjjjkkkjjjjiiiiijjjjkkkjjjjiiiiijjjh................hjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkh................hjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkh................hiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjh................hijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjih................hjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiih................hjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijh................hkkjjjjiiiijjjjjkkkjjjjiiiijjjjjkkkjjjjiiiijjjjh................hjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkh................hjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkh................hiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjh................hijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjih................hjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiih................hjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijh................hkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjh................hjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkh................hjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkh................hiiiijjjjkkkjjjjjiiiijjjjkkkjjjjjiiiijjjjkkkjjjh................hijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjih................hjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiih................hjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijh................hkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjh................hjjjjiiiijjjjkkkkjjjjiiiijjjjkkkkjjjjiiiijjjjkkh................hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh................"
+   ]
+  },
+  {
+   "key": "l",
+   "name": "lava",
+   "kind": "plain",
+   "solid": "none",
+   "fps": 5,
+   "frames": [
+    "pppqqqpppoonnnooqqqqqpppooooopppqqqqppoooooppqqqqpppoooooppqqqqqpooonoooppqqqqqpnnnnnoopppqpppoonnnooppppppoonnnnooppppppoonnnnnoppppppponnnnnnoqqqqppooonnnooppqqqppooooooppqqqqpppoooopppqqqqqpooooooppqqqqqqponnoopppqqqqppponnooppppppppoonnnooppppppoonnnnn",
+    "qqqppooonoooppqqppoonnnnnoopppqponnnnnnoopppppppnnnnnnoppppppoonnnnoopppppppoonnoopppqqqpppoonnnppqqqqqppoooooopqqqqqpppoooooppqqqqpppoooooppqqqpppoonnoopppqqqqoonnnnooppppqpppnnnnnooppppppoonnnnooppppppoonnnnooppppppoonnnnnppqqqqppoonnnnooqqqqqppooooooppq",
+    "oonnnnnooppppppponnnoopppqqqpppoooopppqqqqqpppoooppqqqqqqqppoooopqqqqqqpppooooopqqqqqppooonoooppqpppoonnnnnopppppoonnnnnnooppppponnnnnnoopppppponnnnnooppppppponnnooppqqqqppooonoppqqqqqqppooooopqqqqqqpppooooppqqqqqppooooooppqqqpppoonnoopppqqppoonnnnoopppppp",
+    "oooppqqqqqqqppooooppqqqqqppooonoopppqpppoonnnnnopppppponnnnnnooppppoonnnnnnnopppppoonnnnnooppppppoonnnoopppqqqppoooooppqqqqqqppooooppqqqqqqpppoooppqqqqqqpppooooppqqqqpppoonnoopppppppoonnnnoopppppoonnnnnnooppppoonnnnnnooppppponnnnnnoppppppponnnoooppqqqqppoo"
+   ]
+  },
+  {
+   "key": "b",
+   "name": "brick",
+   "kind": "plain",
+   "solid": "solid",
+   "fps": 6,
+   "frames": [
+    "nnnnnnnmnnnnnnnmnnnnnnnmnnnnnnnmnnnnnnnmnnnnnnnmmmmmmmmmmmmmmmmmonnmnnnnnnnmnnnnnonmnnnnnoomnnnnnnomnnnnnonmnnnnmmmmmmmmmmmmmmmmnnnnnnnmnnnnnnnmnnnnnonmnnnnnnomnnnnnnnmnonnnnnmmmmmmmmmmmmmmmmmonnmnnnnnnomonnnnnnmnnnnnonmnnnnnnomnnnnonnmnnnnmmmmmmmmmmmmmmmm"
+   ]
+  },
+  {
+   "key": "t",
+   "name": "plank",
+   "kind": "plain",
+   "solid": "top",
+   "fps": 6,
+   "frames": [
+    "ffffffffffffffffeeeeceeeeceeeeceeeeeceeeeceeeeceeeeeceeeeceeeeceeeeeceeeeceeeececccccccccccccccc................................................................................................................................................................"
+   ]
+  },
+  {
+   "key": "c",
+   "name": "crate",
+   "kind": "plain",
+   "solid": "solid",
+   "fps": 6,
+   "frames": [
+    "cccccccccccccccccdeeeeeeeeeeeedccedeeeeeeeeeedecceedeeeeeeeedeecceeedeeeeeedeeecceeeedeeeedeeeecceeeeedeedeeeeecceeeeeeddeeeeeecceeeeeeddeeeeeecceeeeedeedeeeeecceeeedeeeedeeeecceeedeeeeeedeeecceedeeeeeeeedeeccedeeeeeeeeeedeccdeeeeeeeeeeeedccccccccccccccccc"
+   ]
+  },
+  {
+   "key": "o",
+   "name": "coin",
+   "kind": "plain",
+   "solid": "none",
+   "fps": 8,
+   "frames": [
+    "......................................................pppp..........pprrqqpp........prrrqqqp.......prrrrqqqqp......prrrrqqqqp......pqqqqqqqqp......pqqqqqqqqp.......pqqqqqqp........ppqqqqpp..........pppp......................................................",
+    "......................................................pppp...........pprqpp..........prrqqp.........prrrqqqp........prrrqqqp........pqqqqqqp........pqqqqqqp.........pqqqqp..........ppqqpp...........pppp......................................................",
+    ".......................................................pp..............rq.............prqp............prqp............rrqq............qqqq............pqqp............pqqp.............qq..............pp.......................................................",
+    ".......................................................................pp..............rq..............rq..............rq..............qq..............qq..............qq..............pp.......................................................................",
+    ".......................................................pp..............rq.............prqp............prqp............rrqq............qqqq............pqqp............pqqp.............qq..............pp.......................................................",
+    "......................................................pppp...........pprqpp..........prrqqp.........prrrqqqp........prrrqqqp........pqqqqqqp........pqqqqqqp.........pqqqqp..........ppqqpp...........pppp......................................................"
+   ]
+  },
+  {
+   "key": "x",
+   "name": "spikes",
+   "kind": "plain",
+   "solid": "none",
+   "fps": 6,
+   "frames": [
+    "..................................................................................................................4....4....4.....4....4....4.....4....4....4....343..343..343...343..343..343...343..343..343..334333343333433333433334333343333343333433334333"
+   ]
+  },
+  {
+   "key": "h",
+   "name": "ladder",
+   "kind": "plain",
+   "solid": "none",
+   "fps": 6,
+   "frames": [
+    "...d........d......deeeeeeeed......d........d......d........d......d........d......deeeeeeeed......d........d......d........d......d........d......deeeeeeeed......d........d......d........d......d........d......deeeeeeeed......d........d......d........d..."
+   ]
+  },
+  {
+   "key": "f",
+   "name": "flower",
+   "kind": "plain",
+   "solid": "none",
+   "fps": 6,
+   "frames": [
+    ".....................................................uuuuu...........uuquu...........uqqqu...........uuquu...........uuuuu.............................7...............7...............7...............788.............7...............7...............7........"
+   ]
+  },
+  {
+   "key": "u",
+   "name": "bush",
+   "kind": "plain",
+   "solid": "none",
+   "fps": 6,
+   "frames": [
+    ".....................................................................................................777877........7887788777.....787777778777....777777887777...87877777877777..87777777777778.7777778777787777787777777777777777877877778777778877777788877878"
+   ]
+  }
+ ]
+}

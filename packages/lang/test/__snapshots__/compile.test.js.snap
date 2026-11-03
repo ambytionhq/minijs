@@ -16,7 +16,10 @@ exports[`compile > compiles the spec example cleanly 1`] = `
     "touchButtons": false,
     "width": 320,
   },
+  "machines": [],
   "maps": [],
+  "music": [],
+  "particles": [],
   "rules": [
     {
       "actions": [
@@ -348,6 +351,7 @@ exports[`compile > compiles the spec example cleanly 1`] = `
       },
     },
   ],
+  "sounds": [],
   "things": [
     {
       "animations": [],
@@ -439,6 +443,7 @@ exports[`compile > compiles the spec example cleanly 1`] = `
       "starts": [],
     },
   ],
+  "tilemaps": [],
   "vars": [
     {
       "initial": 0,

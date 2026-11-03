@@ -7,6 +7,7 @@ minijs Studio is where you write, play and share your games. It works the same i
 - [The workspace](#the-workspace)
 - [Files and folders](#files-and-folders)
 - [Adding pictures](#adding-pictures)
+- [The picture editors](#the-picture-editors)
 - [Playing your game](#playing-your-game)
 - [The tabs under the game](#the-tabs-under-the-game)
 - [Sharing and exporting](#sharing-and-exporting)
@@ -67,8 +68,9 @@ Buttons above the Files list:
 | Button | What it does |
 |---|---|
 | **New game file** | A new `.mini` file |
+| **+** | A new tile map, tile set, particle effect, sound or music. See [the picture editors](#the-picture-editors) |
 | **New folder** | A folder |
-| **Add files** | Pick files from your computer, like pictures |
+| **Add files** | Pick files from your computer, like pictures and sounds |
 | **Reload files** | Re-reads the list. Useful if you changed a real folder outside Studio. |
 
 To **rename**, double-click a file or select it and press **F2**. To **move**, drag it onto a folder. To **delete**, select it and press **Delete**, or click its trash button. A message with **Undo** appears in case it was a mistake.
@@ -85,6 +87,25 @@ thing hero
 ```
 
 minijs finds pictures next to your game file or in an `assets` folder beside it. PNG, JPG, GIF, WebP, SVG, AVIF and BMP all work. See [Pictures and animation](language.md#pictures-and-animation) for animations and tips.
+
+## The picture editors
+
+Some files open as pictures instead of text. In the Files list, they show a tiny picture of what's inside.
+
+| File | Opens as | Guide |
+|---|---|---|
+| `.tilemap` | Paint a level with tiles, in layers, and place things | [Tile maps](tilemaps.md) |
+| `.tileset` | Draw tiles pixel by pixel, with autotile and animation | [Making your own tiles](tilemaps.md#making-your-own-tiles) |
+| `.particles` | Sliders and a live preview | [Particles](particles.md) |
+| `.sound` | Sliders and a picture of the sound | [Sound and music](sound.md) |
+| `.music` | A grid of notes that loops | [Making music](sound.md#making-music-in-studio) |
+| `.mini`, with the **States** button | Boxes and arrows | [States](state-machines.md) |
+
+They all work the same way:
+
+- **Your work saves by itself**, and your game restarts with the change a moment later, so you can watch it on the right as you work.
+- **Ctrl+Z** undoes (Cmd+Z on a Mac). **Ctrl+Shift+Z** redoes.
+- **The strip along the bottom** shows how to use the file. **Add to my game** writes the line for you. The other lines are examples for your rules, with a copy button.
 
 ## Playing your game
 

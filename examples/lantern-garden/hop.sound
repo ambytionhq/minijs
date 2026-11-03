@@ -1,0 +1,17 @@
+{
+ "minijs": "sound",
+ "version": 1,
+ "wave": "square",
+ "pitch": 260,
+ "pitchEnd": 640,
+ "attack": 0.004,
+ "hold": 0.04,
+ "fade": 0.12,
+ "volume": 45,
+ "wobble": 0,
+ "wobbleDepth": 0,
+ "steps": 0,
+ "muffle": 0,
+ "crunch": 0,
+ "echo": 0
+}

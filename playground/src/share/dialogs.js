@@ -8,7 +8,7 @@ import { createProject } from '../projects/registry.js'
 import { go } from '../router.js'
 import { openDialog } from '../ui/dialog.js'
 import { toast } from '../ui/toast.js'
-import { MAX_HTML_BYTES, collectImages, downloadName, exportHtml } from './export-html.js'
+import { MAX_HTML_BYTES, collectFiles, collectImages, downloadName, exportHtml } from './export-html.js'
 import { LONG_CODE, MAX_CODE, decodePack, encodePack, packFiles, packProject, shareLink } from './pack.js'
 import { saveFile } from './save-file.js'
 import { readZip, stripCommonFolder, writeZip } from './zip.js'
@@ -156,7 +156,8 @@ export function openExportDialog({ fs, runPath, name }) {
             const { program } = compile(await fs.readText(runPath))
             if (!program) throw new Error('Fix the problems in the game before exporting it.')
             const images = await collectImages(fs, runPath, program)
-            const html = exportHtml({ title: name, program, images, playerSource })
+            const gameFiles = await collectFiles(fs, runPath, program)
+            const html = exportHtml({ title: name, program, images, files: gameFiles, playerSource })
             if (html.length > MAX_HTML_BYTES) throw new Error('This game is too big to export as one file. Try smaller pictures.')
             await saveFile(new Blob([html], { type: 'text/html' }), downloadName(name, 'html'))
           },

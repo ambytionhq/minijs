@@ -107,6 +107,32 @@ Add a line under the rows saying what `x` is, like `"x" is wall`. Use `.` for em
 **A map letter must be exactly one character.**
 Write `"#" is wall`, not `"##" is wall`.
 
+### Tile maps, sounds, particles and states
+
+**I couldn't find the file "cave.tilemap".**
+The file isn't next to your game file or in an `assets` folder, or it has a different name. If you renamed it, update the line in your game too. This goes for `.tilemap`, `.tileset`, `.sound`, `.music`, `.particles` and recordings.
+
+**"cave.tilemap" isn't a tile map I can read.**
+The file is damaged, or isn't what its name says. Open it in Studio to check it, or make it again.
+
+**I don't know a tile called "lavva".**
+Rules use the names from your tile set. Open the tile set to see them, or check the spelling.
+
+**A tile map places a "ghost", but your game has no thing with that name.**
+Add a `thing ghost` block to your game, or press **T** in the tile map and click the placed thing to remove it.
+
+**I don't have a ready-made sound called "coyn".**
+The message lists what's available. See [the sounds](sound.md#the-quickest-way) and [the effects](particles.md#the-quickest-way).
+
+**"guard" doesn't have any states yet.**
+Something uses `guard state` or `guard is in ...`, but there's no `states guard` block. Add one. See [States](state-machines.md).
+
+**"guard" has no state called "rset".**
+Check the spelling in the `go to` line or the rule.
+
+**"sparkle" is a particle effect, not a thing.**
+To stop an effect, say where: `stop sparkle on player`, or `stop sparkle everywhere`.
+
 ### While the game is running
 
 **I couldn't load the picture "hero.png".**
@@ -167,6 +193,12 @@ Add `pixel art` to the `game` block.
 
 **My gamepad doesn't work.**
 Press any button on it after the game has started, so the browser notices it. Check the **Controls** tab to see what the game sees.
+
+**I can't hear my sounds.**
+Browsers only allow sound after you click or press a key on the page. See [Sound questions](sound.md#questions).
+
+**My player falls through my tile map.**
+See [Tile map questions](tilemaps.md#questions).
 
 ## Studio questions
 

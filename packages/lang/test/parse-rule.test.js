@@ -163,7 +163,7 @@ describe('actions', () => {
     expect(parseErrorOf(() => parseAction(cursor('jmup player')))).toEqual({
       code: 'unknown-word',
       message: 'I don\'t know how to "jmup".',
-      hint: 'Actions start with: move, push, stop, set, add, subtract, make, remove, change, play, show, log, restart.',
+      hint: 'Actions start with: move, push, stop, set, add, subtract, make, remove, change, play, show, hide, log, restart, burst, start, switch.',
       line: 1,
       col: 1,
     })

@@ -12,7 +12,7 @@ v1 target genres: **top-down arcade** and **platformer**.
 
 ### Non-goals for v1
 
-Sound, levels and tilemaps, emoji looks, user-defined functions or macros, per-instance custom variables, `wait` inside rules, rotation, scaling, particle effects, networking, WebGL renderer. (The Studio editor and desktop packaging come after v1, in Stages 5 and 6; some features above may arrive with Stage 7.)
+Emoji looks, user-defined functions or macros, per-instance custom variables, `wait` inside rules, rotation, scaling, networking, WebGL renderer. (Sound, tilemaps, particles and state machines shipped after v1: sections 4.5c to 4.5f.)
 
 ## 2. Architecture
 
@@ -76,7 +76,7 @@ runtime problems -> Game emits 'error' with the same MiniError shape
 
 - File extension `.mini`. UTF-8.
 - Indentation defines blocks. The first indented line sets the indent unit (for example 2 spaces, 4 spaces, or 1 tab). Mixing tabs and spaces in one file is `indent-mixed`. Indent that is not a multiple of the unit is `indent-uneven`. Jumping more than one level deeper is `indent-unexpected`.
-- `#` starts a comment to end of line (outside strings), except a hex color: `#` immediately followed by exactly 3 or 6 hex digits and then a space or end of line is a color token (`background #1a2b3c`).
+- `#` starts a comment to end of line (outside strings), except a hex color: `#` immediately followed by exactly 3 or 6 hex digits and then a space, a comma or end of line is a color token (`background #1a2b3c`).
 - Blank lines are ignored.
 - Keywords are case-insensitive. Thing and variable names are case-insensitive and stored lowercase.
 - Names: letters, digits, `_`, `-`; must start with a letter. Example: `big-rock`, `enemy2`. Because `-` is allowed in names, math needs spaces: `score - 1`, not `score-1`.
@@ -95,9 +95,16 @@ game                      # optional settings block, at most one
 thing <name>              # thing type block
 control <name>            # named input made of several keys and buttons
 map                       # places things from a grid of letters, any number of these
+tilemap <name> "<file>"   # a level painted in Studio (section 4.5c)
+sound <name> ...          # a sound effect (section 4.5d)
+music <name> "<file>"     # looping music (section 4.5d)
+particles <name> ...      # a particle effect (section 4.5e)
+states <thing> | game     # a state machine (section 4.5f)
 when <trigger>            # rule block
 always                    # rule block that fires every tick
 ```
+
+`tilemap`, `sound`, `music`, `particles` and `states` are recognized at the left edge unless followed by `starts`, so older games with numbers of those names keep working.
 
 ### 4.3 `game` block
 
@@ -169,6 +176,96 @@ map
 - Every row character not in the legend and not empty is `map-letter`, reported once per letter. Legend things must exist (`unknown-thing` with did-you-mean).
 - A map needs at least one row (`expected`).
 - At start (and restart), after all `starts at` instances, each letter spawns its thing at `(at.x + col * tileW, at.y + row * tileH)`, row by row, left to right.
+
+### 4.5c Tile maps
+
+```
+tilemap level "level.tilemap"
+  at 0, 0        # optional, world position of the top-left tile
+  hidden         # optional, not shown or solid until shown
+```
+
+File formats live in `packages/runtime/src/tiles/format.js`. Files are JSON and may be edited by hand; they are repaired where possible on load.
+
+- `.tileset`: `tileWidth`, `tileHeight` (even, 2 to 64), `palette` (`#rrggbb`), `tiles[]`: `key` (one character, not `.` or space), `name`, `kind` (`plain` | `terrain`), `solid` (`solid` | `top` | `none`), `fps`, `frames[]`. A frame is one character per pixel from `PIXEL_CHARS`, `.` transparent, otherwise `palette[index - 1]`. A plain frame is one tile. A terrain frame is a sheet 4 tiles by 3: a 3 by 3 island at the left, inner corners in column 3 row 0, the rest unused.
+- `.tilemap`: `tileset` (file name), `width`, `height` (tiles, up to 512), `layers[]`: `name`, `rows[]` (one key per cell, `.` empty), `solid`, `front`, `parallax`, `visible`; `things[]`: `thing`, `x`, `y` (pixels relative to the map).
+
+**Autotile.** Each terrain cell holds an 8-bit mask of neighbors with the same tile, off the map counting as the same. Every cell is drawn as four quarter-tiles chosen per corner from the corner's two sides and diagonal: both sides open is an outer corner, one open is an edge, both closed with an open diagonal is an inner corner, otherwise the fill. This yields all 47 shapes from one sheet. Changing a cell recomputes the 8 around it.
+
+**Collision.** Only `solid` things collide with tiles; `fixed` ones do not move. Layers with `solid: false` are ignored. `top` tiles only stop downward movement of a box that started above them. A tile map that collides counts as a second solid, so a lone solid thing is pushed out of tiles.
+
+**Drawing.** Layers with `front: false`, then things, then `front: true` layers, then particles, then text. A layer's scroll is the camera times `parallax`.
+
+**Camera.** Without `camera stays inside`, the first shown map's rectangle bounds the camera.
+
+**Triggers:** `<thing> touches <tile> tile`, `<thing> touches any tile`, post-physics, per instance, per tile, edge contact counts. `the tile`, `tile x` and `tile y` refer to the touched tile; a thing named `tile` wins for `tile x`.
+
+**Conditions:** `<thing> is on <tile> tile`, `<thing> is touching <tile> tile`, `<thing> is touching any tile`, `tile at <x>, <y> is <tile>`.
+
+**Actions:** `remove the tile`, `set the tile to <tile>`, `set tile at <x>, <y> to <tile>`, `remove tile at <x>, <y>`, `show tilemap <name>`, `hide tilemap <name>`, `switch to tilemap <name>`. Switching applies after the end-of-tick flush: it shows only that map, removes instances placed by maps, and spawns the new map's things. `restart game` restores every tile. Tile names are checked at load (`unknown-tile`) because they live in files.
+
+### 4.5d Sound and music
+
+```
+sound ding like coin          # preset, with optional setting lines
+sound zap                     # settings only
+  wave saw
+sound hop "hop.sound"         # settings file
+sound roar "roar.mp3"         # .wav .mp3 .ogg .m4a
+music theme "theme.music"     # or a recording
+  volume 60
+```
+
+Setting lines: `wave`, `pitch a [to b]`, `attack`, `hold`, `fade` (seconds), `volume`, `wobble n [by d]`, `steps`, `muffle`, `crunch`, `echo`. Presets and defaults are in `packages/lang/src/presets.js`.
+
+`renderSound` and `renderSong` in `packages/runtime/src/audio/synth.js` are pure: settings in, samples out, the same every time. `.music`: `tempo`, `steps` (four to a beat), `scale`, `root`, `tracks[]`: `name`, `wave` (`square` | `sine` | `triangle` | `saw` | `drums`), `volume`, `muted`, `notes[]` of `[step, midi, length]`; in drum tracks the middle number is 0 kick, 1 snare, 2 hat, 3 clap. Note tails wrap, so loops are seamless.
+
+Actions: `play sound <name> [volume <expr>] [pitch <expr>] [from <thing>]`, `play music <name>`, `stop music`, `set sound volume to <expr>`, `set music volume to <expr>`. `from` scales volume by distance to the middle of the view, and pans. `play sound` with a name before `on` stays an animation named sound. `stop music` halts a thing named `music` if the game has one.
+
+Simulation talks to an `AudioOutput` (`NullAudio`, `RecordingAudio`, `WebAudioOutput`), and never touches the browser. `start()` takes `sound: false` and `muted`; `game.setMuted(bool)`. Browsers block sound until a gesture: sound effects before that are dropped, music waits.
+
+### 4.5e Particles
+
+```
+particles shine like sparkle     # preset, with optional setting lines
+particles boom "boom.particles"
+particles flames
+  rate 45
+```
+
+Setting lines: `amount`, `rate`, `life a [to b] [seconds]`, `speed a [to b]`, `direction up|down|left|right|<degrees>`, `spread`, `gravity`, `drag` (percent), `size a [to b]`, `colors a, b, ...`, `shape square|circle|spark`, `[no] fade`, `[no] glow`, `area w by h`. Degrees: 0 right, 90 up.
+
+Actions: `burst <fx> on <thing>`, `burst <fx> at <x>, <y>`, `start <fx> on <thing>`, `start <fx> at <x>, <y>`, `start <fx> on the screen`, `stop <fx> on <thing>`, `stop <fx> everywhere`.
+
+Particles are cosmetic: a fixed pool of 6,000 in typed arrays reused oldest first, no allocation per tick, 256 emitters, their own random numbers (never the game's). They do not collide and rules cannot see them. `restart game` clears them.
+
+### 4.5f State machines
+
+```
+states guard                       # or: states game
+  state walk                       # the first state is the start state
+    on enter                       # once, on arrival
+      play walk on guard
+    always                         # every tick during the state
+      move guard left 1
+    on leave                       # once, on departure
+      stop animation on guard
+    when player touches guard      # a rule that only counts during the state
+      add 1 to hits
+    go to rest after 2 seconds     # may add: and <condition>
+    go to chase when <trigger or condition>
+  state rest
+```
+
+One machine per thing, plus one for the game. A thing's state lives per instance in the world (`state`, `stateTicks`), so slots reused by spawn start fresh; the game's lives in its `Machine`. Inside a state, the thing's name binds the instance.
+
+`go to ... after` counts from entering. `go to ... when <condition>` is checked every tick (level, not edge). Event triggers fire when they happen, for instances then in the state. In the machine step the first ready line wins, at most one per instance per tick. `set <thing> state to <state>` and `set game state to <state>` work from any rule and do nothing if already in that state.
+
+Conditions: `<thing> is in <state>`, `game is in <state>`. Triggers: `<thing> enters <state>`, `<thing> leaves <state>`, `game enters <state>`, `game leaves <state>`. Numbers: `<thing> state time`, `game state time`, in seconds.
+
+Text slots owned by a state's `on enter` and `always` lines are hidden when the state is left. Other `show text` slots stay until `restart game`, as in section 4.6.
+
+Errors: `unknown-state`, `no-machine`, `duplicate-machine`, `duplicate-state`.
 
 ### 4.5a Inputs and `control` blocks
 
@@ -300,30 +397,30 @@ Each `show text` action owns one text slot. Running it again replaces that slot'
 
 Every error has: `code` (stable string), `message` (plain sentence), optional `hint` (what to do), `line`, `col` (1-based). Typos get Levenshtein suggestions over known names and keywords (distance <= 2): message `I don't know what "cion" is.` hint `Did you mean "coin"?`.
 
-Error codes (lang): `indent-mixed`, `indent-uneven`, `indent-unexpected`, `unknown-word`, `expected`, `unterminated-string`, `bad-number`, `unknown-thing`, `unknown-variable`, `unknown-animation`, `unknown-key`, `unknown-button`, `unknown-control`, `duplicate-control`, `map-letter`, `unknown-color`, `duplicate-thing`, `duplicate-variable`, `name-clash`, `missing-look`, `duplicate-look`, `multiple-cameras`, `duplicate-game`.
+Error codes (lang): `indent-mixed`, `indent-uneven`, `indent-unexpected`, `unknown-word`, `expected`, `unterminated-string`, `bad-number`, `unknown-thing`, `unknown-variable`, `unknown-animation`, `unknown-key`, `unknown-button`, `unknown-control`, `duplicate-control`, `map-letter`, `unknown-color`, `duplicate-thing`, `duplicate-variable`, `name-clash`, `missing-look`, `duplicate-look`, `multiple-cameras`, `duplicate-game`, `unknown-sound`, `unknown-music`, `unknown-particles`, `unknown-tilemap`, `unknown-preset`, `unknown-state`, `duplicate-name`, `duplicate-machine`, `duplicate-state`, `no-machine`.
 
-Error codes (runtime): `image-missing`, `too-many-things`, `runtime-math` (division by zero yields 0 plus one warning).
+Error codes (runtime): `image-missing`, `too-many-things`, `runtime-math` (division by zero yields 0 plus one warning), `file-missing`, `file-broken`, `unknown-tile`.
 
 ## 5. Runtime semantics
 
 ### 5.1 Tick order (fixed 1/60 s)
 
 1. Input snapshot: poll gamepads, compute pressed/released edges since last tick for keys, mouse buttons and gamepad buttons, apply the stick deadzone, then update controls.
-2. Pre-physics rules, in source order: `game starts`, timers, key, mouse, gamepad, control, condition, `always`.
+2. State machines enter their first state for new instances (and the game on its first tick). Pre-physics rules, in source order: `game starts`, timers, key, mouse, gamepad, control, condition, `always`; then rules inside states. Then each machine's `always` lines and `go to` checks.
 3. Physics for each live instance not `fixed`:
    - if `falls`: `vy += gravity`
    - `x += vx + mx`, then if `solid`: push out of other solid instances on x; zero `vx` if blocked
    - `y += vy + my`, then if `solid`: push out on y; if pushed up set `onGround`, zero `vy` if blocked
    - reset `mx`, `my` (the `move` displacement)
-4. Rebuild spatial hash; post-physics rules in source order: `touches`, `leaves the screen`.
+4. Rebuild spatial hash; post-physics rules in source order: `touches`, `touches ... tile`, `leaves the screen`.
 5. Apply deferred removals, then spawns. Over 10,000 live instances stops the game with `too-many-things`.
-6. Advance animation frame counters.
+6. Advance animation frame counters and particles. Apply a pending `switch to tilemap`.
 
 `fixed` instances can still be moved by `move` and `set` (moving platforms): displacement applies directly with no push-out.
 
 ### 5.2 Render
 
-`requestAnimationFrame` drives render. Draw position = lerp(previous, current, alpha) where alpha is the fraction of the next tick accumulated. Spawned and teleported instances snap (previous = current). Draw order: thing declaration order, then instance creation order. Text drawn last. Camera centers on the `camera follows` instance, clamped to `camera stays inside` when set.
+`requestAnimationFrame` drives render. Draw position = lerp(previous, current, alpha) where alpha is the fraction of the next tick accumulated. Spawned and teleported instances snap (previous = current). Draw order: tile layers behind things, thing declaration order then instance creation order, tile layers in front, particles, text. Camera centers on the `camera follows` instance, clamped to `camera stays inside` when set.
 
 ### 5.3 Errors at runtime
 

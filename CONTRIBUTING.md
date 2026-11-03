@@ -31,6 +31,9 @@ Open the address it prints to use Studio from source. It reloads as you edit.
 | `npm run desktop:build` | Desktop installers for your system |
 | `npm run screenshots` | Regenerates the screenshots in `docs/screenshots` |
 | `node scripts/make-example-assets.mjs` | Redraws the hero pictures in `examples/basics/assets` |
+| `node scripts/make-systems-example.mjs` | Rewrites the tile set, tile map, sound and music files of Lantern Garden |
+| `SHOTS=tools node scripts/capture-screenshots.mjs` | Only the picture editor screenshots used in the docs |
+| `node scripts/make-showcase-art.mjs` | Redraws the pictures for Cloud Hopper, Star Defender, Crypt Dash and Moss Run |
 
 ## How it fits together
 

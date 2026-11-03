@@ -63,6 +63,10 @@ When it's done, share a link, download it as one `.html` file that plays in any 
 | [How do I...?](docs/recipes.md) | Copy-and-paste answers: lives, enemies, shooting, timers, restart keys |
 | [Language guide](docs/language.md) | Every word minijs understands |
 | [Using Studio](docs/studio.md) | Files, pictures, sharing, exporting, the desktop app |
+| [Tile maps](docs/tilemaps.md) | Paint levels with tiles, draw your own, autotile, layers |
+| [Particles](docs/particles.md) | Sparkles, smoke, fire, explosions, rain and snow |
+| [Sound and music](docs/sound.md) | Sound effects and looping music, with no recordings needed |
+| [States](docs/state-machines.md) | Things that act differently at different times, menus and game over |
 | [Fixing problems](docs/problems.md) | What each message means, and what to do when a game misbehaves |
 
 ## Examples
@@ -74,12 +78,15 @@ Open any of these from the Studio home page, or read them here.
 | [Cloud Hopper](examples/cloud-hopper/game.mini) | A full platformer with a level drawn from letters |
 | [Star Defender](examples/star-defender/game.mini) | An arcade shooter |
 | [Crypt Dash](examples/crypt-dash/game.mini) | A top-down adventure with keys, doors and ghosts |
+| [Lantern Garden](examples/lantern-garden/game.mini) | Painted tile maps, autotile, particles, sound, music and state machines together |
 | [platformer.mini](examples/basics/platformer.mini) | Jumping, gravity, collecting coins, camera |
 | [coin-dash.mini](examples/basics/coin-dash.mini) | Top-down movement, patrolling enemies, lives |
 | [dodge.mini](examples/basics/dodge.mini) | Falling rocks, random spawns, leaving the screen |
 | [clicker.mini](examples/basics/clicker.mini) | Clicking on things, counters, buying upgrades |
 | [hero.mini](examples/basics/hero.mini) | Pictures and walk animation |
 | [controls.mini](examples/basics/controls.mini) | Keyboard, mouse, gamepads, sticks, touch buttons, controls, `log` |
+
+There is also [Moss Run](examples/moss-run/game.mini), a short forest platformer with ledges, patrolling beetles and a goal to reach. It is not on the Studio home page yet.
 
 ## Working on minijs itself
 

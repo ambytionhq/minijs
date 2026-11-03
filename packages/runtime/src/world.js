@@ -150,6 +150,9 @@ export class World {
     this.onGround = new Uint8Array(capacity)
     this.offscreen = new Uint8Array(capacity)
     this.leftScreen = new Uint8Array(capacity)
+    this.state = new Int32Array(capacity).fill(-1)
+    this.stateTicks = new Int32Array(capacity)
+    this.placedBy = new Uint8Array(capacity)
     this.freeIds = new Int32Array(capacity)
     this.spawned = new Int32Array(64)
     this.spawnQueue = new Float64Array(64 * 3)
@@ -189,6 +192,9 @@ export class World {
     this.onGround[id] = 0
     this.offscreen[id] = 0
     this.leftScreen[id] = 0
+    this.state[id] = -1
+    this.stateTicks[id] = 0
+    this.placedBy[id] = 0
     this.liveCount++
 
     let list = this.lists[typeId]
@@ -323,6 +329,9 @@ export class World {
     this.onGround = growU8(this.onGround, size)
     this.offscreen = growU8(this.offscreen, size)
     this.leftScreen = growU8(this.leftScreen, size)
+    this.state = growI32(this.state, size, -1)
+    this.stateTicks = growI32(this.stateTicks, size)
+    this.placedBy = growU8(this.placedBy, size)
     this.freeIds = growI32(this.freeIds, size)
   }
 }

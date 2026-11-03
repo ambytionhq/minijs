@@ -1,7 +1,7 @@
 // Export a game as one HTML file: the player, the compiled game and every
 // picture inside it. It opens from a double-click, with no internet.
 
-import { collectImageSources } from '@minijs/runtime'
+import { collectGameFiles, collectImageSources } from '@minijs/runtime'
 import { imageCandidates } from '../files/project-assets.js'
 import { blobToDataUrl } from './bytes.js'
 
@@ -44,11 +44,37 @@ export async function collectImages(fs, gamePath, program) {
 }
 
 /**
- * @param {{ title: string; program: Program; images: Record<string, string>; playerSource: string }} options
+ * Everything else the game uses: tile maps and sound settings as text, recordings as data URLs.
+ * @param {ProjectFs} fs
+ * @param {string} gamePath
+ * @param {Program} program
+ */
+export async function collectFiles(fs, gamePath, program) {
+  /** @param {string} src */
+  const locate = async (src) => {
+    for (const path of imageCandidates(gamePath, src)) if (await fs.exists(path)) return path
+    return null
+  }
+  /** @type {Record<string, string>} */
+  const files = {}
+  const needed = await collectGameFiles(program, async (src) => {
+    const path = await locate(src)
+    return path === null ? null : fs.readText(path)
+  })
+  for (const { src, binary } of needed) {
+    const path = await locate(src)
+    if (path === null) continue
+    files[src] = binary ? await blobToDataUrl(await fs.readBlob(path)) : await fs.readText(path)
+  }
+  return files
+}
+
+/**
+ * @param {{ title: string; program: Program; images: Record<string, string>; files?: Record<string, string>; playerSource: string }} options
  * @returns {string}
  */
-export function exportHtml({ title, program, images, playerSource }) {
-  const data = JSON.stringify({ title, program, images }).replace(/</g, '\\u003c')
+export function exportHtml({ title, program, images, files = {}, playerSource }) {
+  const data = JSON.stringify({ title, program, images, files }).replace(/</g, '\\u003c')
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -65,7 +91,7 @@ export function exportHtml({ title, program, images, playerSource }) {
 <script>
 (function () {
   var data = ${data};
-  MiniPlayer.mount({ root: document.getElementById('game'), program: data.program, images: data.images, title: data.title });
+  MiniPlayer.mount({ root: document.getElementById('game'), program: data.program, images: data.images, files: data.files, title: data.title });
 })();
 </script>
 </body>

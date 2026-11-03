@@ -22,7 +22,7 @@ import { miniError } from './errors.js'
  * @property {MiniError[]} errors
  */
 
-const HEX_COLOR = /^#(?:[0-9a-f]{6}|[0-9a-f]{3})(?=\s|$)/i
+const HEX_COLOR = /^#(?:[0-9a-f]{6}|[0-9a-f]{3})(?=[\s,]|$)/i
 const NUMBER = /^\d+(?:\.\d+)?/
 const GLUED = /^[A-Za-z0-9_.]*/
 const WORD = /^[A-Za-z][A-Za-z0-9_-]*/

@@ -73,6 +73,11 @@ describe('compile', () => {
       controls: [],
       maps: [],
       rules: [],
+      tilemaps: [],
+      sounds: [],
+      music: [],
+      particles: [],
+      machines: [],
     })
   })
 })

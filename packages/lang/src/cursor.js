@@ -191,6 +191,12 @@ export class Cursor {
     else if (t.kind !== 'eof') throw expected(t, 'the end of the line')
   }
 
+  /** True when nothing but the end of the line follows `offset` tokens from here. @param {number} offset */
+  atEndAfter(offset) {
+    const k = this.peek(offset).kind
+    return k === 'newline' || k === 'eof' || k === 'dedent'
+  }
+
   atLineEnd() {
     const k = this.peek().kind
     return k === 'newline' || k === 'eof' || k === 'dedent'

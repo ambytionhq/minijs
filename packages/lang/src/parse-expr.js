@@ -78,9 +78,17 @@ function parseFactor(c) {
     c.next()
     return { kind: 'mouse', axis: /** @type {'x' | 'y'} */ (axis.text), loc }
   }
+  if (c.isWord('game') && c.isWord('state', 1) && c.isWord('time', 2)) {
+    c.pos += 3
+    return { kind: 'stateTime', thing: null, loc }
+  }
   const hasThe = c.acceptWord('the')
   const name = c.expectName(hasThe ? 'the name of a thing' : 'a number')
   const after = c.peek()
+  if (c.isWord('state') && c.isWord('time', 1)) {
+    c.pos += 2
+    return { kind: 'stateTime', thing: name.text, loc }
+  }
   if (after.kind === 'word' && PROP_WORDS.has(after.text)) {
     c.next()
     return { kind: 'prop', thing: name.text, prop: /** @type {InstanceProp} */ (after.text), loc }
@@ -128,6 +136,22 @@ function parseUnary(c) {
  */
 function parseAtom(c) {
   const loc = c.peek().loc
+  if (c.isWord('game') && c.isWord('is', 1) && c.isWord('in', 2)) {
+    c.pos += 3
+    c.acceptWord('the')
+    return { kind: 'inState', thing: null, state: c.expectName('the name of a state').text, loc }
+  }
+  if (c.isWord('tile') && c.isWord('at', 1)) {
+    c.pos += 2
+    const x = parseExpr(c)
+    if (c.peek().kind !== 'comma') throw expected(c.peek(), 'a comma', 'Write it like: tile at player x, player y is lava')
+    c.next()
+    const y = parseExpr(c)
+    c.expectWord('is', 'Write it like: tile at player x, player y is lava')
+    c.acceptWord('a')
+    c.acceptWord('an')
+    return { kind: 'tileAt', tile: c.expectName('the name of a tile').text, x, y, loc }
+  }
   if (c.isWord('key', 1)) {
     const key = parseKeyName(c)
     c.expectWord('key')
@@ -163,8 +187,34 @@ function parseAtom(c) {
     const thing = c.expectName('the name of a thing').text
     c.pos += 2 // is on
     c.acceptWord('the')
+    if (c.isWord('tile', 1)) {
+      const tile = c.expectName('the name of a tile').text
+      c.next()
+      return { kind: 'onTile', thing, tile, loc }
+    }
     c.expectWord('ground')
     return { kind: 'onGround', thing, loc }
+  }
+  if (c.peek(o).kind === 'word' && c.isWord('is', o + 1) && c.isWord('in', o + 2)) {
+    c.acceptWord('the')
+    const thing = c.expectName('the name of a thing').text
+    c.pos += 2 // is in
+    c.acceptWord('the')
+    return { kind: 'inState', thing, state: c.expectName('the name of a state').text, loc }
+  }
+  if (c.peek(o).kind === 'word' && c.isWord('is', o + 1) && c.isWord('touching', o + 2)) {
+    c.acceptWord('the')
+    const thing = c.expectName('the name of a thing').text
+    c.pos += 2 // is touching
+    c.acceptWord('a')
+    c.acceptWord('an')
+    if (c.acceptWord('any')) {
+      c.expectWord('tile')
+      return { kind: 'touchingTile', thing, tile: null, loc }
+    }
+    const tile = c.expectName('the name of a tile').text
+    c.expectWord('tile', 'Write it like: player is touching lava tile')
+    return { kind: 'touchingTile', thing, tile, loc }
   }
   const left = parseExpr(c)
   c.expectWord('is')

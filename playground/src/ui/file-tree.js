@@ -4,6 +4,7 @@
 // files from your computer to add them.
 
 import { basename, dirname, fileKind, isInside, nameProblem } from '../files/paths.js'
+import { VISUAL_KINDS, visualKind } from '../tools/index.js'
 
 /** @import { Entry } from '../files/project.js' */
 
@@ -15,6 +16,7 @@ import { basename, dirname, fileKind, isInside, nameProblem } from '../files/pat
  * @property {(from: string, toDir: string) => Promise<void>} onMove
  * @property {(files: File[], dir: string) => Promise<void>} onUpload
  * @property {(message: string) => void} onProblem Shows a short message near the tree.
+ * @property {(path: string) => Promise<string | null>} [thumbFor] A little picture for a file, if it has one.
  */
 
 /**
@@ -28,11 +30,15 @@ import { basename, dirname, fileKind, isInside, nameProblem } from '../files/pat
 
 /** @param {string} path */
 function iconFor(path) {
+  const visual = visualKind(path)
+  if (visual) return `ph-${VISUAL_KINDS[visual].icon}`
   switch (fileKind(path)) {
     case 'mini':
       return 'ph-game-controller'
     case 'image':
       return 'ph-image'
+    case 'audio':
+      return 'ph-speaker-high'
     case 'text':
       return 'ph-file-text'
     default:
@@ -119,6 +125,16 @@ export function createFileTree(root, handlers) {
       isDir ? iconEl(collapsed.has(entry.path) ? 'ph-caret-right' : 'ph-caret-down') : el('span', 'caret-space'),
       iconEl(isDir ? (collapsed.has(entry.path) ? 'ph-folder' : 'ph-folder-open') : iconFor(entry.path)),
     )
+    if (!isDir && handlers.thumbFor && visualKind(entry.path)) {
+      const fileIcon = /** @type {HTMLElement} */ (row.lastElementChild)
+      void handlers.thumbFor(entry.path).then((url) => {
+        if (!url || !fileIcon.isConnected) return
+        const img = /** @type {HTMLImageElement} */ (el('img', 'tree-thumb'))
+        img.src = url
+        img.alt = ''
+        fileIcon.replaceWith(img)
+      })
+    }
 
     if (renaming === entry.path) {
       row.append(renameInput(entry))

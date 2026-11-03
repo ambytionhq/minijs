@@ -57,9 +57,18 @@ const IMAGE_TYPES = /** @type {Record<string, string>} */ ({
   bmp: 'image/bmp',
 })
 
-const TEXT_EXTENSIONS = new Set(['mini', 'txt', 'md', 'json', 'csv', 'js', 'css', 'html', 'xml', 'yml', 'yaml', 'toml', 'ini', 'log'])
+const AUDIO_TYPES = /** @type {Record<string, string>} */ ({
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+  ogg: 'audio/ogg',
+  m4a: 'audio/mp4',
+  aac: 'audio/aac',
+  flac: 'audio/flac',
+})
 
-/** @typedef {'mini' | 'image' | 'text' | 'other'} FileKind */
+const TEXT_EXTENSIONS = new Set(['mini', 'txt', 'md', 'json', 'csv', 'js', 'css', 'html', 'xml', 'yml', 'yaml', 'toml', 'ini', 'log', 'tileset', 'tilemap', 'particles', 'sound', 'music'])
+
+/** @typedef {'mini' | 'image' | 'audio' | 'text' | 'other'} FileKind */
 
 /**
  * What the Studio can do with a file, from its name.
@@ -70,6 +79,7 @@ export function fileKind(path) {
   const ext = extname(path)
   if (ext === 'mini') return 'mini'
   if (ext in IMAGE_TYPES) return 'image'
+  if (ext in AUDIO_TYPES) return 'audio'
   if (TEXT_EXTENSIONS.has(ext) || ext === '') return 'text'
   return 'other'
 }
@@ -78,6 +88,7 @@ export function fileKind(path) {
 export function mimeType(path) {
   const ext = extname(path)
   if (ext in IMAGE_TYPES) return IMAGE_TYPES[ext]
+  if (ext in AUDIO_TYPES) return AUDIO_TYPES[ext]
   if (ext === 'json') return 'application/json'
   return fileKind(path) === 'other' ? 'application/octet-stream' : 'text/plain'
 }

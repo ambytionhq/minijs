@@ -201,10 +201,26 @@ export function createConsole(root, handlers) {
       ['time', seconds(sim.tickCount)],
       ['ticks', String(sim.tickCount)],
       ['camera', `${Math.round(sim.camera.x)}, ${Math.round(sim.camera.y)}`],
+      ['particles', String(sim.particles.count)],
     ]
+    /** @type {Array<[string, string]>} */
+    const states = (sim.program.machines ?? []).map((m, i) => {
+      if (m.thing === null) {
+        const current = sim.machines.machines[i].gameState
+        return ['game', current >= 0 ? m.states[current].name : 'starting']
+      }
+      /** @type {Map<string, number>} */
+      const counts = new Map()
+      for (const instance of sim.instancesOf(m.thing)) {
+        const index = sim.world.state[instance.id]
+        if (index >= 0) counts.set(m.states[index].name, (counts.get(m.states[index].name) ?? 0) + 1)
+      }
+      return [m.thing, [...counts].map(([name, n]) => `${n} ${name}`).join(', ') || 'none']
+    })
     watchBody.replaceChildren(
       section('Numbers', vars, 'This game has no numbers. Add one with a line like: score starts at 0'),
       section('Things', things, 'This game has no things yet.'),
+      ...(states.length > 0 ? [section('States', states, '')] : []),
       section('Game', status, ''),
     )
   }

@@ -17,6 +17,18 @@ export function imageCandidates(gamePath, src) {
   return [...new Set([join(dir, src), join(dir, 'assets', src), join(src), join('assets', src)])]
 }
 
+/**
+ * The shortest name a game can use to find a project file.
+ * @param {string} gamePath
+ * @param {string} path
+ */
+export function usableSrc(gamePath, path) {
+  const runDir = dirname(gamePath)
+  const relative = runDir !== '' && path.startsWith(`${runDir}/`) ? path.slice(runDir.length + 1) : path
+  const name = path.slice(path.lastIndexOf('/') + 1)
+  return [name, relative, path].find((src) => imageCandidates(gamePath, src)[0] === path || imageCandidates(gamePath, src).includes(path)) ?? path
+}
+
 export class ProjectAssetLoader {
   /**
    * @param {ProjectFs} fs
@@ -43,6 +55,42 @@ export class ProjectAssetLoader {
       }
     }
     return { src, width: config.PLACEHOLDER_SIZE, height: config.PLACEHOLDER_SIZE, source: null, missing: true }
+  }
+
+  /**
+   * The project path a game's file name points to, or null.
+   * @param {string} src
+   * @returns {Promise<string | null>}
+   */
+  async find(src) {
+    for (const path of imageCandidates(this.gamePath, src)) {
+      if (await this.fs.exists(path).catch(() => false)) return path
+    }
+    return null
+  }
+
+  /**
+   * @param {string} src
+   * @returns {Promise<string | null>}
+   */
+  async loadText(src) {
+    const path = await this.find(src)
+    if (path === null) return null
+    return this.fs.readText(path).catch(() => null)
+  }
+
+  /**
+   * @param {string} src
+   * @returns {Promise<ArrayBuffer | null>}
+   */
+  async loadBytes(src) {
+    const path = await this.find(src)
+    if (path === null) return null
+    try {
+      return await (await this.fs.readBlob(path)).arrayBuffer()
+    } catch {
+      return null
+    }
   }
 }
 

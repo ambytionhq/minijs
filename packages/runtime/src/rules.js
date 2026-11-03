@@ -3,6 +3,7 @@
 // rules (touches, leaves the screen) after. Both phases keep source order.
 
 /** @import { Rule, Trigger } from '@minijs/lang' */
+/** @import { MachineSet } from './machines.js' */
 /** @import { Catalog } from './catalog.js' */
 /** @import { TouchIndex, PairHandler } from './collide.js' */
 import { TICKS_PER_SECOND } from './config.js'
@@ -52,7 +53,7 @@ function post(run) {
  * @param {BoolFn | null} guard
  * @param {ActionFn} actions
  */
-function withBinding(c, typeId, id, guard, actions) {
+export function withBinding(c, typeId, id, guard, actions) {
   const previous = c.bound[typeId]
   c.bound[typeId] = id
   if (guard === null || guard(c)) actions(c)
@@ -64,11 +65,12 @@ function withBinding(c, typeId, id, guard, actions) {
  * @param {Catalog} catalog
  * @param {TextLayer} text
  * @param {TouchIndex} touches
+ * @param {MachineSet | null} [machines]
  * @returns {CompiledRule}
  */
-export function compileRule(rule, catalog, text, touches) {
+export function compileRule(rule, catalog, text, touches, machines = null) {
   const actions = lowerActions(rule.actions, catalog, text)
-  return compileTrigger(rule.trigger, actions, catalog, touches)
+  return compileTrigger(rule.trigger, actions, catalog, touches, machines)
 }
 
 /**
@@ -76,9 +78,10 @@ export function compileRule(rule, catalog, text, touches) {
  * @param {ActionFn} actions
  * @param {Catalog} catalog
  * @param {TouchIndex} touches
+ * @param {MachineSet | null} [machines]
  * @returns {CompiledRule}
  */
-function compileTrigger(trigger, actions, catalog, touches) {
+export function compileTrigger(trigger, actions, catalog, touches, machines = null) {
   switch (trigger.kind) {
     case 'gameStarts': {
       const guard = trigger.guard ? lowerCondition(trigger.guard, catalog) : null
@@ -191,6 +194,51 @@ function compileTrigger(trigger, actions, catalog, touches) {
       }
       return post((c) => touches.forEachPair(c, a, b, handler))
     }
+    case 'touchTile': {
+      const t = catalog.typeId(trigger.thing)
+      const nameId = trigger.tile === null ? -1 : catalog.tileNameId(trigger.tile, trigger.loc)
+      const guard = trigger.guard ? lowerCondition(trigger.guard, catalog) : null
+      const table = catalog.tileTable
+      /** @type {import('./lower/context.js').RuleContext | null} */
+      let active = null
+      /** @type {number} */
+      let activeId = -1
+      /**
+       * @param {number} m
+       * @param {number} l
+       * @param {number} col
+       * @param {number} row
+       * @param {number} id
+       */
+      const visit = (m, l, col, row, id) => {
+        if (nameId !== -1 && table[id].nameId !== nameId) return false
+        const c = /** @type {import('./lower/context.js').RuleContext} */ (active)
+        c.hitMap = m
+        c.hitLayer = l
+        c.hitCol = col
+        c.hitRow = row
+        withBinding(c, t, activeId, guard, actions)
+        c.hitMap = -1
+        return c.world.removing[activeId] === 1
+      }
+      return post((c) => {
+        const world = c.world
+        const list = world.lists[t]
+        const count = world.counts[t]
+        active = c
+        for (let i = 0; i < count; i++) {
+          const id = list[i]
+          if (world.removing[id] === 1) continue
+          activeId = id
+          c.tiles.forEachTouching(world.x[id], world.y[id], world.w[id], world.h[id], visit)
+        }
+      })
+    }
+    case 'stateChange': {
+      const guard = trigger.guard ? lowerCondition(trigger.guard, catalog) : null
+      machines?.addHook(trigger.thing, trigger.state, trigger.change, actions, guard, catalog)
+      return pre(() => {})
+    }
     case 'leavesScreen': {
       const t = catalog.typeId(trigger.thing)
       const guard = trigger.guard ? lowerCondition(trigger.guard, catalog) : null
@@ -220,9 +268,11 @@ export class RuleSet {
    * @param {Catalog} catalog
    * @param {TextLayer} text
    * @param {TouchIndex} touches
+   * @param {MachineSet | null} [machines] Rules inside states run after the ones outside.
    */
-  constructor(rules, catalog, text, touches) {
-    this.all = rules.map((r) => compileRule(r, catalog, text, touches))
+  constructor(rules, catalog, text, touches, machines = null) {
+    this.all = rules.map((r) => compileRule(r, catalog, text, touches, machines))
+    if (machines) this.all.push(...machines.rules)
     this.pre = this.all.filter((r) => !r.post)
     this.post = this.all.filter((r) => r.post)
   }

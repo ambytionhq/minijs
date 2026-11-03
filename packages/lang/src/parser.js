@@ -3,12 +3,13 @@
 // block header skips the whole indented block.
 
 import { DEFAULT_GAME_SETTINGS } from './ast.js'
+import { PARTICLE_PRESETS, PARTICLE_SHAPES, SOUND_PRESETS, SOUND_WAVES } from './presets.js'
 import { Cursor, ParseError, RESERVED, expected, fail } from './cursor.js'
 import { didYouMean, miniError } from './errors.js'
-import { isMouseAhead, parseKeyName, parseMouseButton, parsePadButton } from './parse-expr.js'
+import { isMouseAhead, parseCondition, parseKeyName, parseMouseButton, parsePadButton } from './parse-expr.js'
 import { parseAction, parseColorWords, parseLook, parseTrigger } from './parse-rule.js'
 
-/** @import { AnimationDecl, ControlDecl, MapDecl, GameSettings, InputSource, Look, Loc, Program, Rule, ThingDecl, VarDecl } from './ast.js' */
+/** @import { Action, AnimationDecl, ControlDecl, MachineDecl, MapDecl, MusicDecl, ParticlesDecl, GameSettings, InputSource, Look, Loc, Program, Rule, SoundDecl, StateDecl, ThingDecl, TilemapDecl, VarDecl } from './ast.js' */
 /** @import { MiniError } from './errors.js' */
 /** @import { Token } from './lexer.js' */
 
@@ -18,7 +19,12 @@ import { parseAction, parseColorWords, parseLook, parseTrigger } from './parse-r
  * @property {MiniError[]} errors
  */
 
-const TOP_WORDS = ['game', 'thing', 'control', 'map', 'when', 'always']
+const TOP_WORDS = ['game', 'thing', 'control', 'map', 'tilemap', 'sound', 'music', 'particles', 'states', 'when', 'always']
+const TILEMAP_WORDS = ['at', 'hidden']
+const SOUND_WORDS = ['wave', 'pitch', 'attack', 'hold', 'fade', 'volume', 'wobble', 'steps', 'muffle', 'crunch', 'echo']
+const PARTICLE_WORDS = ['amount', 'rate', 'life', 'speed', 'direction', 'spread', 'gravity', 'drag', 'size', 'colors', 'color', 'shape', 'fade', 'glow', 'area']
+const STATE_WORDS = ['on', 'always', 'when', 'go']
+const DIRECTION_DEGREES = /** @type {Record<string, number>} */ ({ right: 0, up: 90, left: 180, down: 270 })
 const MAP_WORDS = ['tiles', 'at']
 const GAME_WORDS = ['size', 'pixel', 'background', 'gravity', 'touch', 'camera']
 const THING_WORDS = ['looks', 'animation', 'size', 'starts', 'solid', 'fixed', 'falls', 'camera']
@@ -49,6 +55,16 @@ class Parser {
     this.maps = []
     /** @type {Rule[]} */
     this.rules = []
+    /** @type {TilemapDecl[]} */
+    this.tilemaps = []
+    /** @type {SoundDecl[]} */
+    this.sounds = []
+    /** @type {MusicDecl[]} */
+    this.music = []
+    /** @type {ParticlesDecl[]} */
+    this.particles = []
+    /** @type {MachineDecl[]} */
+    this.machines = []
   }
 
   /** @returns {ParseResult} */
@@ -79,6 +95,11 @@ class Parser {
         controls: this.controls,
         maps: this.maps,
         rules: this.rules,
+        tilemaps: this.tilemaps,
+        sounds: this.sounds,
+        music: this.music,
+        particles: this.particles,
+        machines: this.machines,
       },
       errors: this.errors,
     }
@@ -139,6 +160,21 @@ class Parser {
     const c = this.c
     const t = c.peek()
     if (t.kind !== 'word') throw expected(t, 'game, thing, when or always')
+    // These words can still name a number, like `sound starts at 1`.
+    if (!c.isWord('starts', 1)) {
+      switch (t.text) {
+        case 'tilemap':
+          return this.tilemapBlock()
+        case 'sound':
+          return this.soundBlock()
+        case 'music':
+          return this.musicBlock()
+        case 'particles':
+          return this.particlesBlock()
+        case 'states':
+          return this.statesBlock()
+      }
+    }
     switch (t.text) {
       case 'game':
         return this.gameBlock()
@@ -158,7 +194,7 @@ class Parser {
       t.loc,
       `I don't know what "${t.text}" means here.`,
       didYouMean(t.text, TOP_WORDS) ??
-        'Lines at the left edge start with game, thing, control, map, when, always, or a name followed by "starts at".',
+        'Lines at the left edge start with game, thing, control, map, tilemap, sound, music, particles, states, when, always, or a name followed by "starts at".',
     )
   }
 
@@ -401,6 +437,330 @@ class Parser {
       )
     }
     this.maps.push(map)
+  }
+
+  tilemapBlock() {
+    const c = this.c
+    const word = c.next()
+    const name = this.declaredName('a name for the tilemap', 'level')
+    const src = c.expectString('a file in quotes, like "level.tilemap"').text
+    c.expectEndOfLine()
+    /** @type {TilemapDecl} */
+    const map = { name, src, x: 0, y: 0, hidden: false, loc: word.loc }
+    this.block(() => {
+      const t = c.peek()
+      if (c.acceptWord('at')) {
+        map.x = c.expectNumber()
+        if (c.peek().kind !== 'comma') throw expected(c.peek(), 'a comma', 'Write a position like: at 0, 0')
+        c.next()
+        map.y = c.expectNumber()
+      } else if (c.acceptWord('hidden')) {
+        map.hidden = true
+      } else {
+        throw this.unknownLine(t, TILEMAP_WORDS)
+      }
+    })
+    this.tilemaps.push(map)
+  }
+
+  /**
+   * The rest of a `sound` or `particles` header line: a file, `like <preset>`, or nothing.
+   * @param {Readonly<Record<string, unknown>>} presets
+   * @param {string} what
+   * @returns {{ src: string | null; preset: string | null }}
+   */
+  sourceOrPreset(presets, what) {
+    const c = this.c
+    if (c.peek().kind === 'string') return { src: c.next().text, preset: null }
+    if (!c.acceptWord('like')) return { src: null, preset: null }
+    const t = c.peek()
+    const preset = c.expectName(`the name of a ready-made ${what}`).text
+    if (!Object.hasOwn(presets, preset)) {
+      this.errors.push(
+        miniError(
+          'unknown-preset',
+          t.loc,
+          `I don't have a ready-made ${what} called "${preset}".`,
+          didYouMean(preset, Object.keys(presets)) ?? `Try one of: ${Object.keys(presets).join(', ')}.`,
+        ),
+      )
+      return { src: null, preset: null }
+    }
+    return { src: null, preset }
+  }
+
+  soundBlock() {
+    const c = this.c
+    const word = c.next()
+    const name = this.declaredName('a name for the sound', 'noise')
+    const { src, preset } = this.sourceOrPreset(SOUND_PRESETS, 'sound')
+    c.expectEndOfLine()
+    /** @type {SoundDecl} */
+    const sound = { name, src, preset, settings: {}, loc: word.loc }
+    const s = sound.settings
+    this.block(() => {
+      const t = c.peek()
+      if (c.acceptWord('wave')) {
+        const w = c.peek()
+        const wave = c.expectName(`a kind of wave: ${SOUND_WAVES.join(', ')}`).text
+        if (!SOUND_WAVES.includes(/** @type {any} */ (wave))) {
+          throw fail('unknown-word', w.loc, `I don't know the wave "${wave}".`, didYouMean(wave, SOUND_WAVES) ?? `Waves are: ${SOUND_WAVES.join(', ')}.`)
+        }
+        s.wave = /** @type {any} */ (wave)
+      } else if (c.acceptWord('pitch')) {
+        s.pitch = c.expectPositive('a pitch, like 440')
+        s.pitchEnd = c.acceptWord('to') ? c.expectPositive('a pitch, like 880') : s.pitch
+      } else if (c.acceptWord('attack')) {
+        s.attack = this.seconds()
+      } else if (c.acceptWord('hold')) {
+        s.hold = this.seconds()
+      } else if (c.acceptWord('fade')) {
+        s.fade = this.seconds()
+      } else if (c.acceptWord('volume')) {
+        s.volume = this.percent()
+      } else if (c.acceptWord('wobble')) {
+        s.wobble = this.zeroOrMore()
+        s.wobbleDepth = c.acceptWord('by') ? this.percent() : 20
+      } else if (c.acceptWord('steps')) {
+        s.steps = Math.round(this.zeroOrMore())
+      } else if (c.acceptWord('muffle')) {
+        s.muffle = this.percent()
+      } else if (c.acceptWord('crunch')) {
+        s.crunch = this.percent()
+      } else if (c.acceptWord('echo')) {
+        s.echo = this.percent()
+      } else {
+        throw this.unknownLine(t, SOUND_WORDS)
+      }
+    })
+    this.sounds.push(sound)
+  }
+
+  musicBlock() {
+    const c = this.c
+    const word = c.next()
+    const name = this.declaredName('a name for the music', 'song')
+    const src = c.expectString('a file in quotes, like "theme.music" or "theme.mp3"').text
+    c.expectEndOfLine()
+    /** @type {MusicDecl} */
+    const music = { name, src, volume: 100, loc: word.loc }
+    this.block(() => {
+      const t = c.peek()
+      if (c.acceptWord('volume')) music.volume = this.percent()
+      else throw this.unknownLine(t, ['volume'])
+    })
+    this.music.push(music)
+  }
+
+  particlesBlock() {
+    const c = this.c
+    const word = c.next()
+    const name = this.declaredName('a name for the particle effect', 'effect')
+    const { src, preset } = this.sourceOrPreset(PARTICLE_PRESETS, 'particle effect')
+    c.expectEndOfLine()
+    /** @type {ParticlesDecl} */
+    const effect = { name, src, preset, settings: {}, loc: word.loc }
+    const s = effect.settings
+    this.block(() => {
+      const t = c.peek()
+      if (c.acceptWord('amount')) {
+        s.amount = Math.round(c.expectPositive('how many'))
+      } else if (c.acceptWord('rate')) {
+        s.rate = c.expectPositive('how many each second')
+      } else if (c.acceptWord('life')) {
+        s.life = this.range()
+        c.acceptWord('seconds')
+      } else if (c.acceptWord('speed')) {
+        s.speed = this.range()
+      } else if (c.acceptWord('direction')) {
+        const d = c.peek()
+        if (d.kind === 'word' && Object.hasOwn(DIRECTION_DEGREES, d.text)) {
+          c.next()
+          s.direction = DIRECTION_DEGREES[d.text]
+        } else {
+          s.direction = c.expectNumber('a direction: up, down, left, right, or degrees')
+        }
+      } else if (c.acceptWord('spread')) {
+        s.spread = this.zeroOrMore()
+      } else if (c.acceptWord('gravity')) {
+        s.gravity = c.expectNumber()
+      } else if (c.acceptWord('drag')) {
+        s.drag = this.percent() / 100
+      } else if (c.acceptWord('size')) {
+        const range = this.range()
+        s.size = range
+      } else if (c.acceptWord('colors') || c.acceptWord('color')) {
+        const colors = [parseColorWords(c, 'a color')]
+        while (c.peek().kind === 'comma') {
+          c.next()
+          colors.push(parseColorWords(c, 'a color'))
+        }
+        s.colors = colors
+      } else if (c.acceptWord('shape')) {
+        const w = c.peek()
+        const shape = c.expectName(`a shape: ${PARTICLE_SHAPES.join(', ')}`).text
+        if (!PARTICLE_SHAPES.includes(/** @type {any} */ (shape))) {
+          throw fail('unknown-word', w.loc, `I don't know the shape "${shape}".`, didYouMean(shape, PARTICLE_SHAPES) ?? `Shapes are: ${PARTICLE_SHAPES.join(', ')}.`)
+        }
+        s.shape = /** @type {any} */ (shape)
+      } else if (c.acceptWords('no', 'fade')) {
+        s.fade = false
+      } else if (c.acceptWord('fade')) {
+        s.fade = true
+      } else if (c.acceptWords('no', 'glow')) {
+        s.glow = false
+      } else if (c.acceptWord('glow')) {
+        s.glow = true
+      } else if (c.acceptWord('area')) {
+        const w = this.zeroOrMore()
+        c.expectWord('by')
+        s.area = [w, this.zeroOrMore()]
+      } else {
+        throw this.unknownLine(t, PARTICLE_WORDS)
+      }
+    })
+    this.particles.push(effect)
+  }
+
+  statesBlock() {
+    const c = this.c
+    const word = c.next()
+    c.acceptWord('of')
+    c.acceptWord('the')
+    /** @type {string | null} */
+    let thing = null
+    if (!c.acceptWord('game')) thing = c.expectName('the name of a thing, or "game"').text
+    c.expectEndOfLine()
+    /** @type {MachineDecl} */
+    const machine = { thing, states: [], loc: word.loc }
+    const errorsBefore = this.errors.length
+    if (c.peek().kind === 'indent') {
+      c.next()
+      while (c.peek().kind !== 'dedent' && c.peek().kind !== 'eof') {
+        const t = c.peek()
+        if (t.kind === 'indent') {
+          this.unexpectedIndent()
+          continue
+        }
+        try {
+          if (!c.isWord('state')) {
+            throw t.kind === 'word' && didYouMean(t.text, ['state'])
+              ? fail('unknown-word', t.loc, `I don't know what "${t.text}" means here.`, 'Did you mean "state"?')
+              : expected(t, '"state" and a name', 'Write it like: state patrol')
+          }
+          machine.states.push(this.stateBlock())
+        } catch (e) {
+          this.record(e)
+          c.skipBlock()
+        }
+      }
+      if (c.peek().kind === 'dedent') c.next()
+    }
+    if (machine.states.length === 0 && this.errors.length === errorsBefore) {
+      this.errors.push(
+        miniError(
+          'expected',
+          word.loc,
+          'I expected some states under this line.',
+          'Put them on the next lines, indented, like: state patrol',
+        ),
+      )
+    }
+    this.machines.push(machine)
+  }
+
+  /** @returns {StateDecl} */
+  stateBlock() {
+    const c = this.c
+    const word = c.next()
+    const name = this.declaredName('a name for the state', 'mode')
+    c.expectEndOfLine()
+    /** @type {StateDecl} */
+    const state = { name, enter: [], leave: [], always: [], rules: [], transitions: [], loc: word.loc }
+    /** @param {Action[]} into */
+    const actions = (into) => {
+      c.expectEndOfLine()
+      const has = this.block(() => {
+        into.push(parseAction(c))
+      })
+      if (!has) throw fail('expected', word.loc, 'I expected some actions under this line.', 'Put the actions on the next lines, indented.')
+    }
+    if (c.peek().kind !== 'indent') return state
+    c.next()
+    while (c.peek().kind !== 'dedent' && c.peek().kind !== 'eof') {
+      const t = c.peek()
+      if (t.kind === 'indent') {
+        this.unexpectedIndent()
+        continue
+      }
+      try {
+        if (c.acceptWord('on')) {
+          if (c.acceptWord('enter')) actions(state.enter)
+          else if (c.acceptWord('leave')) actions(state.leave)
+          else throw expected(c.peek(), '"enter" or "leave"', 'Write it like: on enter')
+        } else if (c.acceptWord('always')) {
+          actions(state.always)
+        } else if (c.acceptWord('when')) {
+          const trigger = parseTrigger(c)
+          /** @type {Action[]} */
+          const list = []
+          actions(list)
+          state.rules.push({ trigger, actions: list, loc: t.loc })
+        } else if (c.acceptWords('go', 'to')) {
+          const to = c.expectName('the name of a state').text
+          const at = c.peek()
+          if (c.acceptWord('after')) {
+            const seconds = c.expectPositive('a number of seconds')
+            if (!c.acceptWord('seconds') && !c.acceptWord('second')) throw expected(c.peek(), '"seconds"')
+            const guard = c.acceptWord('and') ? parseCondition(c) : null
+            state.transitions.push({ to, trigger: { kind: 'after', seconds, guard, loc: at.loc }, loc: t.loc })
+          } else {
+            c.expectWord('when', `Write it like: go to ${to} when player x is above 100, or: go to ${to} after 3 seconds`)
+            state.transitions.push({ to, trigger: parseTrigger(c), loc: t.loc })
+          }
+          c.expectEndOfLine()
+        } else {
+          throw this.unknownLine(t, STATE_WORDS)
+        }
+      } catch (e) {
+        this.record(e)
+        c.skipBlock()
+      }
+    }
+    if (c.peek().kind === 'dedent') c.next()
+    return state
+  }
+
+  /** A number, then an optional "seconds". */
+  seconds() {
+    const value = this.zeroOrMore()
+    if (!this.c.acceptWord('seconds')) this.c.acceptWord('second')
+    return value
+  }
+
+  /** @returns {number} */
+  zeroOrMore() {
+    const t = this.c.peek()
+    const value = this.c.expectNumber()
+    if (value < 0) throw fail('bad-number', t.loc, `"${value}" is too small here.`, 'Use 0 or a bigger number.')
+    return value
+  }
+
+  /** A number from 0 to 100. */
+  percent() {
+    const t = this.c.peek()
+    const value = this.zeroOrMore()
+    if (value > 100) throw fail('bad-number', t.loc, `"${value}" is too big here.`, 'Use a number from 0 to 100.')
+    return value
+  }
+
+  /**
+   * `2` or `2 to 5`.
+   * @returns {[number, number]}
+   */
+  range() {
+    const low = this.zeroOrMore()
+    return [low, this.c.acceptWord('to') ? this.zeroOrMore() : low]
   }
 
   ruleBlock() {

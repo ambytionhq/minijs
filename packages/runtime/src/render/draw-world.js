@@ -20,6 +20,7 @@ export function drawWorld(renderer, sim, alpha) {
   const camY = camera.prevY + (camera.y - camera.prevY) * alpha
 
   renderer.begin(sim.program.game.background)
+  sim.tiles.draw(renderer, camX, camY, viewW, viewH, false, sim.tickCount)
 
   for (let t = 0; t < catalog.types.length; t++) {
     const type = catalog.types[t]
@@ -58,6 +59,9 @@ export function drawWorld(renderer, sim, alpha) {
       }
     }
   }
+
+  sim.tiles.draw(renderer, camX, camY, viewW, viewH, true, sim.tickCount)
+  sim.particles.draw(renderer, camX, camY, viewW, viewH, alpha)
 
   for (const slot of sim.text.slots) {
     if (!slot.visible) continue

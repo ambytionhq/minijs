@@ -287,6 +287,64 @@ map
 
 Map tiles are ordinary things. Rules like `when player touches coin` work on them exactly as if you had written `starts at` lines. You can have more than one `map`, for example one for walls and another, shifted a little, for spikes.
 
+For painted levels with real tile art, autotile and layers, use a [tile map](tilemaps.md) instead.
+
+## Tile maps, particles, sound and states
+
+These have their own guides, with pictures. Here is what each one adds to a game file.
+
+**[Tile maps](tilemaps.md)** are levels you paint in Studio:
+
+```mini
+tilemap cave "cave.tilemap"
+
+thing player
+  looks like orange box 12 by 16
+
+when player touches coin tile
+  remove the tile
+```
+
+**[Particles](particles.md)** are sparkles, smoke and other effects:
+
+```mini
+particles shine like sparkle
+thing coin
+  looks like gold circle 4
+
+when game starts
+  burst shine on the coin
+```
+
+**[Sound and music](sound.md)** need no recordings:
+
+```mini
+sound ding like coin
+music theme "theme.music"
+
+when game starts
+  play music theme
+
+when space key is pressed
+  play sound ding
+```
+
+**[States](state-machines.md)** make things act differently at different times:
+
+```mini
+thing guard
+  looks like red box 12 by 16
+  starts at 100, 100
+
+states guard
+  state walk
+    always
+      move guard left 1
+    go to rest after 2 seconds
+  state rest
+    go to walk after 1 second
+```
+
 ## Rules: when something happens
 
 A rule says: **when** this happens, do these actions.

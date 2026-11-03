@@ -41,6 +41,17 @@ function sizesFor(file) {
   return sizes
 }
 
+/** Tile maps, sounds and other text files next to a game. @param {string} file */
+function textFilesFor(file) {
+  const dir = join(file, '..')
+  /** @type {Record<string, string>} */
+  const out = {}
+  for (const name of readdirSync(dir)) {
+    if (/\.(tileset|tilemap|particles|sound|music)$/.test(name)) out[name] = readFileSync(join(dir, name), 'utf8')
+  }
+  return out
+}
+
 const files = miniFiles(root)
 
 describe('examples', () => {
@@ -58,7 +69,7 @@ describe('examples', () => {
       if (!program) return
       const sizes = sizesFor(file)
       const input = new ManualInput()
-      const sim = await Simulation.create(program, { input, assets: new StaticAssetLoader(sizes), random: () => 0.5 })
+      const sim = await Simulation.create(program, { input, assets: new StaticAssetLoader(sizes, textFilesFor(file)), random: () => 0.5 })
       // Every picture the game names must exist.
       expect(sim.errors.filter((e) => e.code === 'image-missing')).toEqual([])
       input.keyDown('right')
@@ -70,4 +81,39 @@ describe('examples', () => {
       expect(sim.errors).toEqual([])
     })
   }
+})
+
+describe('Lantern Garden', () => {
+  it('can be finished by a simple player: walk right and jump over what is ahead', async () => {
+    const file = join(root, 'lantern-garden/game.mini')
+    const { program } = compile(readFileSync(file, 'utf8'))
+    const input = new ManualInput()
+    const sim = await Simulation.create(/** @type {any} */ (program), { input, assets: new StaticAssetLoader({}, textFilesFor(file)), random: () => 0.5 })
+    expect(sim.errors).toEqual([])
+    const machine = sim.machines.machines[0]
+    for (let i = 0; i < 5; i++) sim.tick()
+    expect(machine.gameState).toBe(0)
+    input.tap('space')
+    sim.tick()
+    expect(machine.gameState).toBe(1)
+    input.keyDown('right')
+    const tiles = sim.catalog.tileNameIds
+    const danger = new Set([tiles.get('spikes'), tiles.get('water')])
+    let ticks = 0
+    while (machine.gameState === 1 && ticks < 4000) {
+      const hero = sim.instancesOf('hero')[0]
+      const footX = hero.x + hero.width + 22
+      const below = sim.tiles.nameIdAt(footX, hero.y + hero.height + 2)
+      const front = sim.tiles.nameIdAt(hero.x + hero.width + 10, hero.y + hero.height - 4)
+      const beetle = sim.instancesOf('beetle').some((b) => b.x > hero.x && b.x - hero.x < 42 && Math.abs(b.y - hero.y) < 24)
+      const gap = below === -1 || danger.has(below)
+      if (hero.onGround && (gap || front !== -1 || beetle)) {
+        input.tap('up')
+      }
+      sim.tick()
+      ticks++
+    }
+    expect(machine.gameState).toBe(2)
+    expect(sim.getVar('coins')).toBeGreaterThan(0)
+  })
 })

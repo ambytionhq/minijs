@@ -29,10 +29,20 @@
  *   | 'duplicate-look'
  *   | 'multiple-cameras'
  *   | 'duplicate-game'
+ *   | 'unknown-sound'
+ *   | 'unknown-music'
+ *   | 'unknown-particles'
+ *   | 'unknown-tilemap'
+ *   | 'unknown-preset'
+ *   | 'unknown-state'
+ *   | 'duplicate-name'
+ *   | 'duplicate-machine'
+ *   | 'duplicate-state'
+ *   | 'no-machine'
  * )} LangErrorCode
  */
 
-/** @typedef {'image-missing' | 'too-many-things' | 'runtime-math'} RuntimeErrorCode */
+/** @typedef {'image-missing' | 'too-many-things' | 'runtime-math' | 'file-missing' | 'file-broken' | 'unknown-tile'} RuntimeErrorCode */
 
 /** @typedef {LangErrorCode | RuntimeErrorCode} MiniErrorCode */
 

@@ -221,6 +221,7 @@ async function main() {
     '--no-default-browser-check',
     '--hide-scrollbars',
     '--autoplay-policy=no-user-gesture-required',
+    '--mute-audio',
     'about:blank',
   ])
   const wsUrl = await new Promise((resolve, reject) => {
@@ -240,6 +241,28 @@ async function main() {
     const page = new Page(cdp, sessionId)
     await page.send('Page.enable')
     await page.send('Runtime.enable')
+
+    // The picture editors, for the feature guides in docs/.
+    await page.setView({ width: 1440, height: 900, dark: true })
+    /** @type {Array<[string, string, string]>} */
+    const tools = [
+      ['garden.tilemap', 'tool-tilemap', ''],
+      ['garden.tileset', 'tool-tileset', ''],
+      ['pop.particles', 'tool-particles', 'document.querySelector(".fx-canvas").dispatchEvent(new PointerEvent("pointerdown", { clientX: 520, clientY: 330, bubbles: true }))'],
+      ['hop.sound', 'tool-sound', ''],
+      ['garden.music', 'tool-music', ''],
+      ['game.mini', 'tool-states', 'document.querySelector("#view-states").click()'],
+    ]
+    for (const [file, name, setup] of tools) {
+      await page.go(`${origin}/studio/#/p/${encodeURIComponent('example:lantern-garden')}/${file}`)
+      await sleep(2200)
+      if (setup) {
+        await page.eval(`${setup}, true`)
+        await sleep(name === 'tool-states' ? 1200 : 180)
+      }
+      await page.shot(join(DOCS_OUT, `${name}.webp`))
+    }
+    if (process.env.SHOTS === 'tools') return
 
     // Games, mid-play.
     /** @type {Array<[string, (p: Page) => Promise<void>]>} */

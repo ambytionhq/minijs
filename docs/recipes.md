@@ -485,3 +485,104 @@ when player touches coin
 ```
 
 The **Game values** tab shows every number in your game and how many of each thing exist, live as you play. The **Controls** tab shows which keys and buttons the game thinks are pressed. More in [Using Studio](studio.md#the-tabs-under-the-game).
+
+## Paint a level instead of writing it
+
+Click **+** above your files, choose **Tile map**, then **Add to my game**. Give your player `solid` and `falls`, and you have a floor. See [Tile maps](tilemaps.md).
+
+```mini
+game
+  gravity 0.4
+
+tilemap level "level.tilemap"
+
+thing player
+  looks like orange box 12 by 16
+  starts at 40, 20
+  solid
+  falls
+  camera follows
+```
+
+## Coins and spikes painted on the map
+
+Tiles have names, and rules can notice them. See [Using tiles in your rules](tilemaps.md#using-tiles-in-your-rules).
+
+```mini
+score starts at 0
+thing player
+  looks like orange box 12 by 16
+  starts at 40, 20
+
+when player touches coin tile
+  remove the tile
+  add 1 to score
+
+when player touches spikes tile
+  restart game
+```
+
+## Add a sparkle and a sound
+
+No files needed. See [Particles](particles.md) and [Sound and music](sound.md).
+
+```mini
+particles shine like sparkle
+sound ding like coin
+thing player
+  looks like orange box 12 by 16
+thing coin
+  looks like gold circle 4
+
+when player touches coin
+  burst shine on the coin
+  play sound ding
+  remove the coin
+```
+
+## A title screen and game over
+
+A state for each screen. See [States for the whole game](state-machines.md#states-for-the-whole-game).
+
+```mini
+thing player
+  looks like orange box 12 by 16
+  starts at 40, 100
+thing spike
+  looks like red box 12 by 12
+  starts at 200, 100
+
+states game
+  state menu
+    on enter
+      show text "Press space" at 100, 60
+    go to playing when space key is pressed
+  state playing
+    when right key is held
+      move player right 2
+    go to over when player touches spike
+  state over
+    on enter
+      show text "Game over" at 100, 60
+```
+
+## An enemy that walks back and forth
+
+Each one keeps its own time. See [States](state-machines.md).
+
+```mini
+thing beetle
+  looks like black box 14 by 9
+  starts at 100, 100
+  starts at 200, 100
+
+states beetle
+  state go-left
+    always
+      move beetle left 1
+    go to go-right after 2 seconds
+  state go-right
+    always
+      move beetle right 1
+    go to go-left after 2 seconds
+```
