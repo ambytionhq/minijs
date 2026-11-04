@@ -101,7 +101,7 @@ Studio checks for signed updates automatically and offers **Install and restart*
 
 Releases live in this public repository. The release workflow uses the repository's `TAURI_SIGNING_PRIVATE_KEY` secret and the public key embedded in the app. Keep that key pair stable so existing installations can verify future updates. Set `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` only if the signing key has a password.
 
-To release, update the root and desktop package versions and their lockfiles, push a matching `v<version>` tag, and watch **Release desktop app** in GitHub Actions. The workflow builds Mac (Intel and Apple silicon), Windows and Linux installers in a draft. It publishes only after all updater targets and signatures pass checks, then verifies the public `latest.json` download used by the app.
+CI runs on pull requests and inside the release workflow, not on every push. To release, update the root and desktop package versions and their lockfiles, push a matching `v<version>` tag, and watch **Release desktop app** in GitHub Actions. The workflow builds Mac (Intel and Apple silicon), Windows and Linux installers in a draft. It publishes only after all updater targets and signatures pass checks, then verifies the public `latest.json` download used by the app.
 
 More detail, including signing, is in [apps/desktop/README.md](apps/desktop/README.md).
 

@@ -1,8 +1,11 @@
 name: CI
 
+# Not run on every push. Runs on pull requests, by hand, and as the gate
+# inside the release workflow.
 on:
-  push:
   pull_request:
+  workflow_dispatch:
+  workflow_call:
 
 jobs:
   test:
