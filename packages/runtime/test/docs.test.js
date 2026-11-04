@@ -11,7 +11,7 @@ const GUIDES = ['tilemaps.md', 'particles.md', 'sound.md', 'state-machines.md', 
 
 /** @param {string} text */
 function samples(text) {
-  return [...text.matchAll(/```mini\n([\s\S]*?)```/g)].map((m) => m[1].replace(/^ {3}/gm, (s) => s))
+  return [...text.matchAll(/```mini\r?\n([\s\S]*?)```/g)].map((m) => m[1].replace(/\r/g, '').replace(/^ {3}/gm, (s) => s))
 }
 
 /**
@@ -39,6 +39,14 @@ function compileWithStubs(source) {
   }
   return compile(text).errors
 }
+
+describe('sample extraction', () => {
+  it('finds fenced mini blocks in CRLF markdown', () => {
+    const text = '# Title\r\n\r\n```mini\r\nplayer starts at 0\r\nwhen space\r\n  player is 1\r\n```\r\n'
+    expect(samples(text)).toEqual(['player starts at 0\nwhen space\n  player is 1\n'])
+    expect(samples(text.replace(/\r\n/g, '\n'))).toEqual(samples(text))
+  })
+})
 
 describe('samples in the guides', () => {
   for (const guide of GUIDES) {
