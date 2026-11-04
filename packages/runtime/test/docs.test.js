@@ -11,8 +11,15 @@ const GUIDES = ['tilemaps.md', 'particles.md', 'sound.md', 'state-machines.md', 
 
 /** @param {string} text */
 function samples(text) {
-  return [...text.matchAll(/```mini\n([\s\S]*?)```/g)].map((m) => m[1].replace(/^ {3}/gm, (s) => s))
+  return [...text.matchAll(/```mini\r?\n([\s\S]*?)```/g)].map((m) => m[1].replace(/\r/g, '').replace(/^ {3}/gm, (s) => s))
 }
+
+describe('docs sample parsing', () => {
+  it('finds mini fenced blocks in CRLF markdown files', () => {
+    const text = 'before\r\n```mini\r\nthing hero\r\n  looks like red box 4 by 4\r\n```\r\nafter\r\n'
+    expect(samples(text)).toEqual(['thing hero\n  looks like red box 4 by 4\n'])
+  })
+})
 
 /**
  * Compile, adding whatever undeclared names the errors ask for.
